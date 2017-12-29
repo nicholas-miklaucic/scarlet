@@ -1,0 +1,35 @@
+* Scarlet: Colors and Color Spaces For Rust (think of good tagline)
+** Color Types
+ - RGB
+ - RGBA
+ - sRGB / different gammas and primaries? idk
+ - HSV
+ - HSL
+ - LAB
+ - CIELUV
+ - CIE 1931?
+ - XYZ
+ - Spectral?
+** Color Input Formats
+ - HTML names
+ - HTML hex
+ - HTML funcs (e.g., ~rgba(0, 0, 1, 0)~)
+ - Full initalizer functions (e.g., ~HSLColor(232, 94, 94)~)
+** Color Functions
+ - Average /n/ colors in a specified space with weights (e.g., avg(red, green, blue) in RGB => grey, in HSV => green)
+ - Mix (i.e., additively or subtractively superimpose) colors in a given space (e.g., red + blue = fuschia in RGB)
+ - Get gradient scales (ranges of colors interpolated in a color space, so in HSV you'd have red -> yellow
+   -> green and in RGB you'd have blue -> violet -> purple -> fuchsia)
+   - Logarithmic/other kinds as well?
+   - Padding?
+ - Common colormaps implemented from scratch (cubehelix, jet (shudder), MATLAB ones, rainbow, grayscale)
+   - Arbitrary gradients as colormaps
+ - Color distances in each color space
+ - Color temperature
+ - Convert colors in between color spaces
+ - Clamp colors within a gamut
+ - Get luminance/lightness/luma values (should probably be separate than color conversion to space with luminance)
+   - Special convenience function for getting grayscale version of a color?
+ - Format to a string (valid HTML format)
+ - Individually set coordinates and change color (e.g., ~c.r = 142~)
+ - Print to terminal?
