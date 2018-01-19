@@ -190,7 +190,7 @@ fn name_to_rgba(name: &str) -> Result<Vec<u8>, ColorParseError> {
 
 pub trait Chromatic {
     
-
+}
 pub struct RGBColor {
     r: u8;
     g: u8;

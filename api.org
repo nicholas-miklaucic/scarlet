@@ -1,2 +1,9 @@
 * The Color Structs: API Design Notes
+** On Type Conversion
+Type conversion in Rust is very nice, because there's a design pattern for it built into the
+standard library, ~std::convert::From~ and its brethren. The basic idea is simple: there is a base
+trait ~Color~ that all color structs need to implement. The implementation of ~Color~ requires a way of
+converting to and from the ~BaseColor~ struct.
 
+There's a problem with interconversion between colorspaces: they all represent different subsets of
+the full gamut of human visual perception. The solution to this 
