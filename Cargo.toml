@@ -1,0 +1,7 @@
+[package]
+name = "scarlet"
+version = "0.1.0"
+authors = ["Nicholas Miklaucic <nicholas.miklaucic@gmail.com>"]
+
+[dependencies]
+regex = "0.2"

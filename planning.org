@@ -2,17 +2,19 @@
 ** Color Types
  - RGB
  - RGBA
- - sRGB / different gammas and primaries? idk
+ - sRGB / different gammas and primaries
+   - implement by making them attributes of platform-independent colors so that From will work correctly
  - HSV
  - HSL
+ - HSLA
+   - TODO: Implement optional % in hsla and hsl calls (hsl(344, 50%, 13%))
  - LAB
  - CIELUV
- - CIE 1931?
  - XYZ
- - Spectral?
 ** Color Input Formats
  - HTML names
  - HTML hex
+   - TODO: implement shortened hex (e.g., #03b)
  - HTML funcs (e.g., ~rgba(0, 0, 1, 0)~)
  - Full initalizer functions (e.g., ~HSLColor(232, 94, 94)~)
 ** Color Functions
