@@ -1,13 +1,10 @@
-// Now, we begin the public part of this: defining the structs that we'll use to represent different
-// colors in different color spaces.
+/// This file defines the Color trait and all of the standard color types that implement it.
 
-// First, we define a trait that identifies a color as a color: for our purposes, this will be some
-// way of converting to and from a color in the CIE XYZ space (along with an associated luminant).
 
 use std::convert;
 use termion::color;
 
-
+/// A point in the CIE 1931 XYZ color space.
 pub struct XYZColor {
     // these need to all be positive
     // TODO: way of implementing this constraint in code?
@@ -18,6 +15,8 @@ pub struct XYZColor {
 }
 
 
+/// A trait that includes any color representation that can be converted to and from the CIE 1931 XYZ
+/// color space.
 pub trait Color {
     fn from_xyz(XYZColor) -> Self;
     fn to_xyz(&self) -> XYZColor;
