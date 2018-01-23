@@ -6,4 +6,21 @@ trait ~Color~ that all color structs need to implement. The implementation of ~C
 converting to and from the ~BaseColor~ struct.
 
 There's a problem with interconversion between colorspaces: they all represent different subsets of
-the full gamut of human visual perception. The solution to this 
+the full gamut of human visual perception. The best solution to this issue is to have any color
+gamut that is not as large as the master space have exact versions of each of its attributes, so an
+example ~RGBColor~ might have ~color.r~ and ~color.exact_r~: the former is an integer from 0 to 255, and the
+latter is a float with a larger range of values. This allows for the user to choose whether to take
+on the extra complexity of dealing with gamuts, rather than be forced to deal with gamuts
+everywhere, even in situations where it's not a problem. This also prevents any errors being thrown
+by conversions, which is a requirement of ~From~.
+** Basic Structure
+The master color space in which every other color is defined is the [[https://en.wikipedia.org/wiki/CIE_1931_color_space][CIE 1931 XYZ]] color space with
+the CIE standard observer. This is the "lowest-level" in the sense of being fairly close to LMS cone
+responses. Note that this space is rather unwieldy: it's not perceptually uniform, it doesn't
+accurately represent how computers display color, and it doesn't really have too many other useful
+properties. However, we can go between it and every other space in a well-defined manner, which is
+what we want. Conversions between colors all go through this space: it's a common "language" to
+every color representation I will use.
+
+Each Color type first implements the trait ~Color~, which requires two methods, ~from_xyz~ and
+~to_xyz~. This is enough to guarantee that color operations work! 

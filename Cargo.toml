@@ -5,3 +5,4 @@ authors = ["Nicholas Miklaucic <nicholas.miklaucic@gmail.com>"]
 
 [dependencies]
 regex = "0.2"
+termion = "*"
