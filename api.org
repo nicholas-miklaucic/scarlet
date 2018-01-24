@@ -22,5 +22,11 @@ properties. However, we can go between it and every other space in a well-define
 what we want. Conversions between colors all go through this space: it's a common "language" to
 every color representation I will use.
 
-Each Color type first implements the trait ~Color~, which requires two methods, ~from_xyz~ and
-~to_xyz~. This is enough to guarantee that color operations work! 
+Each Color type first implements the trait ~Color~, which has two functions that convert to and from
+~XYZColor~. There's a really annoying design problem here, in that you're literally one type away from
+being able to get automatic conversions between each Color: you could implement a generic version of
+~From<T> for U~, where ~T: Color~ and ~U: Color~, but if ~T~ is ~U~ this is already implemented. It isn't a
+big problem, because all we have to do is just use named functions instead, but it'd be nicer the
+other way.
+
+When specialization becomes part of Rust (RFC 1210), this will actually work!
