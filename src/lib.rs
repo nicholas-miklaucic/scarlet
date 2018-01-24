@@ -1,4 +1,3 @@
-mod color_parsing;
 mod color;
 
 #[cfg(test)]
