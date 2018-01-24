@@ -1,4 +1,4 @@
-mod color;
+pub mod color;
 
 #[cfg(test)]
 mod tests {

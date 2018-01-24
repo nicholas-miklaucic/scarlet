@@ -1,5 +1,7 @@
 /// This file defines the Color trait and all of the standard color types that implement it.
 
+use std::convert::From;
+use std::string::ToString;
 extern crate termion;
 use self::termion::color::{Fg, Reset, Rgb};
 
@@ -16,6 +18,18 @@ pub struct XYZColor {
     // TODO: deal with illuminant
 }
 
+impl From<Vec<f64>> for XYZColor {
+    fn from(nums: Vec<f64>) -> Self {
+        XYZColor{x: nums[0], y: nums[1], z: nums[2]}
+    }
+}
+
+impl Into<Vec<f64>> for XYZColor {
+    fn into(self) -> Vec<f64> {
+        vec![self.x, self.y, self.z]
+    }
+}
+
 
 /// A trait that includes any color representation that can be converted to and from the CIE 1931 XYZ
 /// color space.
@@ -28,7 +42,7 @@ pub trait Color {
     }
     fn write_colored_str(&self, text: &str) -> String {
         let rgb: RGBColor = self.convert();
-        rgb.write_colored_str(text)
+        rgb.base_write_colored_str(text)
     }
 }
 
@@ -50,13 +64,32 @@ pub struct RGBColor {
 }
     
 impl RGBColor {
-    /// Given a string, returns that string wrapped in codes that will color the foreground.
-    pub fn write_colored_str(&self, text: &str) -> String {
+    /// Given a string, returns that string wrapped in codes that will color the foreground. Used for
+    /// the trait implementation of write_colored_str, which should be used instead.
+    fn base_write_colored_str(&self, text: &str) -> String {
         format!("{code}{text}{reset}",
                 code=Fg(Rgb(self.r, self.g, self.b)),
                 text=text,
                 reset=Fg(Reset)
         )
+    }
+}
+
+impl Into<Vec<u8>> for RGBColor {
+    fn into(self) -> Vec<u8> {
+        vec![self.r, self.g, self.b]
+    }
+}
+
+impl From<Vec<u8>> for RGBColor {
+    fn from(nums: Vec<u8>) -> Self {
+        RGBColor {r: nums[0], g: nums[1], b: nums[2]}
+    }
+}
+
+impl ToString for RGBColor {
+    fn to_string(&self) -> String {
+        format!("#{:02X}{:02X}{:02X}", self.r, self.g, self.b)
     }
 }
 
@@ -164,15 +197,26 @@ mod tests {
     }
     #[test]
     fn test_xyz_color_display() {
-        let x = 0.5;
+        println!();
+        let y = 0.5;
         for i in 0..21 {
             let mut line = String::from("");
-            let y = i as f64 * (1.0 / 20.0);
             for j in 0..21 {
-                let z = j as f64 * (1.08883 / 20.0);
+                let x = i as f64 * 0.94 / 20.0;
+                let z = j as f64 * 1.08883 / 20.0;
                 line.push_str(XYZColor{x, y, z}.write_colored_str("■").as_str());
             }
+
             println!("{}", line);
         }
+    }
+    #[test]
+    fn test_rgb_to_string() {
+        let c1 = RGBColor::from(vec![0, 0, 0]);
+        let c2 = RGBColor::from(vec![244, 182, 33]);
+        let c3 = RGBColor::from(vec![0, 255, 0]);
+        assert_eq!(c1.to_string(), "#000000");
+        assert_eq!(c2.to_string(), "#F4B621");
+        assert_eq!(c3.to_string(), "#00FF00");
     }
 }
