@@ -30,3 +30,4 @@ big problem, because all we have to do is just use named functions instead, but 
 other way.
 
 When specialization becomes part of Rust (RFC 1210), this will actually work!
+

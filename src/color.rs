@@ -1,10 +1,11 @@
 /// This file defines the Color trait and all of the standard color types that implement it.
 
 use std::convert::From;
+use std::ops::Add;
 use std::string::ToString;
 extern crate termion;
 use self::termion::color::{Fg, Reset, Rgb};
-
+use super::coord::Coord;
 
 
 /// A point in the CIE 1931 XYZ color space.
@@ -18,15 +19,19 @@ pub struct XYZColor {
     // TODO: deal with illuminant
 }
 
-impl From<Vec<f64>> for XYZColor {
-    fn from(nums: Vec<f64>) -> Self {
-        XYZColor{x: nums[0], y: nums[1], z: nums[2]}
+impl From<Coord> for XYZColor {
+    fn from(nums: Coord) -> Self {
+        XYZColor{x: nums.x, y: nums.y, z: nums.z}
     }
 }
 
-impl Into<Vec<f64>> for XYZColor {
-    fn into(self) -> Vec<f64> {
-        vec![self.x, self.y, self.z]
+impl Into<Coord> for XYZColor {
+    fn into(self) -> Coord {
+        Coord {
+            x: self.x,
+            y: self.y,
+            z: self.z
+        }
     }
 }
 
@@ -72,18 +77,6 @@ impl RGBColor {
                 text=text,
                 reset=Fg(Reset)
         )
-    }
-}
-
-impl Into<Vec<u8>> for RGBColor {
-    fn into(self) -> Vec<u8> {
-        vec![self.r, self.g, self.b]
-    }
-}
-
-impl From<Vec<u8>> for RGBColor {
-    fn from(nums: Vec<u8>) -> Self {
-        RGBColor {r: nums[0], g: nums[1], b: nums[2]}
     }
 }
 
@@ -159,7 +152,42 @@ impl Color for RGBColor {
         XYZColor{x, y, z}
     }
 }
-            
+
+/// Describes a Color that can be mixed with other colors in its own 3D space. Mixing, in this
+/// context, is taking the midpoint of two color projections in some space, or something consistent
+/// with that idea: if colors A and B mix to A, that should mean B is the same as A, for
+/// example. Although this is not currently the case, note that this implies that the gamut of this
+/// Color is convex: any two Colors of the same type may be mixed to form a third valid one.
+
+/// Note that there is one very crucial thing to remember about mixing: it differs depending on the
+/// color space being used. For example, if there are two colors A and B, A.mix(B) may produce very
+/// different results than A_conv.mix(B_conv) if A_conv and B_conv are the results of A.convert() and
+/// B.convert(). For this reason, A.mix(B) is only allowed if A and B share a type: otherwise,
+/// A.mix(B) could be different than B.mix(A), which is error-prone and unintuitive.
+
+/// There is a default implementation for Colors that can interconvert to Coord. This helps
+/// ensure that the most basic case functions appropriately. For any other dimension of Coord, such as
+/// u8, special logic is needed because of range and rounding issues, so it's on the type itself to
+/// implement it.
+
+pub trait Mix : Color {
+    /// Given two Colors, returns a Color representing their midpoint: usually, this means their
+    /// midpoint in some projection into three-dimensional space.
+    fn mix(self, other: Self) -> Self;
+}
+
+impl<T: Color + From<Coord> + Into<Coord>> Mix for T {
+    /// Given two colors that represent the points (a1, b1, c1) and (a2, b2, c2) in some common
+    /// projection, returns the color (a1 + a2, b1 + b2, c1 + c2) / 2.
+    fn mix(self, other: T) -> T {
+        // convert to 3D space, add, divide by 2, come back
+        let c1: Coord = self.into();
+        let c2: Coord = other.into();
+        T::from((c1 + c2) / 2u8)
+    }        
+}
+
+
 mod tests {
     #[allow(unused_imports)]
     use super::*;
@@ -202,8 +230,8 @@ mod tests {
         for i in 0..21 {
             let mut line = String::from("");
             for j in 0..21 {
-                let x = i as f64 * 0.94 / 20.0;
-                let z = j as f64 * 1.08883 / 20.0;
+                let x = i as f64 * 0.8 / 20.0;
+                let z = j as f64 * 0.8 / 20.0;
                 line.push_str(XYZColor{x, y, z}.write_colored_str("■").as_str());
             }
 
@@ -212,9 +240,9 @@ mod tests {
     }
     #[test]
     fn test_rgb_to_string() {
-        let c1 = RGBColor::from(vec![0, 0, 0]);
-        let c2 = RGBColor::from(vec![244, 182, 33]);
-        let c3 = RGBColor::from(vec![0, 255, 0]);
+        let c1 = RGBColor{r: 0, g: 0, b: 0};
+        let c2 = RGBColor{r: 244, g: 182, b: 33};
+        let c3 = RGBColor{r: 0, g: 255, b: 0};
         assert_eq!(c1.to_string(), "#000000");
         assert_eq!(c2.to_string(), "#F4B621");
         assert_eq!(c3.to_string(), "#00FF00");

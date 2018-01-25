@@ -1,3 +1,4 @@
+mod coord;
 pub mod color;
 
 #[cfg(test)]
