@@ -1,7 +1,6 @@
 /// This file defines the Color trait and all of the standard color types that implement it.
 
 use std::convert::From;
-use std::ops::Add;
 use std::string::ToString;
 extern crate termion;
 use self::termion::color::{Fg, Reset, Rgb};
@@ -77,6 +76,19 @@ impl RGBColor {
                 text=text,
                 reset=Fg(Reset)
         )
+    }
+}
+
+impl From<(u8, u8, u8)> for RGBColor {
+    fn from(rgb: (u8, u8, u8)) -> RGBColor {
+        let (r, g, b) = rgb;
+        RGBColor{r, g, b}
+    }
+}
+
+impl Into<(u8, u8, u8)> for RGBColor {
+    fn into(self) -> (u8, u8, u8) {
+        (self.r, self.g, self.b)
     }
 }
 
@@ -165,10 +177,9 @@ impl Color for RGBColor {
 /// B.convert(). For this reason, A.mix(B) is only allowed if A and B share a type: otherwise,
 /// A.mix(B) could be different than B.mix(A), which is error-prone and unintuitive.
 
-/// There is a default implementation for Colors that can interconvert to Coord. This helps
-/// ensure that the most basic case functions appropriately. For any other dimension of Coord, such as
-/// u8, special logic is needed because of range and rounding issues, so it's on the type itself to
-/// implement it.
+/// There is a default implementation for Colors that can interconvert to Coord. This helps ensure
+/// that the most basic case functions appropriately. For any other type of Color, special logic is
+/// needed because of range and rounding issues, so it's on the type itself to implement it.
 
 pub trait Mix : Color {
     /// Given two Colors, returns a Color representing their midpoint: usually, this means their
@@ -185,6 +196,17 @@ impl<T: Color + From<Coord> + Into<Coord>> Mix for T {
         let c2: Coord = other.into();
         T::from((c1 + c2) / 2u8)
     }        
+}
+
+impl Mix for RGBColor {
+    fn mix(self, other: RGBColor) -> RGBColor {
+        let (r1, g1, b1) = self.into();
+        let (r2, g2, b2) = other.into();
+        let (r, g, b) = (((r1 as u16 + r2 as u16) / 2) as u8,
+                         ((g1 as u16 + g2 as u16) / 2) as u8,
+                         ((b1 as u16 + b2 as u16) / 2) as u8);
+        RGBColor{r, g, b}
+    }
 }
 
 
@@ -246,5 +268,22 @@ mod tests {
         assert_eq!(c1.to_string(), "#000000");
         assert_eq!(c2.to_string(), "#F4B621");
         assert_eq!(c3.to_string(), "#00FF00");
+    }
+    #[test]
+    fn test_mix_rgb() {
+        let c1 = RGBColor::from((0, 0, 255));
+        let c2 = RGBColor::from((255, 0, 1));
+        let c3 = RGBColor::from((127, 7, 19));
+        assert_eq!(c1.mix(c2).to_string(), "#7F0080");
+        assert_eq!(c1.mix(c3).to_string(), "#3F0389");
+        assert_eq!(c2.mix(c3).to_string(), "#BF030A");
+    }
+    #[test]
+    fn test_mix_xyz() {
+        let c1 = XYZColor{x: 0.5, y: 0.25, z: 0.75};
+        let c2 = XYZColor{x: 0.625, y: 0.375, z: 0.5};
+        let c3 = XYZColor{x: 0.75, y: 0.5, z: 0.25};
+        assert_eq!(c1.mix(c3), c2);
+        assert_eq!(c3.mix(c1), c2);
     }
 }
