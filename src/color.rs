@@ -39,10 +39,10 @@ impl Into<Coord> for XYZColor {
 /// color space.
 pub trait Color {
     fn from_xyz(XYZColor) -> Self;
-    fn into_xyz(&self) -> XYZColor;
+    fn to_xyz(&self) -> XYZColor;
 
     fn convert<T: Color>(&self) -> T {
-        T::from_xyz(self.into_xyz())
+        T::from_xyz(self.to_xyz())
     }
     fn write_colored_str(&self, text: &str) -> String {
         let rgb: RGBColor = self.convert();
@@ -54,7 +54,7 @@ impl Color for XYZColor {
     fn from_xyz(xyz: XYZColor) -> XYZColor {
         xyz
     }
-    fn into_xyz(&self) -> XYZColor {
+    fn to_xyz(&self) -> XYZColor {
         *self
     }
 }
@@ -142,7 +142,7 @@ impl Color for RGBColor {
         }
     }
 
-    fn into_xyz(&self) -> XYZColor {
+    fn to_xyz(&self) -> XYZColor {
         // scale from 0 to 1 instead
         // TODO: use exact values here?
         let uncorrect_gamma = |x: &f64| {
@@ -239,7 +239,7 @@ mod tests {
     #[test]
     fn rgb_to_xyz() {
         let rgb = RGBColor{r: 45, g: 28, b: 156};
-        let xyz: XYZColor = rgb.into_xyz();
+        let xyz: XYZColor = rgb.to_xyz();
         // these won't match exactly cuz floats, so I just check within a margin
         assert!((xyz.x - 0.0750).abs() <= 0.01);
         assert!((xyz.y - 0.0379).abs() <= 0.01);
