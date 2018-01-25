@@ -8,7 +8,7 @@ use super::coord::Coord;
 
 
 /// A point in the CIE 1931 XYZ color space.
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq)]
 pub struct XYZColor {
     // these need to all be positive
     // TODO: way of implementing this constraint in code?
@@ -16,6 +16,12 @@ pub struct XYZColor {
     y: f64,
     z: f64,
     // TODO: deal with illuminant
+}
+
+impl PartialEq for XYZColor {
+    fn eq(&self, other: &XYZColor) -> bool {
+        self.x == other.x && self.y == other.y && self.z == other.z
+    }
 }
 
 impl From<Coord> for XYZColor {
@@ -59,7 +65,7 @@ impl Color for XYZColor {
     }
 }
 
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq)]
 pub struct RGBColor {
     r: u8,
     g: u8,
@@ -78,6 +84,13 @@ impl RGBColor {
         )
     }
 }
+
+impl PartialEq for RGBColor {
+    fn eq(&self, &other: RGBColor) -> bool {
+        self.r == other.r && self.g == other.g && self.b == other.b
+    }
+}
+        
 
 impl From<(u8, u8, u8)> for RGBColor {
     fn from(rgb: (u8, u8, u8)) -> RGBColor {

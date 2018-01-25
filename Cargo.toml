@@ -1,7 +1,14 @@
 [package]
 name = "scarlet"
+description = "Colors and color spaces made simple"
 version = "0.1.0"
 authors = ["Nicholas Miklaucic <nicholas.miklaucic@gmail.com>"]
+license = "Apache-2.0"
+readme = "README.MD"
+repository = "https://github.com/nicholas-miklaucic/scarlet"
+keywords = ["color", "rgb", "image", "visualization"]
+categories = ["multimedia::images", "visualization", "data-structures"]
+
 
 [dependencies]
 regex = "0.2"
