@@ -14,3 +14,4 @@ categories = ["multimedia::images", "visualization", "data-structures"]
 regex = "0.2"
 termion = "*"
 num = "0.1.41"
+float-cmp = "0.3.0"

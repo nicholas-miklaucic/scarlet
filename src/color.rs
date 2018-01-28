@@ -3,9 +3,12 @@
 use std::convert::From;
 use std::string::ToString;
 extern crate termion;
-use self::termion::color::{Fg, Reset, Rgb};
+use self::termion::color::{Fg, Bg, Reset, Rgb};
+extern crate float_cmp;
+use self::float_cmp::ApproxEqUlps;
 use super::coord::Coord;
-use illuminants::Illuminant;
+use illuminants::{Illuminant};
+
 
 
 /// A point in the CIE 1931 XYZ color space.
@@ -19,23 +22,74 @@ pub struct XYZColor {
     illuminant: Illuminant,
 }
 
-impl From<Coord> for XYZColor {
-    /// Converts from a 3-dimensional point to XYZ, assuming the D50 illuminant.
-    fn from(nums: Coord) -> Self {
-        XYZColor{x: nums.x, y: nums.y, z: nums.z, illuminant: Illuminant::D50}
+impl XYZColor {
+    // Transforms a given XYZ coordinate to LMS space, returning an array [L, M, S] given an array
+    // [X, Y, Z]. Information about this is given in the color_adapt function, which is the only
+    // public function that uses this one right now. Uses the linearized Bradford transform.
+    fn lms_transform(xyz: [f64; 3]) -> [f64; 3] {
+        let l = 0.8951 * xyz[0] + 0.2664 * xyz[1] - 0.1614 * xyz[2];
+        let m = -0.7502 * xyz[0] + 1.7135 * xyz[1] + 0.0367 * xyz[2];
+        let s = 0.0389 * xyz[0] - 0.0685 * xyz[1] + 1.0296 * xyz[2];
+        [l, m, s]
     }
-}
+    /// Performs *color adaptation*: attempts to convert the given color to one that would look the
+    /// exact same under a different illumination. Chromatic adapation is a nontrivial task, and
+    /// there is no one correct way to do this. Scarlet uses a *linearized Bradford von Kries
+    /// transform*, which is technically incorrect but has several advantages over "better"
+    /// transforms like the CIECAT02 transform. Specifically, it doesn't require any information
+    /// about the surrounding absolute luminance, which is pretty much impossible to know anything
+    /// about outside of color science and psychophysics. More information can be found
+    /// [here.](https://en.wikipedia.org/wiki/Chromatic_adaptation)
+    pub fn color_adapt(&self, other_illuminant: Illuminant) -> XYZColor {
+        // no need to transform if same illuminant
+        if other_illuminant == self.illuminant {
+            *self
+        }
+        else {
+            // convert to LMS color space using matrix multiplication
+            // this is called spectral sharpening, intended to increase clarity
+            let lms = XYZColor::lms_transform([self.x, self.y, self.z]);
 
-impl Into<Coord> for XYZColor {
-    fn into(self) -> Coord {
-        Coord {
-            x: self.x,
-            y: self.y,
-            z: self.z
+            // get the LMS values for the white point of the illuminant we are currently using and
+            // the one we want: wr here stands for "white reference", i.e., the one we're converting
+            // to
+            let lms_w = XYZColor::lms_transform(self.illuminant.white_point());
+            let lms_wr = XYZColor::lms_transform(other_illuminant.white_point());
+
+            // perform the transform
+            // this usually includes a parameter indicating how much you want to adapt, but it's
+            // assumed that we want total adaptation: D = 1. Maybe this could change someday?
+
+            // because each white point has already been normalized to Y = 100, we don't need a
+            // factor for it, which simplifies calculation even more than setting D = 1 and makes it
+            // just a linear transform
+            let l_c = lms_wr[0] * lms[0] / lms_w[0];
+            let m_c = lms_wr[1] * lms[1] / lms_w[1];
+            let s_c = lms_wr[2] * lms[2] / lms_w[2];
+
+            // now we convert right back into XYZ space, using the inverse of the LMS matrix we used
+            // earlier. Because we only do this once, this isn't its own function. As with the other
+            // function, this uses the Bradford values found at
+            // http://onlinelibrary.wiley.com/doi/10.1002/9781119021780.app3/pdf
+            let x_c = 0.9870 * l_c - 0.1471 * m_c + 0.1600 * s_c;
+            let y_c = 0.4323 * l_c + 0.5184 * m_c + 0.0493 * s_c;
+            let z_c = -0.0085 * l_c + 0.0400 * m_c + 0.9685 * s_c;
+
+            // the full CIECAT02 model now would do a post-adaptation transform, but we're just going
+            // to ignore that because we don't have any absolute luminance information.
+            XYZColor{x: x_c, y: y_c, z: z_c, illuminant: other_illuminant}
         }
     }
+    /// Returns `true` if the given other XYZ color would look identically in a different color
+    /// space. Uses an approximate float equality that helps resolve errors due to floating-point
+    /// representation.
+    pub fn visually_equal(&self, other: &XYZColor) -> bool {
+        let other_c = other.color_adapt(self.illuminant);
+        (self.x.approx_eq_ulps(&other_c.x, 2) &&
+         self.y.approx_eq_ulps(&other_c.y, 2) &&
+         self.z.approx_eq_ulps(&other_c.z, 2))
+    }
 }
-
 
 /// A trait that includes any color representation that can be converted to and from the CIE 1931 XYZ
 /// color space.
@@ -47,7 +101,7 @@ pub trait Color {
     /// applications, D50 or D65 is a good choice.
     fn to_xyz(&self, illuminant: Illuminant) -> XYZColor;
 
-    /// Converts the given Color to a different Color type, without consuming the current color. `T`
+    /// Converts the given Color to a different Color type, without consuming the curreppnt color. `T`
     /// is the color that is being converted to.  This currently converts back and forth using the
     /// D50 standard illuminant. However, this shouldn't change the actual value if the color
     /// conversion methods operate correctly, and this value should not be relied upon and can be
@@ -62,6 +116,12 @@ pub trait Color {
     fn write_colored_str(&self, text: &str) -> String {
         let rgb: RGBColor = self.convert();
         rgb.base_write_colored_str(text)
+    }
+    /// Returns a string which, when printed in a truecolor-supporting terminal, will hopefully have
+    /// both the foreground and background of the desired color, appearing as a complete square.
+    fn write_color(&self) -> String {
+        let rgb: RGBColor = self.convert();
+        rgb.base_write_color()
     }
 }
 
@@ -91,6 +151,15 @@ impl RGBColor {
                 code=Fg(Rgb(self.r, self.g, self.b)),
                 text=text,
                 reset=Fg(Reset)
+        )
+    }
+    fn base_write_color(&self) -> String {
+        format!("{bg}{fg}{text}{reset_fg}{reset_bg}",
+                bg=Bg(Rgb(self.r, self.g, self.b)),
+                fg=Fg(Rgb(self.r, self.g, self.b)),
+                text="■",
+                reset_fg=Fg(Reset),
+                reset_bg=Bg(Reset),
         )
     }
 }
@@ -124,17 +193,15 @@ impl ToString for RGBColor {
 
 impl Color for RGBColor {
     fn from_xyz(xyz: XYZColor) -> RGBColor {
-        // TODO: implement full illuminant list from
-        // https://github.com/hughsie/colord/tree/master/data/illuminant
-        // and deal with observers
-
+        // sRGB uses D65 as the assumed illuminant: convert the given value to that
+        let xyz_d65 = xyz.color_adapt(Illuminant::D65);
         // first, get linear RGB values (i.e., without gamma correction)
         // https://en.wikipedia.org/wiki/SRGB#Specification_of_the_transformation
 
         // note how the diagonals are large: X, Y, Z, roughly equivalent to R, G, B
-        let rgb_lin_vec = vec![3.2406 * xyz.x - 1.5372 * xyz.y - 0.4986 * xyz.z,
-                               -0.9689 * xyz.x + 1.8758 * xyz.y + 0.0415 * xyz.z,
-                               0.0557 * xyz.x - 0.2040 * xyz.y + 1.0570 * xyz.z];
+        let rgb_lin_vec = vec![3.2406 * xyz_d65.x - 1.5372 * xyz_d65.y - 0.4986 * xyz_d65.z,
+                               -0.9689 * xyz_d65.x + 1.8758 * xyz_d65.y + 0.0415 * xyz_d65.z,
+                               0.0557 * xyz_d65.x - 0.2040 * xyz_d65.y + 1.0570 * xyz_d65.z];
         // now we scale for gamma correction
         let gamma_correct = |x: &f64| {
             if x <= &0.0031308 {
@@ -185,8 +252,10 @@ impl Color for RGBColor {
         let y = 0.2126 * rgb_vec[0] + 0.7152 * rgb_vec[1] + 0.0722 * rgb_vec[2];
         let z = 0.0193 * rgb_vec[0] + 0.1192 * rgb_vec[1] + 0.9505 * rgb_vec[2];
 
-        // D50 is assumed everywhere as the gamut being used
-        XYZColor{x, y, z, illuminant: Illuminant::D50}
+        // sRGB, which this is based on, uses D65 as white, but you can convert to whatever
+        // illuminant is specified
+        let converted = XYZColor{x, y, z, illuminant: Illuminant::D65};
+        converted.color_adapt(illuminant)        
     }
 }
 
@@ -219,8 +288,31 @@ impl<T: Color + From<Coord> + Into<Coord>> Mix for T {
         // convert to 3D space, add, divide by 2, come back
         let c1: Coord = self.into();
         let c2: Coord = other.into();
-        T::from((c1 + c2) / 2u8)
+        T::from((c1 + c2) / 2)
     }        
+}
+
+// `XYZColor` notably doesn't implement conversion to and from `Coord` because illuminant information
+// can't be preserved: this means that mixing colors with different illuminants would produce
+// incorrect results. The following custom implementation of the Mix trait fixes this by converting
+// colors to the same gamut first.
+impl Mix for XYZColor {
+    /// Uses the current XYZ illuminant as the base, and uses the chromatic adapation transform that
+    /// the `XYZColor` struct defines (as `color_adapt`).
+    fn mix(self, other: XYZColor) -> XYZColor {
+        // convert to same illuminant
+        let other_c = other.color_adapt(self.illuminant);
+        // now just take the midpoint in 3D space
+        let c1: Coord = Coord{x: self.x, y: self.y, z: self.z};
+        let c2: Coord = Coord{x: other_c.x, y: other_c.y, z: other_c.z};
+        let mixed_coord = (c1 + c2) / 2.0;
+        XYZColor{
+            x: mixed_coord.x,
+            y: mixed_coord.y,
+            z: mixed_coord.z,
+            illuminant: self.illuminant
+        }
+    }
 }
 
 impl Mix for RGBColor {
@@ -254,7 +346,7 @@ mod tests {
     
     #[test]
     fn xyz_to_rgb() {
-        let xyz = XYZColor{x: 0.41874, y: 0.21967, z: 0.05649, illuminant: Illuminant::D50};
+        let xyz = XYZColor{x: 0.41874, y: 0.21967, z: 0.05649, illuminant: Illuminant::D65};
         let rgb: RGBColor = xyz.convert();
         assert_eq!(rgb.r, 254);
         assert_eq!(rgb.g, 23);
@@ -270,7 +362,8 @@ mod tests {
         assert!((xyz.y - 0.0379).abs() <= 0.01);
         assert!((xyz.z-  0.3178).abs() <= 0.01);
     }
-    #[test]
+    // for now, not gonna use since the fun color adaptation demo already runs this
+    #[allow(dead_code)]
     fn test_xyz_color_display() {
         println!();
         let y = 0.5;
@@ -305,10 +398,69 @@ mod tests {
     }
     #[test]
     fn test_mix_xyz() {
+        // note how I'm using fractions with powers of 2 in the denominator to prevent floating-point issues
         let c1 = XYZColor{x: 0.5, y: 0.25, z: 0.75, illuminant: Illuminant::D65};
         let c2 = XYZColor{x: 0.625, y: 0.375, z: 0.5, illuminant: Illuminant::D65};
         let c3 = XYZColor{x: 0.75, y: 0.5, z: 0.25, illuminant: Illuminant::D65};
         assert_eq!(c1.mix(c3), c2);
         assert_eq!(c3.mix(c1), c2);
+    }
+    #[test]
+    fn test_xyz_color_adaptation() {
+        // I can literally not find a single API or something that does this so I can check the
+        // values, so I'll just hope that it's good enough to check that converting between several
+        // illuminants and back again gets something good
+        let c1 = XYZColor{x: 0.5, y: 0.75, z: 0.6, illuminant: Illuminant::D65};
+        let c2 = c1.color_adapt(Illuminant::D50).color_adapt(Illuminant::D55);
+        let c3 = c1.color_adapt(Illuminant::D75).color_adapt(Illuminant::D55);
+        assert!(c3.x - c2.x <= 0.01);
+        assert!(c3.y - c2.y <= 0.01);
+        assert!(c3.z - c2.z <= 0.01);
+    }
+    #[test]
+    fn fun_color_adaptation_demo() {
+        println!();
+        let w: usize = 120;
+        let h: usize = 60;
+        let d50_wp = Illuminant::D50.white_point();
+        let d75_wp = Illuminant::D75.white_point();
+        let d65_wp = Illuminant::D65.white_point();
+        println!("{:?}{:?}{:?}", d50_wp, d65_wp, d75_wp);
+        let d50 = XYZColor{x: d50_wp[0] / 100.0, y: d50_wp[1] / 100.0, z: d50_wp[2] / 100.0,
+                           illuminant:Illuminant::D65};
+        let d75 = XYZColor{x: d75_wp[0] / 100.0, y: d75_wp[1] / 100.0, z: d75_wp[2] / 100.0,
+                           illuminant:Illuminant::D65};
+        for _ in 0..h+1 {
+            println!("{}{}", d50.write_color().repeat(w / 2), d75.write_color().repeat(w / 2));
+        }
+        
+        println!();
+        println!();
+        let y = 0.5;
+        println!();
+        for i in 0..(h+1) {
+            let mut line = String::from("");
+            let x = i as f64 * 0.9 / h as f64;
+            for j in 0..(w / 2) {
+                let z = j as f64 * 0.9 / w as f64;
+                line.push_str(XYZColor{x, y, z, illuminant: Illuminant::D50}.write_color().as_str());
+            }
+            for j in (w / 2)..(w+1) {
+                let z = j as f64 * 0.9 / w as f64;
+                line.push_str(XYZColor{x, y, z, illuminant: Illuminant::D75}.write_color().as_str());
+            }
+            println!("{}", line);
+        }
+        println!();
+        println!();
+        for i in 0..(h+1) {
+            let mut line = String::from("");
+            let x = i as f64 * 0.9 / h as f64;
+            for j in 0..w {
+                let z = j as f64 * 0.9 / w as f64;
+                line.push_str(XYZColor{x, y, z, illuminant: Illuminant::D65}.write_color().as_str());
+            }
+            println!("{}", line);
+        }
     }
 }
