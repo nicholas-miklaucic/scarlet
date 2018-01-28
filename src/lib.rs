@@ -1,5 +1,7 @@
 mod coord;
+pub mod illuminants;
 pub mod color;
+pub mod colors;
 
 #[cfg(test)]
 mod tests {

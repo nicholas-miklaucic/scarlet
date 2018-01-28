@@ -5,28 +5,24 @@ use std::string::ToString;
 extern crate termion;
 use self::termion::color::{Fg, Reset, Rgb};
 use super::coord::Coord;
+use illuminants::Illuminant;
 
 
 /// A point in the CIE 1931 XYZ color space.
-#[derive(Debug, Copy, Clone, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub struct XYZColor {
     // these need to all be positive
     // TODO: way of implementing this constraint in code?
     x: f64,
     y: f64,
     z: f64,
-    // TODO: deal with illuminant
-}
-
-impl PartialEq for XYZColor {
-    fn eq(&self, other: &XYZColor) -> bool {
-        self.x == other.x && self.y == other.y && self.z == other.z
-    }
+    illuminant: Illuminant,
 }
 
 impl From<Coord> for XYZColor {
+    /// Converts from a 3-dimensional point to XYZ, assuming the D50 illuminant.
     fn from(nums: Coord) -> Self {
-        XYZColor{x: nums.x, y: nums.y, z: nums.z}
+        XYZColor{x: nums.x, y: nums.y, z: nums.z, illuminant: Illuminant::D50}
     }
 }
 
@@ -44,12 +40,25 @@ impl Into<Coord> for XYZColor {
 /// A trait that includes any color representation that can be converted to and from the CIE 1931 XYZ
 /// color space.
 pub trait Color {
+    /// Converts from a color in CIE 1931 XYZ to the given color type.
     fn from_xyz(XYZColor) -> Self;
-    fn to_xyz(&self) -> XYZColor;
+    /// Converts from the given color type to a color in CIE 1931 XYZ space. Because most color types
+    /// don't include illuminant information, it is provided instead, as an enum. For most
+    /// applications, D50 or D65 is a good choice.
+    fn to_xyz(&self, illuminant: Illuminant) -> XYZColor;
 
+    /// Converts the given Color to a different Color type, without consuming the current color. `T`
+    /// is the color that is being converted to.  This currently converts back and forth using the
+    /// D50 standard illuminant. However, this shouldn't change the actual value if the color
+    /// conversion methods operate correctly, and this value should not be relied upon and can be
+    /// changed without notice.
     fn convert<T: Color>(&self) -> T {
-        T::from_xyz(self.to_xyz())
+        // theoretically, the illuminant shouldn't matter as long as the color conversions are
+        // correct.
+        T::from_xyz(self.to_xyz(Illuminant::D50))
     }
+    /// "Colors" a given piece of text with terminal escape codes to allow it to be printed out in the
+    /// given foreground color. Will cause problems with terminals that do not support truecolor.
     fn write_colored_str(&self, text: &str) -> String {
         let rgb: RGBColor = self.convert();
         rgb.base_write_colored_str(text)
@@ -60,7 +69,8 @@ impl Color for XYZColor {
     fn from_xyz(xyz: XYZColor) -> XYZColor {
         xyz
     }
-    fn to_xyz(&self) -> XYZColor {
+    #[allow(unused_variables)]
+    fn to_xyz(&self, illuminant: Illuminant) -> XYZColor {
         *self
     }
 }
@@ -84,9 +94,10 @@ impl RGBColor {
         )
     }
 }
+// TODO: get RGB from string
 
 impl PartialEq for RGBColor {
-    fn eq(&self, &other: RGBColor) -> bool {
+    fn eq(&self, other: &RGBColor) -> bool {
         self.r == other.r && self.g == other.g && self.b == other.b
     }
 }
@@ -155,7 +166,7 @@ impl Color for RGBColor {
         }
     }
 
-    fn to_xyz(&self) -> XYZColor {
+    fn to_xyz(&self, illuminant: Illuminant) -> XYZColor {
         // scale from 0 to 1 instead
         // TODO: use exact values here?
         let uncorrect_gamma = |x: &f64| {
@@ -174,7 +185,8 @@ impl Color for RGBColor {
         let y = 0.2126 * rgb_vec[0] + 0.7152 * rgb_vec[1] + 0.0722 * rgb_vec[2];
         let z = 0.0193 * rgb_vec[0] + 0.1192 * rgb_vec[1] + 0.9505 * rgb_vec[2];
 
-        XYZColor{x, y, z}
+        // D50 is assumed everywhere as the gamut being used
+        XYZColor{x, y, z, illuminant: Illuminant::D50}
     }
 }
 
@@ -242,7 +254,7 @@ mod tests {
     
     #[test]
     fn xyz_to_rgb() {
-        let xyz = XYZColor{x: 0.41874, y: 0.21967, z: 0.05649};
+        let xyz = XYZColor{x: 0.41874, y: 0.21967, z: 0.05649, illuminant: Illuminant::D50};
         let rgb: RGBColor = xyz.convert();
         assert_eq!(rgb.r, 254);
         assert_eq!(rgb.g, 23);
@@ -252,7 +264,7 @@ mod tests {
     #[test]
     fn rgb_to_xyz() {
         let rgb = RGBColor{r: 45, g: 28, b: 156};
-        let xyz: XYZColor = rgb.to_xyz();
+        let xyz: XYZColor = rgb.to_xyz(Illuminant::D65);
         // these won't match exactly cuz floats, so I just check within a margin
         assert!((xyz.x - 0.0750).abs() <= 0.01);
         assert!((xyz.y - 0.0379).abs() <= 0.01);
@@ -267,7 +279,7 @@ mod tests {
             for j in 0..21 {
                 let x = i as f64 * 0.8 / 20.0;
                 let z = j as f64 * 0.8 / 20.0;
-                line.push_str(XYZColor{x, y, z}.write_colored_str("■").as_str());
+                line.push_str(XYZColor{x, y, z, illuminant: Illuminant::D65}.write_colored_str("■").as_str());
             }
 
             println!("{}", line);
@@ -293,9 +305,9 @@ mod tests {
     }
     #[test]
     fn test_mix_xyz() {
-        let c1 = XYZColor{x: 0.5, y: 0.25, z: 0.75};
-        let c2 = XYZColor{x: 0.625, y: 0.375, z: 0.5};
-        let c3 = XYZColor{x: 0.75, y: 0.5, z: 0.25};
+        let c1 = XYZColor{x: 0.5, y: 0.25, z: 0.75, illuminant: Illuminant::D65};
+        let c2 = XYZColor{x: 0.625, y: 0.375, z: 0.5, illuminant: Illuminant::D65};
+        let c3 = XYZColor{x: 0.75, y: 0.5, z: 0.25, illuminant: Illuminant::D65};
         assert_eq!(c1.mix(c3), c2);
         assert_eq!(c3.mix(c1), c2);
     }
