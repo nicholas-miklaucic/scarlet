@@ -1,0 +1,5 @@
+* Scarlet Change Log
+** January 29, 2018
+ - Added CIELAB
+ - Illuminants now have white-point Y value of 1
+ - Added changelog and detailed checklist
