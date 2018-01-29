@@ -121,7 +121,8 @@ pub trait Color {
     /// changed without notice.
     fn convert<T: Color>(&self) -> T {
         // theoretically, the illuminant shouldn't matter as long as the color conversions are
-        // correct.
+        // correct. D50 is a common gamut for use in internal conversions, so for spaces like CIELAB
+        // it will produce the least error
         T::from_xyz(self.to_xyz(Illuminant::D50))
     }
     /// "Colors" a given piece of text with terminal escape codes to allow it to be printed out in the

@@ -6,8 +6,6 @@
    - implement by making them attributes of platform-independent colors so that From will work correctly
  - HSV
  - HSL
- - HSLA
-   - TODO: Implement optional % in hsla and hsl calls (hsl(344, 50%, 13%))
  - LAB
  - CIELUV
  - XYZ
@@ -35,3 +33,39 @@
  - Format to a string (valid HTML format)
  - Individually set coordinates and change color (e.g., ~c.r = 142~)
  - Print to terminal?
+
+* Things Between Now and v1.0
+** Color Types
+ - [ ] Adobe RGB
+ - [ ] ProPhoto RGB
+ - [ ] sHSL
+ - [ ] Adobe HSL
+ - [ ] ProPhoto HSL
+ - [ ] CIELUV
+ - [ ] CMYK
+** Color Input Formats
+ - [ ] HTML names
+ - [ ] HTML hex
+ - [ ] HTML shortened hex
+ - [ ] HTML initalizer functions
+ - [ ] Illuminant white points
+** Color Functions
+ - [ ] Average /n/ colors of the same type
+ - [ ] Superimposition of /n/ colors of the same type
+ - [ ] Gradient scales (basically /n/ colors in a sequence of equal color distance, the smallest possible, between two colors in the same space)
+   - [ ] Logarthmic
+   - [ ] Cube root
+   - [ ] Square root
+   - [ ] Pad scale on both ends by some fraction of total distance
+ - [ ] Gradient functions (basically as above, but instead of a scale it returns a new function f(x) -> color where 0 <= x <= 1)
+ - [ ] Common colormaps (MATLAB, jet (shudder), rainbow (shudder))
+ - [ ] Distance between 2 colors of the same type
+ - [ ] Color temperature
+ - [ ] Convenience functions for:
+   - [ ] Hue angle
+   - [ ] Lightness
+   - [ ] Brightness
+   - [ ] Chroma
+   - [ ] Colorfulness
+   - [ ] Saturation
+ - [ ] Clamp color to the closest one representable by a given gamut
