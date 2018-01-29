@@ -31,16 +31,16 @@ pub static ILLUMINANTS: [Illuminant; 4] = [
 /// A table of white point values for various CIE illuminants. As there are currently no static
 /// HashMaps or the like in Rust, this is simply an array of arrays. The order of the rows is the
 /// order of the Illuminant enum definition, which should be alphabetical and low-high in that
-/// order. Each white point is an array of 3 `f64` values X, Y, and Z, normalized so that Y is 100.
+/// order. Each white point is an array of 3 `f64` values X, Y, and Z, normalized so that Y is 1.
 pub static ILLUMINANT_WHITE_POINTS: [[f64; 3]; 4] = [
-    [96.422, 100.000, 82.521],
-    [95.682, 100.000, 92.129],
-    [95.047, 100.000, 108.884],
-    [94.972, 100.000, 122.638]
+    [0.96422, 1.00000, 0.82521],
+    [0.95682, 1.00000, 0.92129],
+    [0.95047, 1.00000, 1.08884],
+    [0.94972, 1.00000, 1.22638]
 ];
 
 impl Illuminant {
-    /// Gets the XYZ coordinates of the white point value of the illuminant.
+    /// Gets the XYZ coordinates of the white point value of the illuminant, normalized so Y = 1.
     pub fn white_point(&self) -> [f64; 3] {
         match *self {
             Illuminant::D50 => ILLUMINANT_WHITE_POINTS[0],
@@ -48,9 +48,9 @@ impl Illuminant {
             Illuminant::D65 => ILLUMINANT_WHITE_POINTS[2],
             Illuminant::D75 => ILLUMINANT_WHITE_POINTS[3],
             Illuminant::Custom(xyz) => [
-                xyz[0] * 100.0 / xyz[1],
-                xyz[1],
-                xyz[2] * 100.0 / xyz[1],
+                xyz[0] / xyz[1],
+                1.0,
+                xyz[2] / xyz[1],
             ]
         }
     }

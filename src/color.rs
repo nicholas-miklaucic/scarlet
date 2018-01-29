@@ -11,15 +11,28 @@ use illuminants::{Illuminant};
 
 
 
-/// A point in the CIE 1931 XYZ color space.
+/// A point in the CIE 1931 XYZ color space. Although any point in XYZ coordinate space is technically
+/// valid, in this library XYZ colors are treated as normalized so that Y=1 is the white point of
+/// whatever illuminant is being worked with.
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct XYZColor {
     // these need to all be positive
     // TODO: way of implementing this constraint in code?
-    x: f64,
-    y: f64,
-    z: f64,
-    illuminant: Illuminant,
+    /// The X axis of the CIE 1931 XYZ space, roughly representing the long-wavelength receptors in
+    /// the human eye: the red receptors. Usually between 0 and 1, but can range more than that.
+    pub x: f64,
+    /// The Y axis of the CIE 1931 XYZ space, roughly representing the middle-wavelength receptors in
+    /// the human eye. In CIE 1931, this is fudged to correspond exactly with perceived luminance.
+    pub y: f64,
+    /// The Z axis of the CIE 1931 XYZ space, roughly representing the short-wavelength receptors in
+    /// the human eye. Usually between 0 and 1, but can range more than that.
+    pub z: f64,
+    /// The illuminant that is assumed to be the lighting environment for this color. Although XYZ
+    /// itself describes the human response to a color and so is independent of lighting, it is useful
+    /// to consider the question "how would an object in one light look different in another?" and so,
+    /// to contain all the information needed to track this, the illuminant is set. Don't modify this
+    /// directly in most cases: use the `color_adapt` function to do it.
+    pub illuminant: Illuminant,
 }
 
 impl XYZColor {
@@ -60,7 +73,7 @@ impl XYZColor {
             // this usually includes a parameter indicating how much you want to adapt, but it's
             // assumed that we want total adaptation: D = 1. Maybe this could change someday?
 
-            // because each white point has already been normalized to Y = 100, we don't need a
+            // because each white point has already been normalized to Y = 1, we don't need a
             // factor for it, which simplifies calculation even more than setting D = 1 and makes it
             // just a linear transform
             let l_c = lms_wr[0] * lms[0] / lms_w[0];
@@ -413,9 +426,15 @@ mod tests {
         let c1 = XYZColor{x: 0.5, y: 0.75, z: 0.6, illuminant: Illuminant::D65};
         let c2 = c1.color_adapt(Illuminant::D50).color_adapt(Illuminant::D55);
         let c3 = c1.color_adapt(Illuminant::D75).color_adapt(Illuminant::D55);
-        assert!(c3.x - c2.x <= 0.01);
-        assert!(c3.y - c2.y <= 0.01);
-        assert!(c3.z - c2.z <= 0.01);
+        assert!((c3.x - c2.x).abs() <= 0.01);
+        assert!((c3.y - c2.y).abs() <= 0.01);
+        assert!((c3.z - c2.z).abs() <= 0.01);
+    }
+    #[test]
+    fn test_chromatic_adapation_to_same_light() {
+        let xyz = XYZColor{x: 0.4, y: 0.6, z: 0.2, illuminant: Illuminant::D65};
+        let xyz2 = xyz.color_adapt(Illuminant::D65);
+        assert_eq!(xyz, xyz2);
     }
     #[test]
     fn fun_color_adaptation_demo() {
@@ -424,11 +443,9 @@ mod tests {
         let h: usize = 60;
         let d50_wp = Illuminant::D50.white_point();
         let d75_wp = Illuminant::D75.white_point();
-        let d65_wp = Illuminant::D65.white_point();
-        println!("{:?}{:?}{:?}", d50_wp, d65_wp, d75_wp);
-        let d50 = XYZColor{x: d50_wp[0] / 100.0, y: d50_wp[1] / 100.0, z: d50_wp[2] / 100.0,
+        let d50 = XYZColor{x: d50_wp[0], y: d50_wp[1], z: d50_wp[2],
                            illuminant:Illuminant::D65};
-        let d75 = XYZColor{x: d75_wp[0] / 100.0, y: d75_wp[1] / 100.0, z: d75_wp[2] / 100.0,
+        let d75 = XYZColor{x: d75_wp[0], y: d75_wp[1], z: d75_wp[2],
                            illuminant:Illuminant::D65};
         for _ in 0..h+1 {
             println!("{}{}", d50.write_color().repeat(w / 2), d75.write_color().repeat(w / 2));
