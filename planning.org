@@ -36,7 +36,7 @@
 
 * Things Between Now and v1.0
 ** Color Types
- - [ ] Adobe RGB
+ - [X] Adobe RGB
  - [ ] ProPhoto RGB
  - [ ] sHSL
  - [ ] Adobe HSL
