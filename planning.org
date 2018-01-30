@@ -37,7 +37,7 @@
 * Things Between Now and v1.0
 ** Color Types
  - [X] Adobe RGB
- - [ ] ProPhoto RGB
+ - [X] ProPhoto RGB
  - [ ] sHSL
  - [ ] Adobe HSL
  - [ ] ProPhoto HSL
@@ -48,7 +48,7 @@
  - [ ] HTML hex
  - [ ] HTML shortened hex
  - [ ] HTML initalizer functions
- - [ ] Illuminant white points
+ - [X] Illuminant white points
 ** Color Functions
  - [ ] Average /n/ colors of the same type
  - [ ] Superimposition of /n/ colors of the same type

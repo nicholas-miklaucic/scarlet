@@ -4,8 +4,6 @@ use std::convert::From;
 use std::string::ToString;
 extern crate termion;
 use self::termion::color::{Fg, Bg, Reset, Rgb};
-extern crate float_cmp;
-use self::float_cmp::ApproxEqUlps;
 use super::coord::Coord;
 use illuminants::{Illuminant};
 
@@ -93,14 +91,25 @@ impl XYZColor {
             XYZColor{x: x_c, y: y_c, z: z_c, illuminant: other_illuminant}
         }
     }
+    /// Returns `true` if the given other XYZ color's coordinates are all within 0.001 of each other,
+    /// which helps account for necessary floating-point errors in conversions.
+    pub fn approx_equal(&self, other: &XYZColor) -> bool {
+        ((self.x - other.x).abs() <= 0.001 &&
+         (self.y - other.y).abs() <= 0.001 &&
+         (self.z - other.z).abs() <= 0.001)
+    }
+        
     /// Returns `true` if the given other XYZ color would look identically in a different color
     /// space. Uses an approximate float equality that helps resolve errors due to floating-point
-    /// representation.
-    pub fn visually_equal(&self, other: &XYZColor) -> bool {
+    /// representation, only testing if the two floats are within 0.001 of each other.
+    pub fn approx_visually_equal(&self, other: &XYZColor) -> bool {
         let other_c = other.color_adapt(self.illuminant);
-        (self.x.approx_eq_ulps(&other_c.x, 2) &&
-         self.y.approx_eq_ulps(&other_c.y, 2) &&
-         self.z.approx_eq_ulps(&other_c.z, 2))
+        self.approx_equal(&other_c)
+    }
+    /// Gets the XYZColor corresponding to pure white in the given light environment.
+    pub fn white_point(illuminant: Illuminant) -> XYZColor {
+        let wp = illuminant.white_point();
+        XYZColor{x: wp[0], y: wp[1], z: wp[2], illuminant}
     }
 }
 

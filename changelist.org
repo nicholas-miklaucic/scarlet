@@ -3,3 +3,6 @@
  - Added CIELAB
  - Illuminants now have white-point Y value of 1
  - Added changelog and detailed checklist
+** January 30, 2018
+ - Added Adobe RGB
+ - Added ProPhoto RGB, a curse upon it
