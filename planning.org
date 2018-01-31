@@ -39,8 +39,6 @@
  - [X] Adobe RGB
  - [X] ProPhoto RGB
  - [ ] sHSL
- - [ ] Adobe HSL
- - [ ] ProPhoto HSL
  - [ ] CIELUV
  - [ ] CMYK
 ** Color Input Formats
@@ -69,3 +67,10 @@
    - [ ] Colorfulness
    - [ ] Saturation
  - [ ] Clamp color to the closest one representable by a given gamut
+** Documentation/Testing
+ - [ ] Every single public piece of code is documented
+ - [ ] Every single public piece of documentation has an example
+ - [ ] Tests are comprehensive at the very least at the function level: every method should be
+   called in a test
+ - [ ] "Guide" wrtten to alleviate problem of no high-level documentation
+ - [ ] Tests don't have any fudging in them (check!)
