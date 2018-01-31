@@ -67,6 +67,7 @@ impl Color for AdobeRGBColor {
     }
 }
 
+#[cfg(tests)]
 mod tests {
     #[allow(unused_imports)]
     use super::*;

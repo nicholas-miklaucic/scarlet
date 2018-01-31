@@ -414,7 +414,7 @@ impl Mix for RGBColor {
     }
 }
 
-
+#[cfg(tests)]
 mod tests {
     #[allow(unused_imports)]
     use super::*;

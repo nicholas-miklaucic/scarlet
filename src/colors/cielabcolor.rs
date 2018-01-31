@@ -89,6 +89,7 @@ impl Color for CIELABColor {
     }
 }
 
+#[cfg(tests)]
 mod tests {
     #[allow(unused_imports)]
     use super::*;
