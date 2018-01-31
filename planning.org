@@ -45,8 +45,8 @@
  - [ ] CMYK
 ** Color Input Formats
  - [ ] HTML names
- - [ ] HTML hex
- - [ ] HTML shortened hex
+ - [X] HTML hex
+ - [X] HTML shortened hex
  - [ ] HTML initalizer functions
  - [X] Illuminant white points
 ** Color Functions

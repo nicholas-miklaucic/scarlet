@@ -1,11 +1,15 @@
 /// This file defines the Color trait and all of the standard color types that implement it.
 
 use std::convert::From;
+use std::num::ParseIntError;
+use std::result::Result::Err;
 use std::string::ToString;
-extern crate termion;
-use self::termion::color::{Fg, Bg, Reset, Rgb};
+
 use super::coord::Coord;
 use illuminants::{Illuminant};
+
+extern crate termion;
+use self::termion::color::{Fg, Bg, Reset, Rgb};
 
 
 
@@ -282,6 +286,67 @@ impl Color for RGBColor {
     }
 }
 
+/// An error type that results from an invalid attempt to convert a string into an RGB color.
+#[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
+pub enum RGBParseError {
+    /// This indicates that function syntax was acceptable, but the numbers were out of range, such as
+    /// the invalid string `"rgb(554, 23, 553)"`.
+    OutOfRange,
+    /// This indicates that the hex string was malformed in some way.
+    InvalidHexSyntax,
+    /// This indicates a syntax error in the string that was supposed to be a valid rgb( function.
+    InvalidFuncSyntax,
+}
+
+impl From<ParseIntError> for RGBParseError {
+    fn from(_err: ParseIntError) -> RGBParseError {
+        RGBParseError::OutOfRange
+    }
+}
+
+impl RGBColor {
+    /// Given a string that represents a hex code, returns the RGB color that the given hex code
+    /// represents. Four formats are accepted: `"#rgb"` as a shorthand for `"#rrggbb"`, `#rrggbb` by
+    /// itself, and either of those formats without `#`: `"rgb"` or `"rrggbb"` are acceptable. Returns
+    /// a ColorParseError if the given string does not follow one of these formats.
+    pub fn from_hex_code(hex: &str) -> Result<RGBColor, RGBParseError> {
+        let mut chars: Vec<char> = hex.chars().collect();
+        // check if leading hex, remove if so
+        if chars[0] == '#' {
+            chars.remove(0);
+        }
+        println!("{:?}", chars);
+        // can only have 3 or 6 characters: error if not so
+        if chars.len() != 3 && chars.len() != 6 {
+            Err(RGBParseError::InvalidHexSyntax)
+            // now split on invalid hex
+        } else if !chars.iter().all(|&c| "0123456789ABCDEFabcdef".contains(c)) {
+            Err(RGBParseError::InvalidHexSyntax)
+        } else {
+            // split on whether it's #rgb or #rrggbb
+            if chars.len() == 6 {
+                let mut rgb: Vec<u8> = Vec::new();
+                for _i in 0..3 {
+                    // this should never fail, logically, but if by some miracle it did it'd just
+                    // return an OutOfRangeError
+                    rgb.push(u8::from_str_radix(chars.drain(..2).collect::<String>().as_str(), 16).unwrap());
+                }
+                Ok(RGBColor{r: rgb[0], g: rgb[1], b: rgb[2]})
+            }
+            else { // len must be 3 from earlier
+                let mut rgb: Vec<u8> = Vec::new();
+                for _i in 0..3 {
+                    // again, this shouldn't ever fail, but if it did it'd just return an
+                    // OutOfRangeError
+                    let c: Vec<char> = chars.drain(..1).collect();
+                    rgb.push(u8::from_str_radix(c.iter().chain(c.iter()).collect::<String>().as_str(), 16).unwrap());
+                }
+                Ok(RGBColor{r: rgb[0], g: rgb[1], b: rgb[2]})
+            }
+        }
+    }
+}
+
 /// Describes a Color that can be mixed with other colors in its own 3D space. Mixing, in this
 /// context, is taking the midpoint of two color projections in some space, or something consistent
 /// with that idea: if colors A and B mix to A, that should mean B is the same as A, for
@@ -489,5 +554,30 @@ mod tests {
             }
             println!("{}", line);
         }
+    }
+    #[test]
+    fn test_rgb_from_hex() {
+        // test rgb format
+        let rgb = RGBColor::from_hex_code("#172844").unwrap();
+        assert_eq!(rgb.r, 23);
+        assert_eq!(rgb.g, 40);
+        assert_eq!(rgb.b, 68);
+        // test with letters and no hex
+        let rgb = RGBColor::from_hex_code("a1F1dB").unwrap();
+        assert_eq!(rgb.r, 161);
+        assert_eq!(rgb.g, 241);
+        assert_eq!(rgb.b, 219);
+        // test for error if 7 chars
+        let rgb = RGBColor::from_hex_code("#1244444");
+        assert!(match rgb {
+            Err(x) if x == RGBParseError::InvalidHexSyntax => true,
+            _ => false
+        });
+        // test for error if invalid hex chars
+        let rgb = RGBColor::from_hex_code("#ffggbb");
+        assert!(match rgb {
+            Err(x) if x == RGBParseError::InvalidHexSyntax => true,
+            _ => false
+        });               
     }
 }
