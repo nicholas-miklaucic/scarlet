@@ -39,7 +39,8 @@
  - [X] Adobe RGB
  - [X] ProPhoto RGB
  - [ ] sHSL
- - [ ] CIELUV
+ - [X] CIELUV
+   - [ ] Deal with chromatic adaptation
  - [ ] CMYK
 ** Color Input Formats
  - [ ] HTML names
@@ -47,6 +48,12 @@
  - [X] HTML shortened hex
  - [ ] HTML initalizer functions
  - [X] Illuminant white points
+** Color Output Formats
+ - [ ] ~Coord~ if it makes sense
+ - [ ] ~(a, b, c)~ if that makes sense
+ - [ ] hex code
+ - [ ] html ~rgb(~ function call
+ - [ ] html ~hsl(~ function call
 ** Color Functions
  - [ ] Average /n/ colors of the same type
  - [ ] Superimposition of /n/ colors of the same type
@@ -74,3 +81,6 @@
    called in a test
  - [ ] "Guide" wrtten to alleviate problem of no high-level documentation
  - [ ] Tests don't have any fudging in them (check!)
+ - [ ] All tests use ~approx_equal~ when comparing colors to ensure loss of precision is within acceptable bounds
+ - [ ] Make public commitment to a given level of precision and use integration testing to verify it and target areas of precision loss
+ - [ ] Judicious links in documentation (research more)
