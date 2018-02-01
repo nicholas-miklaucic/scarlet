@@ -18,13 +18,16 @@ pub struct CIELUVColor {
 }
 
 impl Color for CIELUVColor {
-    /// Given an XYZ color, gets a new CIELUV color.
+    /// Given an XYZ color, gets a new CIELUV color. This is CIELUV D50, so anything else is
+    /// chromatically adapted before conversion.
     fn from_xyz(xyz: XYZColor) -> CIELUVColor {
         // this is not bad: LUV is meant to be easy from XYZ
         // https://en.wikipedia.org/wiki/CIELUV
 
         // do u and v chromaticity conversions on whitepoint and on given color
-        let wp = XYZColor::white_point(xyz.illuminant);
+        // because cieluv chromatic adaptation sucks, use the good one
+        let xyz_c = xyz.color_adapt(Illuminant::D50);
+        let wp = XYZColor::white_point(Illuminant::D50);
         let denom = |color: XYZColor| {
             color.x + 15.0 * color.y + 3.0 * color.z
         };
@@ -38,14 +41,14 @@ impl Color for CIELUVColor {
         let u_prime_n = u_func(wp);
         let v_prime_n = v_func(wp);
 
-        let u_prime = u_func(xyz);
-        let v_prime = v_func(xyz);
+        let u_prime = u_func(xyz_c);
+        let v_prime = v_func(xyz_c);
 
         let delta: f64 = 6.0 / 29.0; // like CIELAB
 
         // technically this next division should do nothing: idk if it gets factored out at compile
         // time, but it's just insurance if someone ever decides not to normalize whitepoints to Y=1
-        let y_scaled = xyz.y / wp.y; // ranges from 0-1
+        let y_scaled = xyz_c.y / wp.y; // ranges from 0-1
         let l = if y_scaled <= delta.powf(3.0) {
             (2.0 / delta).powf(3.0) * y_scaled
         } else {
@@ -56,16 +59,13 @@ impl Color for CIELUVColor {
         let v = 13.0 * l * (v_prime - v_prime_n);
         CIELUVColor{l, u, v}
     }
-    /// Returns a new `XYZColor` that matches the given color. Note that CIELUV uses its own,
-    /// translational chromatic adaptation. Because of this, this will produce inconsistent results
-    /// with other chromatic adaptations and may even generate colors that cannot physically
-    /// exist. It's best practice to only use the illuminant of the XYZColor that created this color,
-    /// which is D50 if you created this using the `Color::convert` method. Because D50 is used in
-    /// every usage of `convert`, as long as you don't invoke this by hand results will be fine.
+    /// Returns a new `XYZColor` that matches the given color. Note that Scarlet uses CIELUV D50 to
+    /// get around compatibility issues, so any other illuminant will be chromatically adapted after
+    /// initial conversion (using the `color_adapt()` function).
     fn to_xyz(&self, illuminant: Illuminant) -> XYZColor {
         // https://en.wikipedia.org/wiki/CIELUV literally has the equations in order
         // pretty straightforward
-        let wp = XYZColor::white_point(illuminant);
+        let wp = XYZColor::white_point(Illuminant::D50);
         let denom = |color: XYZColor| {
             color.x + 15.0 * color.y + 3.0 * color.z
         };
@@ -91,7 +91,7 @@ impl Color for CIELUVColor {
         
         let x = y * 9.0 * u_prime / (4.0 * v_prime);
         let z = y * (12.0 - 3.0 * u_prime - 20.0 * v_prime) / (4.0 * v_prime);
-        XYZColor{x, y, z, illuminant}
+        XYZColor{x, y, z, illuminant: Illuminant::D50}.color_adapt(illuminant)
     }
 }
 
@@ -106,5 +106,13 @@ mod tests {
         let luv: CIELUVColor = xyz.convert();
         let xyz2: XYZColor = luv.convert();
         assert!(xyz2.approx_equal(&xyz));
+    }
+
+    #[test]
+    fn test_cieluv_xyz_conversion_d65() {
+        let xyz = XYZColor{x: 0.3, y: 0.53, z: 0.65, illuminant: Illuminant::D65};
+        let luv: CIELUVColor = xyz.convert();
+        let xyz2: XYZColor = luv.convert();
+        assert!(xyz2.approx_visually_equal(&xyz));
     }
 }
