@@ -38,6 +38,7 @@ impl Color for CIELABColor {
     /// converted to D50 outside of CIELAB conversion. This in line with programs like Photoshop,
     /// which also use CIELAB D50.
     fn from_xyz(xyz: XYZColor) -> CIELABColor {
+        // TODO: are the bounds for a and b right? -128 to 127?
         // https://en.wikipedia.org/wiki/Lab_color_space#CIELAB-CIEXYZ_conversions
         let f = |x: &f64| {
             let delta: f64 = 6.0 / 29.0;
@@ -89,7 +90,7 @@ impl Color for CIELABColor {
     }
 }
 
-#[cfg(tests)]
+#[cfg(test)]
 mod tests {
     #[allow(unused_imports)]
     use super::*;

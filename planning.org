@@ -39,15 +39,18 @@
  - [X] Adobe RGB
  - [X] ProPhoto RGB
  - [ ] sHSL
- - [X] CIELUV
+ - [ ] CIELUV
    - [ ] Deal with chromatic adaptation
  - [ ] CMYK
+ - [X] CIELCH
+ - [ ] CIEHCL
 ** Color Input Formats
  - [ ] HTML names
  - [X] HTML hex
  - [X] HTML shortened hex
  - [ ] HTML initalizer functions
  - [X] Illuminant white points
+ - [ ] Iterables of various kinds?
 ** Color Output Formats
  - [ ] ~Coord~ if it makes sense
  - [ ] ~(a, b, c)~ if that makes sense
@@ -55,6 +58,9 @@
  - [ ] html ~rgb(~ function call
  - [ ] html ~hsl(~ function call
 ** Color Functions
+ - [ ] Everything implements standard traits
+ - [ ] Some sort of safe modification/getter/setter?
+ - [ ] Use correct floating-point methods everywhere to tamp down on error
  - [ ] Average /n/ colors of the same type
  - [ ] Superimposition of /n/ colors of the same type
  - [ ] Gradient scales (basically /n/ colors in a sequence of equal color distance, the smallest possible, between two colors in the same space)
