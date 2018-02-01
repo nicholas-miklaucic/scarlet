@@ -6,3 +6,8 @@
 ** January 30, 2018
  - Added Adobe RGB
  - Added ProPhoto RGB, a curse upon it
+** January 31, 2018
+ - Added conversion from hex to RGB
+ - Added some more planning tasks (particularly documentation)
+ - Added CIELUV and CIELCH
+ - Fixed a stupid typo where I said ~#[cfg(tests)]~ instead of ~test~
