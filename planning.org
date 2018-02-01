@@ -45,7 +45,7 @@
  - [X] CIELCH
  - [ ] CIEHCL
 ** Color Input Formats
- - [ ] HTML names
+ - [X] HTML names
  - [X] HTML hex
  - [X] HTML shortened hex
  - [ ] HTML initalizer functions

@@ -1,5 +1,6 @@
 /// This file defines the Color trait and all of the standard color types that implement it.
 
+use std::collections::HashMap;
 use std::convert::From;
 use std::num::ParseIntError;
 use std::result::Result::Err;
@@ -296,6 +297,8 @@ pub enum RGBParseError {
     InvalidHexSyntax,
     /// This indicates a syntax error in the string that was supposed to be a valid rgb( function.
     InvalidFuncSyntax,
+    /// This indicated an invalid color name was supplied to the `from_color_name()` function.
+    InvalidX11Name
 }
 
 impl From<ParseIntError> for RGBParseError {
@@ -343,6 +346,69 @@ impl RGBColor {
                 }
                 Ok(RGBColor{r: rgb[0], g: rgb[1], b: rgb[2]})
             }
+        }
+    }
+    /// Gets the RGB color corresponding to an X11 color name. Case is ignored.
+    pub fn from_color_name(name: &str) -> Result<RGBColor, RGBParseError> {
+        // this is the full list of X11 color names
+        // I used a Python script to process it from this site:
+        // https://github.com/bahamas10/css-color-names/blob/master/css-color-names.json let
+        // I added the special "transparent" referring to #00000000
+        let color_names:Vec<&str> = [
+            "aliceblue", "antiquewhite", "aqua", "aquamarine", "azure", "beige",
+            "bisque", "black", "blanchedalmond", "blue", "blueviolet", "brown", "burlywood", "cadetblue",
+            "chartreuse", "chocolate", "coral", "cornflowerblue", "cornsilk", "crimson", "cyan", "darkblue",
+            "darkcyan", "darkgoldenrod", "darkgray", "darkgreen", "darkgrey", "darkkhaki", "darkmagenta",
+            "darkolivegreen", "darkorange", "darkorchid", "darkred", "darksalmon", "darkseagreen",
+            "darkslateblue", "darkslategray", "darkslategrey", "darkturquoise", "darkviolet", "deeppink",
+            "deepskyblue", "dimgray", "dimgrey", "dodgerblue", "firebrick", "floralwhite", "forestgreen",
+            "fuchsia", "gainsboro", "ghostwhite", "gold", "goldenrod", "gray", "green", "greenyellow",
+            "grey", "honeydew", "hotpink", "indianred", "indigo", "ivory", "khaki", "lavender",
+            "lavenderblush", "lawngreen", "lemonchiffon", "lightblue", "lightcoral", "lightcyan",
+            "lightgoldenrodyellow", "lightgray", "lightgreen", "lightgrey", "lightpink", "lightsalmon",
+            "lightseagreen", "lightskyblue", "lightslategray", "lightslategrey", "lightsteelblue",
+            "lightyellow", "lime", "limegreen", "linen", "magenta", "maroon", "mediumaquamarine",
+            "mediumblue", "mediumorchid", "mediumpurple", "mediumseagreen", "mediumslateblue",
+            "mediumspringgreen", "mediumturquoise", "mediumvioletred", "midnightblue", "mintcream",
+            "mistyrose", "moccasin", "navajowhite", "navy", "oldlace", "olive", "olivedrab", "orange",
+            "orangered", "orchid", "palegoldenrod", "palegreen", "paleturquoise", "palevioletred",
+            "papayawhip", "peachpuff", "peru", "pink", "plum", "powderblue", "purple", "rebeccapurple",
+            "red", "rosybrown", "royalblue", "saddlebrown", "salmon", "sandybrown", "seagreen", "seashell",
+            "sienna", "silver", "skyblue", "slateblue", "slategray", "slategrey", "snow", "springgreen",
+            "steelblue", "tan", "teal", "thistle", "tomato", "turquoise", "violet", "wheat", "white",
+            "whitesmoke", "yellow", "yellowgreen"
+        ].to_vec();
+        let color_codes:Vec<&str> = [
+            "#f0f8ff", "#faebd7", "#00ffff", "#7fffd4", "#f0ffff", "#f5f5dc", "#ffe4c4", "#000000",
+            "#ffebcd", "#0000ff", "#8a2be2", "#a52a2a", "#deb887", "#5f9ea0", "#7fff00", "#d2691e",
+            "#ff7f50", "#6495ed", "#fff8dc", "#dc143c", "#00ffff", "#00008b", "#008b8b", "#b8860b",
+            "#a9a9a9", "#006400", "#a9a9a9", "#bdb76b", "#8b008b", "#556b2f", "#ff8c00", "#9932cc",
+            "#8b0000", "#e9967a", "#8fbc8f", "#483d8b", "#2f4f4f", "#2f4f4f", "#00ced1", "#9400d3",
+            "#ff1493", "#00bfff", "#696969", "#696969", "#1e90ff", "#b22222", "#fffaf0", "#228b22",
+            "#ff00ff", "#dcdcdc", "#f8f8ff", "#ffd700", "#daa520", "#808080", "#008000", "#adff2f",
+            "#808080", "#f0fff0", "#ff69b4", "#cd5c5c", "#4b0082", "#fffff0", "#f0e68c", "#e6e6fa",
+            "#fff0f5", "#7cfc00", "#fffacd", "#add8e6", "#f08080", "#e0ffff", "#fafad2", "#d3d3d3",
+            "#90ee90", "#d3d3d3", "#ffb6c1", "#ffa07a", "#20b2aa", "#87cefa", "#778899", "#778899",
+            "#b0c4de", "#ffffe0", "#00ff00", "#32cd32", "#faf0e6", "#ff00ff", "#800000", "#66cdaa",
+            "#0000cd", "#ba55d3", "#9370db", "#3cb371", "#7b68ee", "#00fa9a", "#48d1cc", "#c71585",
+            "#191970", "#f5fffa", "#ffe4e1", "#ffe4b5", "#ffdead", "#000080", "#fdf5e6", "#808000",
+            "#6b8e23", "#ffa500", "#ff4500", "#da70d6", "#eee8aa", "#98fb98", "#afeeee", "#db7093",
+            "#ffefd5", "#ffdab9", "#cd853f", "#ffc0cb", "#dda0dd", "#b0e0e6", "#800080", "#663399",
+            "#ff0000", "#bc8f8f", "#4169e1", "#8b4513", "#fa8072", "#f4a460", "#2e8b57", "#fff5ee",
+            "#a0522d", "#c0c0c0", "#87ceeb", "#6a5acd", "#708090", "#708090", "#fffafa", "#00ff7f",
+            "#4682b4", "#d2b48c", "#008080", "#d8bfd8", "#ff6347", "#40e0d0", "#ee82ee", "#f5deb3",
+            "#ffffff", "#f5f5f5", "#ffff00", "#9acd32"
+        ].to_vec();
+        let mut names_to_codes = HashMap::new();
+
+        for (i, color_name) in color_names.iter().enumerate() {
+            names_to_codes.insert(color_name, color_codes[i]);
+        }
+
+        // now just return the converted value or raise one if not in hashmap
+        match names_to_codes.get(&name.to_lowercase().as_str()) {
+            None => Err(RGBParseError::InvalidX11Name),
+            Some(x) => Self::from_hex_code(x)
         }
     }
 }
@@ -579,5 +645,18 @@ mod tests {
             Err(x) if x == RGBParseError::InvalidHexSyntax => true,
             _ => false
         });               
+    }
+    #[test]
+    fn test_rgb_from_name() {
+        let rgb = RGBColor::from_color_name("yeLlowgreEn").unwrap();
+        assert_eq!(rgb.r, 154);
+        assert_eq!(rgb.g, 205);
+        assert_eq!(rgb.b, 50);
+        // test error
+        let rgb = RGBColor::from_color_name("thisisnotavalidnamelol");
+        assert!(match rgb {
+            Err(x) if x == RGBParseError::InvalidX11Name => true,
+            _ => false
+        });
     }
 }
