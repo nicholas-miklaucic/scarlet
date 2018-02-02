@@ -57,10 +57,7 @@
  - [X] hex code
  - [ ] html ~rgb(~ function call
  - [ ] html ~hsl(~ function call
-** Color Functions
- - [ ] CAT02 chromatic adaptation
- - [ ] Implement CIECAM02
- - [ ] Use book to fix decimal places & correct for things
+** Color Functions 
  - [ ] Everything implements standard traits
  - [ ] Some sort of safe modification/getter/setter?
  - [ ] Use correct floating-point methods everywhere to tamp down on error

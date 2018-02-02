@@ -90,4 +90,3 @@ mod tests {
         assert!(xyz1.approx_equal(&xyz2));
     }
 }
-   
