@@ -39,60 +39,44 @@ pub struct XYZColor {
 }
 
 impl XYZColor {
-    // Transforms a given XYZ coordinate to LMS space, returning an array [L, M, S] given an array
-    // [X, Y, Z]. Information about this is given in the color_adapt function, which is the only
-    // public function that uses this one right now. Uses the linearized Bradford transform.
-    fn lms_transform(xyz: [f64; 3]) -> [f64; 3] {
-        let l = 0.8951 * xyz[0] + 0.2664 * xyz[1] - 0.1614 * xyz[2];
-        let m = -0.7502 * xyz[0] + 1.7135 * xyz[1] + 0.0367 * xyz[2];
-        let s = 0.0389 * xyz[0] - 0.0685 * xyz[1] + 1.0296 * xyz[2];
-        [l, m, s]
+    /// Transforms a given XYZ coordinate to the Bradford RGB space.
+    fn bradford_transform(xyz: [f64; 3]) -> [f64; 3] {
+        let r = 00.8951 * xyz[0] + 0.2664 * xyz[1] - 0.1614 * xyz[2];
+        let g = -0.7502 * xyz[0] + 1.7135 * xyz[1] + 0.0367 * xyz[2];
+        let b = 00.0389 * xyz[0] - 0.0685 * xyz[1] + 1.0296 * xyz[2];
+        [r, g, b]
     }
-    /// Performs *color adaptation*: attempts to convert the given color to one that would look the
-    /// exact same under a different illumination. Chromatic adapation is a nontrivial task, and
-    /// there is no one correct way to do this. Scarlet uses a *linearized Bradford von Kries
-    /// transform*, which is technically incorrect but has several advantages over "better"
-    /// transforms like the CIECAT02 transform. Specifically, it doesn't require any information
-    /// about the surrounding absolute luminance, which is pretty much impossible to know anything
-    /// about outside of color science and psychophysics. More information can be found
-    /// [here.](https://en.wikipedia.org/wiki/Chromatic_adaptation)
     pub fn color_adapt(&self, other_illuminant: Illuminant) -> XYZColor {
         // no need to transform if same illuminant
         if other_illuminant == self.illuminant {
             *self
         }
         else {
-            // convert to LMS color space using matrix multiplication
-            // this is called spectral sharpening, intended to increase clarity
-            let lms = XYZColor::lms_transform([self.x, self.y, self.z]);
+            // convert to Bradford RGB space
+            let rgb = XYZColor::bradford_transform([self.x, self.y, self.z]);
 
-            // get the LMS values for the white point of the illuminant we are currently using and
+            // get the RGB values for the white point of the illuminant we are currently using and
             // the one we want: wr here stands for "white reference", i.e., the one we're converting
             // to
-            let lms_w = XYZColor::lms_transform(self.illuminant.white_point());
-            let lms_wr = XYZColor::lms_transform(other_illuminant.white_point());
+            let rgb_w = XYZColor::bradford_transform(self.illuminant.white_point());
+            let rgb_wr = XYZColor::bradford_transform(other_illuminant.white_point());
 
             // perform the transform
             // this usually includes a parameter indicating how much you want to adapt, but it's
             // assumed that we want total adaptation: D = 1. Maybe this could change someday?
 
-            // because each white point has already been normalized to Y = 1, we don't need a
+            // because each white point has already been normalized to Y = 1, we don't need ap
             // factor for it, which simplifies calculation even more than setting D = 1 and makes it
             // just a linear transform
-            let l_c = lms_wr[0] * lms[0] / lms_w[0];
-            let m_c = lms_wr[1] * lms[1] / lms_w[1];
-            let s_c = lms_wr[2] * lms[2] / lms_w[2];
+            let r_c = rgb[0] * rgb_wr[0] / rgb_w[0];
+            let g_c = rgb[1] * rgb_wr[1] / rgb_w[1];
+            // there's a slight nonlinearity here that I will omit
+            let b_c = rgb[2] * (rgb_wr[2] / rgb_w[2]);
 
-            // now we convert right back into XYZ space, using the inverse of the LMS matrix we used
-            // earlier. Because we only do this once, this isn't its own function. As with the other
-            // function, this uses the Bradford values found at
-            // http://onlinelibrary.wiley.com/doi/10.1002/9781119021780.app3/pdf
-            let x_c = 0.9870 * l_c - 0.1471 * m_c + 0.1600 * s_c;
-            let y_c = 0.4323 * l_c + 0.5184 * m_c + 0.0493 * s_c;
-            let z_c = -0.0085 * l_c + 0.0400 * m_c + 0.9685 * s_c;
-
-            // the full CIECAT02 model now would do a post-adaptation transform, but we're just going
-            // to ignore that because we don't have any absolute luminance information.
+            // convert back to XYZ using closer matrix inverse than before
+            let x_c = 00.986993 * r_c - 0.147054 * g_c + 0.159963 * b_c;
+            let y_c = 00.432305 * r_c + 0.518360 * g_c + 0.049291 * b_c;
+            let z_c = -0.008529 * r_c + 0.040043 * g_c + 0.968487 * b_c;
             XYZColor{x: x_c, y: y_c, z: z_c, illuminant: other_illuminant}
         }
     }
@@ -318,7 +302,6 @@ impl RGBColor {
         if chars[0] == '#' {
             chars.remove(0);
         }
-        println!("{:?}", chars);
         // can only have 3 or 6 characters: error if not so
         if chars.len() != 3 && chars.len() != 6 {
             Err(RGBParseError::InvalidHexSyntax)
@@ -567,6 +550,9 @@ mod tests {
         let c1 = XYZColor{x: 0.5, y: 0.75, z: 0.6, illuminant: Illuminant::D65};
         let c2 = c1.color_adapt(Illuminant::D50).color_adapt(Illuminant::D55);
         let c3 = c1.color_adapt(Illuminant::D75).color_adapt(Illuminant::D55);
+        println!("{} {} {}", c1.x, c1.y, c1.z);
+        println!("{} {} {}", c2.x, c2.y, c2.z);
+        println!("{} {} {}", c3.x, c3.y, c3.z);
         assert!((c3.x - c2.x).abs() <= 0.01);
         assert!((c3.y - c2.y).abs() <= 0.01);
         assert!((c3.z - c2.z).abs() <= 0.01);
@@ -658,5 +644,11 @@ mod tests {
             Err(x) if x == RGBParseError::InvalidX11Name => true,
             _ => false
         });
+    }
+    #[test]
+    fn test_to_string() {
+        for hex in ["#000000", "#ABCDEF", "#1A2B3C", "#D00A12", "#40AA50"].iter() {
+            assert_eq!(*hex, RGBColor::from_hex_code(hex).unwrap().to_string());
+        }
     }
 }

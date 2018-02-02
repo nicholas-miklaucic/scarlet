@@ -160,8 +160,7 @@ mod tests {
         let xyz = XYZColor{x: wp[0], y: wp[1], z: wp[2], illuminant: Illuminant::D65};
         let rgb: ROMMRGBColor = ROMMRGBColor::from_xyz(xyz);
         let xyz2: XYZColor = rgb.to_xyz(Illuminant::D65);
-        assert!((xyz.x - xyz2.x).abs() <= 0.001);
-        assert!((xyz.y - xyz2.y).abs() <= 0.001);
-        assert!((xyz.z - xyz2.z).abs() <= 0.001);
+        println!("{} {} {} {} {} {}", xyz.x, xyz.y, xyz.z, xyz2.x, xyz2.y, xyz2.z);
+        assert!(xyz.approx_equal(&xyz2));
     }
 }       
