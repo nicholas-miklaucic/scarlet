@@ -412,6 +412,11 @@ impl RGBColor {
 /// that the most basic case functions appropriately. For any other type of Color, special logic is
 /// needed because of range and rounding issues, so it's on the type itself to implement it.
 
+/// Especially note that color mixing as one thinks of with paints or other subtractive mixtures will
+/// almost definitely not agree with the output of Scarlet, because computer monitors use additive
+/// mixing while pigments use subtractive mixing. Yellow mixed with blue in most RGB or other systems
+/// is gray, not green
+
 pub trait Mix : Color {
     /// Given two Colors, returns a Color representing their midpoint: usually, this means their
     /// midpoint in some projection into three-dimensional space.

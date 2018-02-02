@@ -7,6 +7,7 @@
 //! and `b` in this module.
 
 use color::{Color, XYZColor};
+use coord::Coord;
 use illuminants::Illuminant;
 
 
@@ -90,18 +91,30 @@ impl Color for CIELABColor {
     }
 }
 
+impl From<Coord> for CIELABColor {
+    fn from(c: Coord) -> CIELABColor {
+        CIELABColor{l: c.x, a: c.y, b: c.z}
+    }
+}
+
+impl Into<Coord> for CIELABColor {
+    fn into(self) -> Coord {
+        Coord{x: self.l, y: self.a, z: self.b}
+    }
+}
+
+
 #[cfg(test)]
 mod tests {
     #[allow(unused_imports)]
     use super::*;
+    use color::Mix;
     #[test]
     fn test_cielab_xyz_conversion_d50() {
         let xyz = XYZColor{x: 0.4, y: 0.2, z: 0.6, illuminant: Illuminant::D50};
         let lab = CIELABColor::from_xyz(xyz);
         let xyz2 = lab.to_xyz(Illuminant::D50);
-        assert!((xyz.x - xyz2.x).abs() <= 0.1);
-        assert!((xyz.y - xyz2.y).abs() <= 0.1);
-        assert!((xyz.z - xyz2.z).abs() <= 0.1);
+        assert!(xyz.approx_equal(&xyz2));
     }
     #[test]
     fn test_cielab_xyz_conversion() {
@@ -109,8 +122,15 @@ mod tests {
         let lab = CIELABColor::from_xyz(xyz);
         let xyz_d50 = lab.to_xyz(Illuminant::D50);
         let xyz2 = xyz_d50.color_adapt(Illuminant::D65);
-        assert!((xyz.x - xyz2.x).abs() <= 0.1);
-        assert!((xyz.y - xyz2.y).abs() <= 0.1);
-        assert!((xyz.z - xyz2.z).abs() <= 0.1);
+        assert!(xyz.approx_equal(&xyz2));
+    }
+    #[test]
+    fn test_cielab_color_mixing() {
+        let lab = CIELABColor{l: 50.0, a: -45.0, b: 65.0};
+        let lab2 = CIELABColor{l: 60.0, a: -25.0, b: 75.0};
+        let lab_mixed = lab.mix(lab2);
+        assert!((lab_mixed.l - 55.0).abs() <= 1e-7);
+        assert!((lab_mixed.a + 35.0).abs() <= 1e-7);
+        assert!((lab_mixed.b - 70.0).abs() <= 1e-7);
     }
 }

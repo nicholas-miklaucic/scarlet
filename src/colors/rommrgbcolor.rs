@@ -9,6 +9,7 @@
 
 
 use color::{Color, XYZColor};
+use coord::Coord;
 use illuminants::Illuminant;
 
 
@@ -130,19 +131,31 @@ impl Color for ROMMRGBColor {
     }
 }
 
+impl From<Coord> for ROMMRGBColor {
+    fn from(c: Coord) -> ROMMRGBColor {
+        ROMMRGBColor{r: c.x, g: c.y, b: c.z}
+    }
+}
+
+impl Into<Coord> for ROMMRGBColor {
+    fn into(self) -> Coord {
+        Coord{x: self.r, y: self.g, z: self.b}
+    }
+}
+
+
 #[cfg(test)]
 mod tests {
     #[allow(unused_imports)]
     use super::*;
+    use color::Mix;
 
     #[test]
     fn test_romm_rgb_xyz_conversion() {
         let xyz = XYZColor{x: 0.4, y: 0.5, z: 0.6, illuminant: Illuminant::D50};
         let rgb = ROMMRGBColor::from_xyz(xyz);
         let xyz2: XYZColor = rgb.to_xyz(Illuminant::D50);
-        assert!((xyz.x - xyz2.x).abs() <= 0.001);
-        assert!((xyz.y - xyz2.y).abs() <= 0.001);
-        assert!((xyz.z - xyz2.z).abs() <= 0.001);
+        assert!(xyz.approx_equal(&xyz2));
     }
     #[test]
     fn test_xyz_romm_rgb_conversion() {
@@ -162,5 +175,15 @@ mod tests {
         let xyz2: XYZColor = rgb.to_xyz(Illuminant::D65);
         println!("{} {} {} {} {} {}", xyz.x, xyz.y, xyz.z, xyz2.x, xyz2.y, xyz2.z);
         assert!(xyz.approx_equal(&xyz2));
+    }
+
+    #[test]
+    fn test_romm_rgb_color_mixing() {
+        let rgb = ROMMRGBColor{r: 0.2, g: 0.3, b: 0.4};
+        let rgb2 = ROMMRGBColor{r: 0.5, g: 0.5, b: 0.6};
+        let rgb_mixed = rgb.mix(rgb2);
+        assert!((rgb_mixed.r - 0.35).abs() <= 1e-7);
+        assert!((rgb_mixed.g - 0.4).abs() <= 1e-7);
+        assert!((rgb_mixed.b - 0.5).abs() <= 1e-7);
     }
 }       

@@ -3,9 +3,11 @@
 //! equivalent to red and green and luminance is then used to calculate the blue part.
 
 use color::{Color, XYZColor};
+use coord::Coord;
 use illuminants::Illuminant;
 
 
+#[derive(Debug, Copy, Clone)]
 pub struct CIELUVColor {
     /// The luminance component of LUV. Ranges from 0 to 100 by definition.
     pub l: f64,
@@ -95,10 +97,23 @@ impl Color for CIELUVColor {
     }
 }
 
+impl From<Coord> for CIELUVColor {
+    fn from(c: Coord) -> CIELUVColor {
+        CIELUVColor{l: c.x, u: c.y, v: c.z}
+    }
+}
+
+impl Into<Coord> for CIELUVColor {
+    fn into(self) -> Coord {
+        Coord{x: self.l, y: self.u, z: self.v}
+    }
+}
+
 #[cfg(test)]
 mod tests {
     #[allow(unused_imports)]
     use super::*;
+    use color::Mix;
     
     #[test]
     fn test_cieluv_xyz_conversion_d50() {
@@ -114,5 +129,15 @@ mod tests {
         let luv: CIELUVColor = xyz.convert();
         let xyz2: XYZColor = luv.convert();
         assert!(xyz2.approx_visually_equal(&xyz));
+    }
+
+    #[test]
+    fn test_cieluv_color_mixing() {
+        let luv = CIELUVColor{l: 45.0, u: 67.0, v: 49.0};
+        let luv2 = CIELUVColor{l: 53.0, u: 59.0, v: 3.0};
+        let luv_mixed = luv.mix(luv2);
+        assert!((luv_mixed.l - 49.0).abs() <= 1e-7);
+        assert!((luv_mixed.u - 63.0).abs() <= 1e-7);
+        assert!((luv_mixed.v - 26.0).abs() <= 1e-7);
     }
 }

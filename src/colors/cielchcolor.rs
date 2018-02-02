@@ -3,10 +3,12 @@
 //! CIEHCL, which uses CIELUV internally.
 
 use color::{Color, XYZColor};
+use coord::Coord;
 use illuminants::Illuminant;
 use super::cielabcolor::CIELABColor;
 
 /// A cylindrical form of CIELAB, analogous to the relationship between HSL and RGB.
+#[derive(Debug, Copy, Clone)]
 pub struct CIELCHColor {
     /// The luminance component, identical to CIELAB's and CIELUV's. Ranges between 0 and 100.
     pub l: f64,
@@ -49,11 +51,24 @@ impl Color for CIELCHColor {
     }
 }
 
+impl From<Coord> for CIELCHColor {
+    fn from(c: Coord) -> CIELCHColor {
+        CIELCHColor{l: c.x, c: c.y, h: c.z}
+    }
+}
+
+impl Into<Coord> for CIELCHColor {
+    fn into(self) -> Coord {
+        Coord{x: self.l, y: self.c, z: self.h}
+    }
+}
+
 
 #[cfg(test)]
 mod tests {
     #[allow(unused_imports)]
     use super::*;
+    use color::Mix;
 
     #[test]
     fn test_lch_xyz_conversion_same_illuminant() {
@@ -71,5 +86,13 @@ mod tests {
         println!("{} {} {} {} {} {}", xyz.x, xyz.y, xyz.z, xyz2.x, xyz2.y, xyz2.z);
         assert!(xyz2.approx_visually_equal(&xyz));
     }
-
+    #[test]
+    fn test_cielch_color_mixing() {
+        let lch = CIELCHColor{l: 50.0, c: 40.0, h: 65.0};
+        let lch2 = CIELCHColor{l: 60.0, c: 25.0, h: 75.0};
+        let lch_mixed = lch.mix(lch2);
+        assert!((lch_mixed.l - 55.0).abs() <= 1e-7);
+        assert!((lch_mixed.c - 32.5).abs() <= 1e-7);
+        assert!((lch_mixed.h - 70.0).abs() <= 1e-7);
+    }
 }

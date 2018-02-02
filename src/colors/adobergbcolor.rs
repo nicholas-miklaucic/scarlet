@@ -2,9 +2,11 @@
 //! sRGB: its components are floating points that range between 0 and 1, and it has a set of
 //! primaries designed to give it a wider coverage (over half of CIE 1931).
 
+use coord::Coord;
 use color::{Color, XYZColor};
 use illuminants::Illuminant;
 
+#[derive(Debug, Copy, Clone)]
 pub struct AdobeRGBColor {
     /// The red primary component. This is a float that should range between 0 and 1.
     pub r: f64,
@@ -67,10 +69,36 @@ impl Color for AdobeRGBColor {
     }
 }
 
+impl From<Coord> for AdobeRGBColor {
+    /// Converts from a Coordinate (R, G, B) to a color. Clamps values outside of the range [0, 1].
+    fn from(c: Coord) -> AdobeRGBColor {
+        // clamp values
+        let clamp = |x: f64| {
+            if x <= 0.0 {
+                0.0
+            }
+            else if x >= 1.0 {
+                1.0
+            }
+            else {
+                x
+            }
+        };
+        AdobeRGBColor{r: clamp(c.x), g: clamp(c.y), b: clamp(c.z)}
+    }
+}
+
+impl Into<Coord> for AdobeRGBColor {
+    fn into(self) -> Coord {
+        Coord{x: self.r, y: self.g, z: self.b}
+    }
+}
+
 #[cfg(test)]
 mod tests {
     #[allow(unused_imports)]
     use super::*;
+    use color::Mix;
 
     #[test]
     fn test_adobe_rgb_xyz_conversion() {
@@ -88,5 +116,14 @@ mod tests {
         let xyz2 = argb2prime.to_xyz(Illuminant::D50);
         println!("{} {} {} {} {} {}", xyz1.x, xyz2.x, xyz1.y, xyz2.y, xyz1.z, xyz2.z);
         assert!(xyz1.approx_equal(&xyz2));
+    }
+    #[test]
+    fn test_adobe_rgb_mixing() {
+        let argb = AdobeRGBColor{r: 0.4, g: 0.2, b: 0.5};
+        let argb2 = AdobeRGBColor{r: 0.6, g: 0.6, b: 0.8};
+        let argb_mixed = argb.mix(argb2);
+        assert!((argb_mixed.r - 0.5).abs() <= 1e-7);
+        assert!((argb_mixed.g - 0.4).abs() <= 1e-7);
+        assert!((argb_mixed.b - 0.65).abs() <= 1e-7);
     }
 }
