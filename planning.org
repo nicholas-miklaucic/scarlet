@@ -39,11 +39,11 @@
  - [X] Adobe RGB
  - [X] ProPhoto RGB
  - [ ] sHSL
- - [ ] CIELUV
-   - [ ] Deal with chromatic adaptation
+ - [X] CIELUV
+   - [X] Deal with chromatic adaptation
  - [ ] CMYK
  - [X] CIELCH
- - [ ] CIEHCL
+ - [X] CIEHCL
 ** Color Input Formats
  - [X] HTML names
  - [X] HTML hex

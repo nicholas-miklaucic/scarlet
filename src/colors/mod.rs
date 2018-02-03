@@ -4,3 +4,4 @@ mod cielabcolor;
 mod cielchcolor;
 mod rommrgbcolor;
 mod cieluvcolor;
+mod cielchuvcolor;
