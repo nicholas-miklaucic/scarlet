@@ -11,3 +11,10 @@
  - Added some more planning tasks (particularly documentation)
  - Added CIELUV and CIELCH
  - Fixed a stupid typo where I said ~#[cfg(tests)]~ instead of ~test~
+** February 1-2, 2018
+ - Added RGB names -> color
+ - Added hex codes, fixed chromatic adaptation
+ - Messed around with the planning and added/removed some stuff
+** February 3-4, 2018 
+ - Added mixing and standard traits to colors
+ - Added CIELCHuv
