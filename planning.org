@@ -94,3 +94,4 @@
  - [ ] All tests use ~approx_equal~ when comparing colors to ensure loss of precision is within acceptable bounds
  - [ ] Make public commitment to a given level of precision and use integration testing to verify it and target areas of precision loss
  - [ ] Judicious links in documentation (research more)
+ - [ ] Add comprehensive guide with examples on gamuts, integral spaces, and anything that can mess up conversions
