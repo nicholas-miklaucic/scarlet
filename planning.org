@@ -38,7 +38,11 @@
 ** Color Types
  - [X] Adobe RGB
  - [X] ProPhoto RGB
- - [ ] sHSL
+ - [-] sHSL
+   - [X] Implement basic functionality
+   - [ ] Add string conversion functions
+   - [ ] Add custom equality to deal with saturation and hue messiness
+ - [ ] sHSV
  - [X] CIELUV
    - [X] Deal with chromatic adaptation
  - [ ] CMYK

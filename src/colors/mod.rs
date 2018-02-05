@@ -2,6 +2,7 @@
 mod adobergbcolor;
 mod cielabcolor;
 mod cielchcolor;
-mod rommrgbcolor;
 mod cieluvcolor;
 mod cielchuvcolor;
+mod hslcolor;
+mod rommrgbcolor;
