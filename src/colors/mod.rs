@@ -1,8 +1,8 @@
 //! This module contains various modules that implement types that implement Color.
-mod adobergbcolor;
-mod cielabcolor;
-mod cielchcolor;
-mod cieluvcolor;
-mod cielchuvcolor;
-mod hslcolor;
-mod rommrgbcolor;
+pub mod adobergbcolor;
+pub mod cielabcolor;
+pub mod cielchcolor;
+pub mod cieluvcolor;
+pub mod cielchuvcolor;
+pub mod hslcolor;
+pub mod rommrgbcolor;
