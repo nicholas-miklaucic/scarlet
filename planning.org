@@ -62,6 +62,7 @@
  - [ ] html ~rgb(~ function call
  - [ ] html ~hsl(~ function call
 ** Color Functions 
+ - [ ] Implement floating-point exact values for RGB
  - [ ] Everything implements standard traits
  - [ ] Some sort of safe modification/getter/setter?
  - [ ] Use correct floating-point methods everywhere to tamp down on error

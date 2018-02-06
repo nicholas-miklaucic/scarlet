@@ -18,3 +18,5 @@
 ** February 3-4, 2018 
  - Added mixing and standard traits to colors
  - Added CIELCHuv
+** February 5, 2018
+ - Added HSV and updated planning
