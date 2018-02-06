@@ -85,6 +85,8 @@
    - [ ] Colorfulness
    - [ ] Saturation
  - [ ] Clamp color to the closest one representable by a given gamut
+ - [ ] Get closest visible color
+ - [ ] Determine whether color is imaginary
 ** Documentation/Testing
  - [ ] Every single public piece of code is documented
  - [ ] Every single public piece of documentation has an example
@@ -96,3 +98,4 @@
  - [ ] Make public commitment to a given level of precision and use integration testing to verify it and target areas of precision loss
  - [ ] Judicious links in documentation (research more)
  - [ ] Add comprehensive guide with examples on gamuts, integral spaces, and anything that can mess up conversions
+ - [ ] Add ideology doc

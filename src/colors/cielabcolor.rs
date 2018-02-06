@@ -108,7 +108,7 @@ impl Into<Coord> for CIELABColor {
 mod tests {
     #[allow(unused_imports)]
     use super::*;
-    use color::Mix;
+    use color::{Mix, RGBColor};
     #[test]
     fn test_cielab_xyz_conversion_d50() {
         let xyz = XYZColor{x: 0.4, y: 0.2, z: 0.6, illuminant: Illuminant::D50};
@@ -132,5 +132,14 @@ mod tests {
         assert!((lab_mixed.l - 55.0).abs() <= 1e-7);
         assert!((lab_mixed.a + 35.0).abs() <= 1e-7);
         assert!((lab_mixed.b - 70.0).abs() <= 1e-7);
+    }
+    #[test]
+    fn test_out_of_gamut() {
+        // this color doesn't exist in sRGB! (that's probably a good thing, this can't really be represented)
+        let color1 = CIELABColor{l: 0.0, a: 100.0, b: 100.0};
+        let color2: RGBColor = color1.convert();
+        println!("{}", color2.to_string());
+        let color3: CIELABColor = color2.convert();
+        println!("{} {} {}", color3.l, color3.a, color3.b);
     }
 }
