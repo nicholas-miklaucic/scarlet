@@ -8,6 +8,7 @@ use std::string::ToString;
 
 use super::coord::Coord;
 use illuminants::{Illuminant};
+use colors::cielabcolor::CIELABColor;
 
 extern crate termion;
 use self::termion::color::{Fg, Bg, Reset, Rgb};
@@ -134,6 +135,116 @@ pub trait Color {
     fn write_color(&self) -> String {
         let rgb: RGBColor = self.convert();
         rgb.base_write_color()
+    }
+
+    /// Returns a metric of the distance between the given color and another that attempts to
+    /// accurately reflect human perception. This is done by using the CIEDE2000 difference formula,
+    /// the current international and industry standard. The result, being a distance, will never be
+    /// negative: it has no defined upper bound, although anything larger than 100 would be very
+    /// extreme. A distance of 1.0 is conservatively the smallest possible noticeable difference:
+    /// anything that is below 1.0 is almost guaranteed to be indistinguishable to most people.
+    fn distance<T: Color>(&self, other: &T) -> f64 {
+        // implementation reference found here:
+        // https://pdfs.semanticscholar.org/969b/c38ea067dd22a47a44bcb59c23807037c8d8.pdf
+
+        // I'm going to match the notation in that text pretty much exactly: it's the only way to
+        // keep this both concise and readable
+
+        // first convert to LAB
+        let lab1: CIELABColor = self.convert();
+        let lab2: CIELABColor = other.convert();
+        // step 1: calculation of C and h
+        // the method hypot returns sqrt(a^2 + b^2)
+        let c_star_1: f64 = lab1.a.hypot(lab1.b);
+        let c_star_2: f64 = lab2.a.hypot(lab2.b);
+
+        let c_bar_ab: f64 = (c_star_1 + c_star_2) / 2.0;
+        let g = 0.5 * (1.0 - ((c_bar_ab.powi(7)) / (c_bar_ab.powi(7) + 25.0f64.powi(7))).sqrt());
+
+        let a_prime_1 = (1.0 + g) * lab1.a;
+        let a_prime_2 = (1.0 + g) * lab2.a;
+
+        let c_prime_1 = a_prime_1.hypot(lab1.b);
+        let c_prime_2 = a_prime_2.hypot(lab2.b);
+
+        // this closure simply does the atan2 like CIELCH, but safely accounts for a == b == 0
+        // we're gonna do this twice, so I just use a closure
+        let h_func = |a: f64, b: f64| {
+            if a == 0.0 && b == 0.0 {
+                0.0
+            }
+            else {
+                let val = b.atan2(a).to_degrees();
+                if val < 0.0 {
+                    val + 360.0
+                } else {
+                    val
+                }
+            }
+        };
+
+        let h_prime_1 = h_func(a_prime_1, lab1.b);
+        let h_prime_2 = h_func(a_prime_2, lab2.b);
+
+        // step 2: computing delta L, delta C, and delta H
+        // take a deep breath, you got this!
+
+        let delta_l = lab2.l - lab1.l;
+        let delta_c = c_prime_2 - c_prime_1;
+        // essentially, compute the difference in hue but keep it in the right range
+        let delta_angle_h = if c_prime_1 * c_prime_2 == 0.0 {
+            0.0
+        } else if (h_prime_2 - h_prime_1).abs() <= 180.0 {
+            h_prime_2 - h_prime_1
+        } else if h_prime_2 - h_prime_1 > 180.0 {
+            h_prime_2 - h_prime_1 - 360.0
+        } else {
+            h_prime_2 - h_prime_1 + 360.0
+        };
+        // now get the Cartesian equivalent of the angle difference in hue
+        // this also corrects for chromaticity mattering less at low luminances
+        let delta_h = 2.0 * (c_prime_1 * c_prime_2).sqrt() * (delta_angle_h / 2.0).to_radians().sin();
+
+        // step 3: the color difference
+        // if you're reading this, it's not too late to back out
+        let l_bar_prime = (lab1.l + lab2.l) / 2.0;
+        let c_bar_prime = (c_prime_1 + c_prime_2) / 2.0;
+        let h_bar_prime = if c_prime_1 * c_prime_2 == 0.0 {
+            h_prime_1 + h_prime_2
+        } else if (h_prime_2 - h_prime_1).abs() <= 180.0 {
+            (h_prime_1 + h_prime_2) / 2.0
+        } else {
+            if h_prime_1 + h_prime_2 < 360.0 {
+                (h_prime_1 + h_prime_2 + 360.0) / 2.0
+            }
+            else {
+                (h_prime_1 + h_prime_2 - 360.0) / 2.0
+            }
+        };
+
+        // we're gonna use this a lot
+        let deg_cos = |x: f64| {
+            x.to_radians().cos()
+        };
+
+        let t = 1.0 - 0.17 * deg_cos(h_bar_prime - 30.0) + 0.24 * deg_cos(2.0 * h_bar_prime) + 0.32 *
+            deg_cos(3.0 * h_bar_prime + 6.0) - 0.20 * deg_cos(4.0 * h_bar_prime - 63.0);
+
+        let delta_theta = 30.0 * (-(((h_bar_prime - 275.0) / 25.0)).powi(2)).exp();
+        let r_c = 2.0 * (c_bar_prime.powi(7) / (c_bar_prime.powi(7) + 25.0f64.powi(7))).sqrt();
+        let s_l = 1.0 + ((0.015 * (l_bar_prime - 50.0).powi(2))
+                         / (20.0 + (l_bar_prime - 50.0).powi(2)).sqrt());
+        let s_c = 1.0 + 0.045 * c_bar_prime;
+        let s_h = 1.0 + 0.015 * c_bar_prime * t;
+        let r_t = -r_c * (2.0 * delta_theta).to_radians().sin();
+        // finally, the end result
+        // in the original there are three parametric weights, used for weighting differences in
+        // lightness, chroma, or hue. In pretty much any application, including this one, all of
+        // these are 1, so they're omitted
+        ((delta_l / s_l).powi(2)
+         + (delta_c / s_c).powi(2)
+         + (delta_h / s_h).powi(2)
+         + r_t * (delta_c / s_c) * (delta_h / s_h)).sqrt()
     }
 }
 
@@ -654,6 +765,51 @@ mod tests {
     fn test_to_string() {
         for hex in ["#000000", "#ABCDEF", "#1A2B3C", "#D00A12", "#40AA50"].iter() {
             assert_eq!(*hex, RGBColor::from_hex_code(hex).unwrap().to_string());
+        }
+    }
+    #[test]
+    fn test_ciede2000() {
+        // this implements the fancy test cases found here:
+        // https://pdfs.semanticscholar.org/969b/c38ea067dd22a47a44bcb59c23807037c8d8.pdf
+        let l_1 = vec![50.0, 50.0, 50.0, 50.0, 50.0, 50.0, 50.0, 50.0, 50.0, 50.0, 50.0, 50.0, 50.0,
+                       50.0, 50.0, 50.0, 50.0, 50.0, 50.0, 50.0, 50.0, 50.0, 50.0, 50.0, 60.2574,
+                       63.0109, 61.2901, 35.0831, 22.7233, 36.4612, 90.8027, 90.9257, 6.7747, 2.0776];
+        let l_2 = vec![50.0, 50.0, 50.0, 50.0, 50.0, 50.0, 50.0, 50.0, 50.0, 50.0, 50.0, 50.0, 50.0,
+                       50.0, 50.0, 50.0, 73.0, 61.0, 56.0, 58.0, 50.0, 50.0, 50.0, 50.0, 60.4626,
+                       62.8187, 61.4292, 35.0232, 23.0331, 36.2715, 91.1528, 88.6381, 5.8714,  0.9033];
+        let a_1 = vec![2.6772, 3.1571, 2.8361, -1.3802, -1.1848, -0.9009, 0.0, -1.0, 2.49, 2.49,
+                       2.49, 2.49, -0.001, -0.001, -0.001, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5,
+                       2.5, -34.0099, -31.0961, 3.7196, -44.1164, 20.0904, 47.858, -2.0831, -0.5406,
+                       -0.2908, 0.0795];
+        let a_2 = vec![0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, -2.49, -2.49, -2.49, -2.49, 0.0009,
+                       0.001, 0.0011, 0.0, 25.0, -5.0, -27.0, 24.0, 3.1736, 3.2972, 1.8634, 3.2592,
+                       -34.1751, -29.7946, 2.248, -40.0716, 14.973, 50.5065, -1.6435, -0.8985,
+                       -0.0985, -0.0636];
+        let b_1 = vec![-79.7751, -77.2803, -74.02, -84.2814, -84.8006, -85.5211, 0.0, 2.0, -0.001,
+                       -0.001, -0.001, -0.001, 2.49, 2.49, 2.49, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                       0.0, 0.0, 36.2677, -5.8663, -5.3901, 3.7933, -46.6940, 18.3852, 1.441,
+                       -0.9208, -2.4247, -1.135];
+        let b_2 = vec![-82.7485, -82.7485, -82.7485, -82.7485, -82.7485, -82.7485, 2.0, 0.0, 0.0009,
+                       0.001, 0.0011, 0.0012, -2.49, -2.49, -2.49, -2.5, -18.0, 29.0, -3.0, 15.0,
+                       0.5854, 0.0, 0.5757, 0.3350, 39.4387, -4.0864, -4.962, 1.5901, -42.5619,
+                       21.2231, 0.0447, -0.7239, -2.2286, -0.5514];
+        let d_e = vec![2.0425, 2.8615, 3.4412, 1.0, 1.0, 1.0, 2.3669, 2.3669, 7.1792, 7.1792,
+                       7.2195, 7.2195, 4.8045, 4.8045, 4.7461, 4.3065, 27.1492, 22.8977, 31.9030,
+                       19.4535, 1.0, 1.0, 1.0, 1.0, 1.2644, 1.263, 1.8731, 1.8645, 2.0373, 1.4146,
+                       1.4441, 1.5381, 0.6377, 0.9082];
+        assert_eq!(l_1.len(), 34);
+        assert_eq!(l_2.len(), 34);
+        assert_eq!(a_1.len(), 34);
+        assert_eq!(a_2.len(), 34);
+        assert_eq!(b_1.len(), 34);
+        assert_eq!(b_2.len(), 34);
+        assert_eq!(d_e.len(), 34);
+        for i in 0..34 {
+            let lab1 = CIELABColor{l: l_1[i], a: a_1[i], b: b_1[i]};
+            let lab2 = CIELABColor{l: l_2[i], a: a_2[i], b: b_2[i]};
+            // only good to 4 decimal points
+            assert!((lab1.distance(&lab2) - d_e[i]).abs() <= 1e-4);
+            assert!((lab2.distance(&lab1) - d_e[i]).abs() <= 1e-4);
         }
     }
 }

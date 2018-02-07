@@ -61,11 +61,15 @@
  - [X] hex code
  - [ ] html ~rgb(~ function call
  - [ ] html ~hsl(~ function call
+ - [ ] Integral formats where that makes sense
+   - [ ] sRGB
+   - [ ] CIELAB
 ** Color Functions 
  - [ ] Implement floating-point exact values for RGB
  - [ ] Everything implements standard traits
  - [ ] Some sort of safe modification/getter/setter?
  - [ ] Use correct floating-point methods everywhere to tamp down on error
+ - [ ] Use borrowing correctly
  - [ ] Average /n/ colors of the same type
  - [ ] Superimposition of /n/ colors of the same type
  - [ ] Gradient scales (basically /n/ colors in a sequence of equal color distance, the smallest possible, between two colors in the same space)
@@ -76,6 +80,7 @@
  - [ ] Gradient functions (basically as above, but instead of a scale it returns a new function f(x) -> color where 0 <= x <= 1)
  - [ ] Common colormaps (MATLAB, jet (shudder), rainbow (shudder))
  - [ ] Distance between 2 colors of the same type
+ - [X] Perceptual distance between any two colors
  - [ ] Color temperature
  - [ ] Convenience functions for:
    - [ ] Hue angle
@@ -88,6 +93,8 @@
  - [ ] Get closest visible color
  - [ ] Determine whether color is imaginary
 ** Documentation/Testing
+ - [ ] Clean up and reorganize files
+ - [ ] Use the right modules in main namespace
  - [ ] Every single public piece of code is documented
  - [ ] Every single public piece of documentation has an example
  - [ ] Tests are comprehensive at the very least at the function level: every method should be
@@ -98,4 +105,6 @@
  - [ ] Make public commitment to a given level of precision and use integration testing to verify it and target areas of precision loss
  - [ ] Judicious links in documentation (research more)
  - [ ] Add comprehensive guide with examples on gamuts, integral spaces, and anything that can mess up conversions
+   - [ ] Add section on actually fixing issues
  - [ ] Add ideology doc
+
