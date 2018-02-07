@@ -20,3 +20,7 @@
  - Added CIELCHuv
 ** February 5, 2018
  - Added HSV and updated planning
+** February 6, 2018
+ - Made modules public so they actually worked
+ - Planned a lot of gamut stuff and added some documentation for that
+ - Added CIEDE2000 color distance: this was legit a journey
