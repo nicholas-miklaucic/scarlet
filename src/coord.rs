@@ -77,3 +77,11 @@ impl<U: Scalar> Div<U> for Coord {
         }
     }
 }
+
+impl Coord {
+    /// The Euclidean difference between two 3D points, defined as the square root of the sum of
+    /// squares of differences in each axis.
+    pub fn euclidean_distance(&self, other: &Coord) -> f64 {
+        ((self.x - other.x).powi(2) + (self.y - other.y).powi(2) + (self.z - other.z).powi(2)).sqrt()
+    }
+}

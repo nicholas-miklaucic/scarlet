@@ -79,7 +79,7 @@
    - [ ] Pad scale on both ends by some fraction of total distance
  - [ ] Gradient functions (basically as above, but instead of a scale it returns a new function f(x) -> color where 0 <= x <= 1)
  - [ ] Common colormaps (MATLAB, jet (shudder), rainbow (shudder))
- - [ ] Distance between 2 colors of the same type
+ - [X] Distance between 2 colors of the same type
  - [X] Perceptual distance between any two colors
  - [ ] Color temperature
  - [ ] Convenience functions for:
