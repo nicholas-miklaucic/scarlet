@@ -1,8 +1,8 @@
-mod coord;
+pub mod coord;
 pub mod illuminants;
 pub mod color;
 pub mod colors;
-pub mod euclidean_distance;
+pub mod color_funcs;
 
 #[cfg(test)]
 mod tests {

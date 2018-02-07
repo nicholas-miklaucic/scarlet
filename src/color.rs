@@ -541,7 +541,7 @@ impl<T: Color + From<Coord> + Into<Coord>> Mix for T {
         // convert to 3D space, add, divide by 2, come back
         let c1: Coord = self.into();
         let c2: Coord = other.into();
-        T::from((c1 + c2) / 2)
+        T::from(c1.midpoint(&c2))
     }        
 }
 

@@ -70,13 +70,16 @@
  - [ ] Some sort of safe modification/getter/setter?
  - [ ] Use correct floating-point methods everywhere to tamp down on error
  - [ ] Use borrowing correctly
+   - [ ] Implement correct borrowing for Coord and co.
  - [ ] Average /n/ colors of the same type
+   - [ ] Test this
  - [ ] Superimposition of /n/ colors of the same type
  - [ ] Gradient scales (basically /n/ colors in a sequence of equal color distance, the smallest possible, between two colors in the same space)
    - [ ] Logarthmic
    - [ ] Cube root
    - [ ] Square root
    - [ ] Pad scale on both ends by some fraction of total distance
+   - [ ] Test this
  - [ ] Gradient functions (basically as above, but instead of a scale it returns a new function f(x) -> color where 0 <= x <= 1)
  - [ ] Common colormaps (MATLAB, jet (shudder), rainbow (shudder))
  - [X] Distance between 2 colors of the same type

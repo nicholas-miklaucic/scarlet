@@ -21,7 +21,7 @@ pub struct Coord {
 }
 
 /// Now we implement addition and subtraction, as well as division and multiplication by scalars. Note
-/// that because the multiplication of points by points in 3D space has different defintions, we won't
+/// that because the multiplication of pnoints by points in 3D space has different defintions, we won't
 /// implement it: it's unclear what even the return type should be.
 impl Add for Coord {
     type Output = Coord;
@@ -78,10 +78,29 @@ impl<U: Scalar> Div<U> for Coord {
     }
 }
 
+// this will mostly be math stuff for colors
 impl Coord {
+    /// The midpoint between two 3D points: returns a new Coord.
+    pub fn midpoint(&self, other: &Coord) -> Coord {
+        Coord{x: (&self.x + &other.x) / 2.0,
+              y: (&self.y + &other.y) / 2.0,
+              z: (&self.z + &other.z) / 2.0}
+    }
+    /// The weighted midpoint: like midpoint, but with weighted averages instead of the arithmetic
+    /// mean. Very strange things may happen if the weight is not between 0 and 1.
+    pub fn weighted_midpoint(&self, other: &Coord, weight: f64) -> Coord {
+        Coord{x: (&self.x * weight + (1.0 - weight) * &other.x),
+              y: (&self.y * weight + (1.0 - weight) * &other.y),
+              z: (&self.z * weight + (1.0 - weight) * &other.z)}
+    }
     /// The Euclidean difference between two 3D points, defined as the square root of the sum of
     /// squares of differences in each axis.
     pub fn euclidean_distance(&self, other: &Coord) -> f64 {
         ((self.x - other.x).powi(2) + (self.y - other.y).powi(2) + (self.z - other.z).powi(2)).sqrt()
+    }
+    /// Gets the arithmetic mean of `self`, alongside other coordinates.
+    pub fn average(self, others: Vec<Coord>) -> Coord {
+        let n = others.len() + 1;
+        others.iter().fold(self, |x, y| x + *y) / n
     }
 }
