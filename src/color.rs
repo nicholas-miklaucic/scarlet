@@ -107,7 +107,7 @@ impl XYZColor {
 
 /// A trait that includes any color representation that can be converted to and from the CIE 1931 XYZ
 /// color space.
-pub trait Color {
+pub trait Color: Sized {
     /// Converts from a color in CIE 1931 XYZ to the given color type.
     fn from_xyz(XYZColor) -> Self;
     /// Converts from the given color type to a color in CIE 1931 XYZ space. Because most color types
@@ -925,5 +925,15 @@ mod tests {
             assert!((lab1.distance(&lab2) - d_e[i]).abs() <= 1e-4);
             assert!((lab2.distance(&lab1) - d_e[i]).abs() <= 1e-4);
         }
+    }
+    #[test]
+    fn test_hue() {
+        let rgb1 = RGBColor::from_hex_code("#1866aa").unwrap();        
+        let xyz1: XYZColor = rgb1.convert();
+        println!("{:?}", (xyz1.x, xyz1.y, xyz1.z));
+        println!("{} {} {}", rgb1.lightness(), rgb1.chroma(), rgb1.hue());
+        assert!((rgb1.hue() - 273.767).abs() <= 1e-4);
+        let rgb2 = rgb1.set_hue(318.92);
+        assert_eq!(rgb2.to_string(), "#815092");
     }
 }

@@ -68,7 +68,7 @@
 ** Color Functions 
  - [ ] Implement floating-point exact values for RGB
  - [ ] Everything implements standard traits
- - [ ] Some sort of safe modification/getter/setter?
+ - [X] Some sort of safe modification/getter/setter?
  - [ ] Use correct floating-point methods everywhere to tamp down on error
  - [ ] Use borrowing correctly
    - [ ] Implement correct borrowing for Coord and co.
@@ -93,8 +93,8 @@
    - [X] Chroma
    - [X] Saturation
  - [ ] Clamp color to the closest one representable by a given gamut
- - [ ] Get closest visible color
- - [ ] Determine whether color is imaginary
+ - [X] Get closest visible color
+ - [X] Determine whether color is imaginary
 ** Documentation/Testing
  - [ ] Clean up and reorganize files
  - [ ] Use the right modules in main namespace
@@ -110,6 +110,7 @@
  - [ ] Add comprehensive guide with examples on gamuts, integral spaces, and anything that can mess up conversions
    - [ ] Add section on actually fixing issues
  - [ ] Add ideology doc
+ - [ ] Add tests that use external programs and test cases instead of just preserving identity
 
 ** Misc
  - [ ] Put extern crates in root

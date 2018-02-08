@@ -38,7 +38,18 @@ impl Color for CIELCHColor {
         // angle is atan2(a, b)
         // Rust does this ez
         let c = lab.b.hypot(lab.a);
-        let h = lab.b.atan2(lab.a);
+        // don't forget to convert to degrees
+        let unbounded_h = lab.b.atan2(lab.a).to_degrees();
+        // and now add or subtract 360 to get within range (0, 360)
+        // should only need to be done once
+        let h = if unbounded_h < 0.0 {
+            unbounded_h + 360.0
+        } else if unbounded_h > 360.0 {
+            unbounded_h - 360.0
+        } else {
+            unbounded_h
+        };
+        
         CIELCHColor{l, c, h}
     }
     /// Converts from LCH back to XYZ by way of CIELAB, chromatically adapting it as CIELAB does.
@@ -46,7 +57,7 @@ impl Color for CIELCHColor {
         // go back to a and b
         // more math: a = c cos h, b = c sin h
         // Rust also has something for this which is hella cool
-        let (sin, cos) = self.h.sin_cos();
+        let (sin, cos) = self.h.to_radians().sin_cos();
         CIELABColor{l: self.l, a: self.c * cos, b: self.c * sin}.to_xyz(illuminant)
     }
 }

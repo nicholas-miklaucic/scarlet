@@ -5,8 +5,9 @@
 
 use coord::Coord;
 use color::{Color, XYZColor};
+use colors::cieluvcolor::CIELUVColor;
 use visual_gamut::read_cie_spectral_data;
-use super::geo::{LineString, Point};
+use super::geo::{Closest, LineString, Point};
 use super::geo::prelude::*;
 
 
@@ -98,8 +99,47 @@ pub trait ColorPoint : Color + Into<Coord> + From<Coord> + Clone + Copy {
         line.contains(&self_point)
     }
 
-    // TODO: implement closest real color
-    // oh dear
+    /// Returns the closest color that can be seen by the human eye. If the color is not imaginary,
+    /// returns itself.
+    fn closest_real_color(&self) -> Self {
+        // if real color, return itself
+        if !self.is_imaginary() {
+            *self
+        } else {
+            let (_wavelengths, xyz_data) = read_cie_spectral_data();
+            // convert to chromaticity coordinates
+            // use the explicit formulae instead of CIELUVColor to reduce rounding errors
+            // we only care about those coordinates
+            let uv_func = |xyz: XYZColor| {
+                let denom = xyz.x + 15.0 * xyz.y + 3.0 * xyz.z;
+                (4.0 * xyz.x / denom, 9.0 * xyz.y / denom)
+            };
+            // we need to keep luminance data to convert back, so we use CIELUV explicitly
+            let mut self_luv: CIELUVColor = self.convert();
+            let self_uv = (self_luv.u, self_luv.v);
+            let uv_data: Vec<(f64, f64)> = xyz_data.into_iter().map(uv_func).collect();
+            let self_point = Point::new(self_uv.0, self_uv.1);
+
+            // this is also an annoying algorithm: just use the crate
+            let line: LineString<f64> = uv_data.into();
+            let closest_point = line.closest_point(&self_point);
+            // convert back into original type
+            match closest_point {
+                Closest::Intersection(p) => {
+                    self_luv.u = p.x();
+                    self_luv.v = p.y();
+                },
+                Closest::SinglePoint(p) => {
+                    self_luv.u = p.x();
+                    self_luv.v = p.y();
+                },
+                Closest::Indeterminate => {  // should never happen
+                    panic!("Indeterminate closest point! Please report this error");
+                }
+            }
+            self_luv.convert()
+        }
+    }
 }
 
 impl<T: Color + Into<Coord> + From<Coord> + Copy + Clone> ColorPoint for T {
@@ -120,5 +160,5 @@ mod tests {
         let lab2 = CIELABColor{l: 54.2, a: 65.0, b: 100.0};
         println!("{}", lab1.euclidean_distance(lab2));
         assert!((lab1.euclidean_distance(lab2) - 132.70150715).abs() <= 1e-7);
-    }    
+    }
 }
