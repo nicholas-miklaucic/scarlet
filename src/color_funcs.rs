@@ -4,7 +4,10 @@
 //! it easy to provide these for custom `Color` types.
 
 use coord::Coord;
-use color::Color;
+use color::{Color, XYZColor};
+use visual_gamut::read_cie_spectral_data;
+use super::geo::{LineString, Point};
+use super::geo::prelude::*;
 
 
 /// Some errors that might pop up when dealing with colors as coordinates.
@@ -74,6 +77,29 @@ pub trait ColorPoint : Color + Into<Coord> + From<Coord> + Clone + Copy {
         let other_cs = others.iter().map(|x| (*x).into()).collect();
         c1.average(other_cs)
     }
+
+    /// Returns `true` if the color is outside the range of human vision. Uses the CIE 1931 standard
+    /// observer spectral data.
+    fn is_imaginary(&self) -> bool {
+        let (_wavelengths, xyz_data) = read_cie_spectral_data();
+        // convert to chromaticity coordinates
+        // use the explicit formulae instead of CIELUVColor to reduce rounding errors
+        // we only care about those coordinates
+        let uv_func = |xyz: XYZColor| {
+            let denom = xyz.x + 15.0 * xyz.y + 3.0 * xyz.z;
+            (4.0 * xyz.x / denom, 9.0 * xyz.y / denom)
+        };
+        let self_uv: (f64, f64) = (uv_func(self.convert())).into();
+        let uv_data: Vec<(f64, f64)> = xyz_data.into_iter().map(uv_func).collect();
+        let self_point = Point::new(self_uv.0, self_uv.1);
+
+        // this is an annoying algorithm, so I'm using a crate instead
+        let line: LineString<f64> = uv_data.into();
+        line.contains(&self_point)
+    }
+
+    // TODO: implement closest real color
+    // oh dear
 }
 
 impl<T: Color + Into<Coord> + From<Coord> + Copy + Clone> ColorPoint for T {
@@ -94,5 +120,5 @@ mod tests {
         let lab2 = CIELABColor{l: 54.2, a: 65.0, b: 100.0};
         println!("{}", lab1.euclidean_distance(lab2));
         assert!((lab1.euclidean_distance(lab2) - 132.70150715).abs() <= 1e-7);
-    }
+    }    
 }

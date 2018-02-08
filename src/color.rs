@@ -2,6 +2,7 @@
 
 use std::collections::HashMap;
 use std::convert::From;
+use std::marker::Sized;
 use std::num::ParseIntError;
 use std::result::Result::Err;
 use std::string::ToString;
@@ -9,6 +10,7 @@ use std::string::ToString;
 use super::coord::Coord;
 use illuminants::{Illuminant};
 use colors::cielabcolor::CIELABColor;
+use colors::cielchcolor::CIELCHColor;
 
 extern crate termion;
 use self::termion::color::{Fg, Bg, Reset, Rgb};
@@ -137,6 +139,118 @@ pub trait Color {
         rgb.base_write_color()
     }
 
+    /// Gets the generally most accurate version of hue for a given color: the hue coordinate in
+    /// CIELCH. There are generally considered four "unique hues" that humans perceive as not
+    /// decomposable into other hues (when mixing additively): these are red, yellow, green, and
+    /// blue. These unique hues have values of 0, 90, 180, and 270 degrees respectively, with other
+    /// colors interpolated between them. This returned value will never be outside the range 0 to
+    /// 360.
+    fn hue(&self) -> f64 {
+        let lch: CIELCHColor = self.convert();
+        lch.h
+    }
+
+    /// Sets a perceptually-accurate version hue of a color, even if the space itself does not have a
+    /// conception of hue. This uses the CIELCH version of hue. To use another one, simply convert and
+    /// set it manually. If the given hue is not between 0 and 360, it is shifted in that range by
+    /// adding multiples of 360.
+    fn set_hue(&self, new_hue: f64) -> Self where Self: Sized {
+        let mut lch: CIELCHColor = self.convert();
+        lch.h = if new_hue >= 0.0 && new_hue <= 360.0 {
+            new_hue
+        } else if new_hue < 0.0 {
+            new_hue - 360.0 * (new_hue / 360.0).floor()
+        } else {
+            new_hue - 360.0 * (new_hue / 360.0).ceil()
+        };
+        lch.convert()
+    }
+
+    /// Gets a perceptually-accurate version of lightness as a value from 0 to 100, where 0 is black
+    /// and 100 is pure white. The exact value used is CIELAB's definition of luminance, which is
+    /// generally considered a very good standard. Note that this is nonlinear with respect to the
+    /// physical amount of light emitted: a material with 18% reflectance has a lightness value of 50,
+    /// not 18.
+    fn lightness(&self) -> f64 {
+        let lab: CIELABColor = self.convert();
+        lab.l
+    }
+
+    /// Sets a perceptually-accurate version of lightness, which ranges between 0 and 100 for visible
+    /// colors. Any values outside of this range will be clamped within it.
+    fn set_lightness(&self, new_lightness: f64) -> Self where Self: Sized {
+        let mut lab: CIELABColor = self.convert();
+        lab.l = if new_lightness >= 0.0 && new_lightness <= 100.0 {
+            new_lightness
+        } else if new_lightness < 0.0 {
+            0.0
+        } else {
+            100.0
+        };
+        lab.convert()
+    }
+
+    /// Gets a perceptually-accurate version of *chroma*, defined as colorfulness relative to a
+    /// similarly illuminated white. This has no explicit upper bound, but is always positive and
+    /// generally between 0 and 180 for visible colors. This is done using the CIELCH model.
+    fn chroma(&self) -> f64 {
+        let lch: CIELCHColor = self.convert();
+        lch.c
+    }
+
+    /// Sets a perceptually-accurate version of *chroma*, defined as colorfulness relative to a
+    /// similarly illuminated white. Uses CIELCH's defintion of chroma for implementation. Any value
+    /// below 0 will be clamped up to 0, but because the upper bound depends on the hue and
+    /// lightness no clamping will be done. This means that this method has a higher chance than
+    /// normal of producing imaginary colors and any output from this method should be checked.
+    fn set_chroma(&self, new_chroma: f64) -> Self where Self: Sized {
+        let mut lch: CIELCHColor = self.convert();
+        lch.c = if new_chroma < 0.0 {
+            0.0
+        } else {
+            new_chroma
+        };
+        lch.convert()
+    }
+
+    /// Gets a perceptually-accurate version of *saturation*, defined as chroma relative to
+    /// lightness. Generally ranges from 0 to around 10, although exact bounds are tricky. from This
+    /// means that e.g., a very dark purple could be very highly saturated even if it does not seem
+    /// so relative to lighter colors. This is computed using the CIELCH model and computing chroma
+    /// divided by lightness: if the lightness is 0, the saturation is also said to be 0. There is
+    /// no official formula except ones that require more information than this model of colors has,
+    /// but the CIELCH formula is fairly standard.
+    fn saturation(&self) -> f64 {
+        let lch: CIELCHColor = self.convert();
+        if lch.l == 0.0 {
+            0.0
+        } else {
+            lch.c / lch.l
+        }
+    }
+
+    /// Sets a perceptually-accurate version of *saturation*, defined as chroma relative to
+    /// lightness. Any negative value will be clamped to 0, but because the maximum saturation is not
+    /// well-defined any positive value will be used as is: this means that this method is more likely
+    /// than others to produce imaginary colors. Uses the CIELCH color space.
+    fn set_saturation(&self, new_sat: f64) -> Self where Self: Sized {
+        let mut lch: CIELCHColor = self.convert();
+        lch.c = if new_sat < 0.0 {
+            0.0
+        } else {
+            new_sat * lch.l
+        };
+        lch.convert()
+    }
+
+    /// Returns a new Color of the same type as before, but with chromaticity removed: effectively,
+    /// a color created solely using a mix of black and white that has the same lightness as
+    /// before. This uses the CIELAB luminance definition, which is considered a good standard and is
+    /// perceptually accurate for the most part.
+    fn grayscale(&self) -> Self where Self: Sized {
+        self.set_chroma(0.0)
+    }
+    
     /// Returns a metric of the distance between the given color and another that attempts to
     /// accurately reflect human perception. This is done by using the CIEDE2000 difference formula,
     /// the current international and industry standard. The result, being a distance, will never be

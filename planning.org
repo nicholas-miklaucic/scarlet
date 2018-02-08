@@ -55,6 +55,7 @@
  - [ ] HTML initalizer functions
  - [X] Illuminant white points
  - [ ] Iterables of various kinds?
+ - [ ] Use traits (FromStr)
 ** Color Output Formats
  - [ ] ~Coord~ if it makes sense
  - [ ] ~(a, b, c)~ if that makes sense
@@ -84,14 +85,13 @@
  - [ ] Common colormaps (MATLAB, jet (shudder), rainbow (shudder))
  - [X] Distance between 2 colors of the same type
  - [X] Perceptual distance between any two colors
- - [ ] Color temperature
- - [ ] Convenience functions for:
-   - [ ] Hue angle
-   - [ ] Lightness
-   - [ ] Brightness
-   - [ ] Chroma
-   - [ ] Colorfulness
-   - [ ] Saturation
+ - [ ] Allow use of IntoIterator instead of Vec
+ - [X] Grayscale version of color
+ - [X] Convenience functions for:
+   - [X] Hue angle
+   - [X] Lightness
+   - [X] Chroma
+   - [X] Saturation
  - [ ] Clamp color to the closest one representable by a given gamut
  - [ ] Get closest visible color
  - [ ] Determine whether color is imaginary
@@ -111,3 +111,5 @@
    - [ ] Add section on actually fixing issues
  - [ ] Add ideology doc
 
+** Misc
+ - [ ] Put extern crates in root

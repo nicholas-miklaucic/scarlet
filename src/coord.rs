@@ -6,7 +6,6 @@ use std::ops::{Add, Sub, Mul, Div};
 extern crate num;
 use self::num::{NumCast, Num};
 
-
 pub trait Scalar : NumCast + Num {}
 
 impl<T: NumCast + Num> Scalar for T {}
