@@ -24,3 +24,7 @@
  - Made modules public so they actually worked
  - Planned a lot of gamut stuff and added some documentation for that
  - Added CIEDE2000 color distance: this was legit a journey
+** February 7, 2018
+ - Added Euclidean distance
+ - Added some more color convenience functions, no tests though!
+ - Added imaginary gamut check and closest visible function, only test fails so doesn't really count!
