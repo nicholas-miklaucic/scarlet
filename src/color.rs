@@ -81,12 +81,12 @@ impl XYZColor {
             XYZColor{x: xyz_c[0], y: xyz_c[1], z: xyz_c[2], illuminant: other_illuminant}
         }
     }
-    /// Returns `true` if the given other XYZ color's coordinates are all within 0.001 of each other,
-    /// which helps account for necessary floating-point errors in conversions.
+    /// Returns `true` if the given other XYZ color's coordinates are all within acceptable error of
+    /// each other, which helps account for necessary floating-point errors in conversions.
     pub fn approx_equal(&self, other: &XYZColor) -> bool {
-        ((self.x - other.x).abs() <= 1e-4 &&
-         (self.y - other.y).abs() <= 1e-4 &&
-         (self.z - other.z).abs() <= 1e-4)
+        ((self.x - other.x).abs() <= 1e-15 &&
+         (self.y - other.y).abs() <= 1e-15 &&
+         (self.z - other.z).abs() <= 1e-15)
     }
         
     /// Returns `true` if the given other XYZ color would look identically in a different color
