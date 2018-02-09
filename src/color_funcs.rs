@@ -140,8 +140,9 @@ pub trait ColorPoint : Color + Into<Coord> + From<Coord> + Clone + Copy {
             self_luv.convert()
         }
     }
-}
+}    
 
+    
 impl<T: Color + Into<Coord> + From<Coord> + Copy + Clone> ColorPoint for T {
     // nothing to do
 }

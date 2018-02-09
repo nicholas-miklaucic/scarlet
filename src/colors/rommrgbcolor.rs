@@ -10,6 +10,9 @@
 
 use color::{Color, XYZColor};
 use coord::Coord;
+use consts::ROMM_RGB_TRANSFORM_MAT as ROMM;
+use consts;
+use na::Vector3;
 use illuminants::Illuminant;
 
 
@@ -33,11 +36,8 @@ impl Color for ROMMRGBColor {
         // convert to D50
         let xyz_c = xyz.color_adapt(Illuminant::D50);
 
-        // matrix multiplication: variable names come from spec in module description
-        let rr = 1.3460 * xyz_c.x - 0.2556 * xyz_c.y - 0.0511 * xyz_c.z;
-        let gr = -0.5446 * xyz_c.x + 1.5082 * xyz_c.y + 0.0205 * xyz_c.z;
-        let br = 0.0000 * xyz_c.x + 0.0000 * xyz_c.y + 1.2123 * xyz_c.z;
-
+        // matrix multiplication, using spec's variable names
+        let rr_gg_bb = ROMM() * Vector3::new(xyz_c.x, xyz_c.y, xyz_c.z);
 
         // like sRGB, there's a linear part and an exponential part to the gamma conversion
         let gamma = |x: f64| {
@@ -78,9 +78,9 @@ impl Color for ROMMRGBColor {
         };   
         // now just apply these in sequence
         ROMMRGBColor{
-            r: clamp(fix_flare(gamma(rr))),
-            g: clamp(fix_flare(gamma(gr))),
-            b: clamp(fix_flare(gamma(br))),
+            r: clamp(fix_flare(gamma(rr_gg_bb[0]))),
+            g: clamp(fix_flare(gamma(rr_gg_bb[1]))),
+            b: clamp(fix_flare(gamma(rr_gg_bb[2]))),
         }
     }
     /// Converts back from ROMM RGB to XYZ. As ROMM RGB uses D50, any other illuminant given will be
@@ -119,15 +119,17 @@ impl Color for ROMMRGBColor {
         let g_c = gamma_inv(fix_flare_inv(self.g));
         let b_c = gamma_inv(fix_flare_inv(self.b));
 
-        // the coordinates of this matrix, the inverse of the one above, is just the
-        // coordinates of the primaries of the space, from the spec, but scaled so that (1, 1, 1)
-        // maps to D50 reference white and transposed
-        let x = 0.7977 * r_c + 0.1352 * g_c + 0.0314 * b_c;
-        let y = 0.2881 * r_c + 0.7118 * g_c + 0.0001 * b_c;
-        let z = 0.0000 * r_c + 0.0000 * g_c + 0.8249 * b_c;
+        // the standard brilliantly decided to not even bother adding an inverse matrix, but it's
+        // best to calculate anyway: it makes it more precise
+        let xyz = consts::inv(ROMM()) * Vector3::new(r_c, g_c, b_c);
         
         // now we convert from D50 to whatever space we need and we're done!
-        XYZColor{x, y, z, illuminant: Illuminant::D50}.color_adapt(illuminant)
+        XYZColor {
+            x: xyz[0],
+            y: xyz[1],
+            z: xyz[2],
+            illuminant: Illuminant::D50,
+        }.color_adapt(illuminant)
     }
 }
 

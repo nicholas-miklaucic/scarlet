@@ -56,6 +56,7 @@
  - [X] Illuminant white points
  - [ ] Iterables of various kinds?
  - [ ] Use traits (FromStr)
+ - [ ] Clever enum for color names?
 ** Color Output Formats
  - [ ] ~Coord~ if it makes sense
  - [ ] ~(a, b, c)~ if that makes sense
@@ -66,7 +67,7 @@
    - [ ] sRGB
    - [ ] CIELAB
 ** Color Functions 
- - [ ] Implement floating-point exact values for RGB
+ - [X] Implement floating-point exact values for RGB
  - [ ] Everything implements standard traits
  - [X] Some sort of safe modification/getter/setter?
  - [ ] Use correct floating-point methods everywhere to tamp down on error
@@ -111,6 +112,10 @@
    - [ ] Add section on actually fixing issues
  - [ ] Add ideology doc
  - [ ] Add tests that use external programs and test cases instead of just preserving identity
+ - [ ] Add something that clearly explains the trickiness of HSV systems: e.g., setting black's hue
+   to 270 and then getting its hue won't return 270
 
 ** Misc
  - [ ] Put extern crates in root
+ - [ ] Remove unneeded dependencies
+ - [ ] Figure out what needs to be public or not

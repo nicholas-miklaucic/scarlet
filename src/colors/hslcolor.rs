@@ -17,6 +17,8 @@
 //! Another small implementation note is that converting gray into HSL or HSV will give a hue of 0
 //! degrees, although any hue could be used in its place.
 
+use std::f64;
+
 use color::{Color, RGBColor, XYZColor};
 use coord::Coord;
 use illuminants::Illuminant;
@@ -52,11 +54,10 @@ impl Color for HSLColor {
         // projection.
         // I call this chroma, but it's a very very rough estimate of the actual color attribute.
         // More info: https://en.wikipedia.org/wiki/HSL_and_HSV#Formal_derivation
-        let components = vec![rgb.r, rgb.g, rgb.b];
-        let max_c = components.iter().max().unwrap();
-        let min_c = components.iter().min().unwrap();
-        // scale chroma, because components are scaled from 0-255 and we want 0-1
-        let chroma = (max_c - min_c) as f64 / 256.0;        
+        let components = [rgb.r, rgb.g, rgb.b];
+        let max_c = components.iter().cloned().fold(-1.0, f64::max);
+        let min_c = components.iter().cloned().fold(2.0, f64::min);
+        let chroma = max_c - min_c;        
 
         // hue is crazy in a hexagon! no more trig functions for us!
         // it's technically the proportion of the length of the hexagon through the point, but it's
@@ -65,19 +66,19 @@ impl Color for HSLColor {
             // could be anything, undefined according to Wikipedia, in Scarlet just 0 for gray
             0.0
         }
-        else if max_c == &rgb.r {
+        else if max_c == rgb.r {
             // in red sector: find which part by comparing green and blue and scaling
             // adding green moves up on the hexagon, adding blue moves down: hence, linearity
             // the modulo makes sure it's in the range 0-360
-            ((((rgb.g - rgb.b) as f64) / chroma) % 6.0) * 60.0
+            (((rgb.g - rgb.b) / chroma) % 6.0) * 60.0
         }
-        else if max_c == &rgb.g {
+        else if max_c == rgb.g {
             // similar to above, but you add an offset
-            (((rgb.b - rgb.r) as f64) / chroma) * 60.0 + 120.0
+            ((rgb.b - rgb.r) / chroma) * 60.0 + 120.0
         }
         else {
             // same as above, different offset
-            (((rgb.r - rgb.g) as f64) / chroma) * 60.0 + 240.0
+            ((rgb.r - rgb.g) / chroma) * 60.0 + 240.0
         };
 
         // saturation, scientifically speaking, is chroma adjusted for lightness. For HSL, it's
@@ -86,12 +87,9 @@ impl Color for HSLColor {
         
         // now we choose lightness as the average of the largest and smallest components. This
         // essentially translates to a double hex cone, quite the interesting structure!
-        // the division by 510 is really two divisions: one by 255 to scale between 0 and 1, a nd one
-        // for 2 for taking the average instead of the sum.
-        let lightness = ((max_c + min_c) as f64) / 510.0;
-
+        let lightness = (max_c + min_c) / 2.0;
         // now back to saturation
-        let saturation = if lightness == 1.0 {
+        let saturation = if lightness == 1.0 || lightness == 0.0 {
             // this would be a divide by 0 otherwise, just set it to 0 because it doesn't matter
             0.0
         }
@@ -134,10 +132,9 @@ impl Color for HSLColor {
         // now we add the right value to each component to get the correct lightness and scale back
         // to 0-255
         let offset = self.l - chroma / 2.0;
-        let rescale = |x: f64| {
-            ((x + offset) * 255.0).round() as u8
-        };
-        let (r, g, b) = (rescale(r1), rescale(g1), rescale(b1));
+        let r = r1 + offset;
+        let g = g1 + offset;
+        let b = b1 + offset;
         RGBColor{r, g, b}.to_xyz(illuminant)
     }
 }
@@ -163,8 +160,9 @@ mod tests {
 
     #[test]
     fn test_hsl_rgb_conversion() {
-        let red_rgb = RGBColor{r: 255, g: 0, b: 0};
+        let red_rgb = RGBColor{r: 1., g: 0., b: 0.};
         let red_hsl: HSLColor = red_rgb.convert();
+        println!("{}", red_hsl.s);
         assert!(red_hsl.h.abs() <= 0.0001);
         assert!((red_hsl.s - 1.0) <= 0.0001);
         assert!((red_hsl.l - 0.5) <= 0.0001);

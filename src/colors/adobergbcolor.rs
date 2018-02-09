@@ -4,6 +4,9 @@
 
 use coord::Coord;
 use color::{Color, XYZColor};
+use consts::ADOBE_RGB_TRANSFORM_MAT as ADOBE_RGB;
+use consts;
+use na::Vector3;
 use illuminants::Illuminant;
 
 #[derive(Debug, Copy, Clone)]
@@ -22,11 +25,9 @@ impl Color for AdobeRGBColor {
     fn from_xyz(xyz: XYZColor) -> AdobeRGBColor {
         // convert to D65
         let xyz_c = xyz.color_adapt(Illuminant::D65);
-        // essentially matrix multiplication
+        // matrix multiplication
         // https://en.wikipedia.org/wiki/Adobe_RGB_color_space
-        let r = 2.04159 * xyz_c.x - 0.56501 * xyz_c.y - 0.34473 * xyz_c.z;
-        let g = -0.96924 * xyz_c.x + 1.87597 * xyz_c.y + 0.04156 * xyz_c.z;
-        let b = 0.01344 * xyz_c.x - 0.11836 * xyz_c.y + 1.01517 * xyz_c.z;
+        let rgb = ADOBE_RGB() * Vector3::new(xyz_c.x, xyz_c.y, xyz_c.z);
 
         // clamp
         let clamp = |x: f64| {
@@ -47,9 +48,9 @@ impl Color for AdobeRGBColor {
         };
 
         AdobeRGBColor{
-            r: gamma(clamp(r)),
-            g: gamma(clamp(g)),
-            b: gamma(clamp(b)),
+            r: gamma(clamp(rgb[0])),
+            g: gamma(clamp(rgb[1])),
+            b: gamma(clamp(rgb[2])),
         }
     }
     /// Converts from Adobe RGB to an XYZ color in a given illuminant (via chromatic adaptation).
@@ -60,12 +61,18 @@ impl Color for AdobeRGBColor {
         };
 
         // inverse matrix to the one in from_xyz
-        let x = 0.57667 * ungamma(self.r) + 0.18556 * ungamma(self.g) + 0.18823 * ungamma(self.b);
-        let y = 0.29734 * ungamma(self.r) + 0.62736 * ungamma(self.g) + 0.07529 * ungamma(self.b);
-        let z = 0.02703 * ungamma(self.r) + 0.07069 * ungamma(self.g) + 0.99134 * ungamma(self.b);
+        let xyz_vec = consts::inv(ADOBE_RGB()) * Vector3::new(
+            ungamma(self.r),
+            ungamma(self.g),
+            ungamma(self.b)
+        );
 
-        let xyz = XYZColor{x, y, z, illuminant: Illuminant::D65};
-        xyz.color_adapt(illuminant)
+        XYZColor{
+            x: xyz_vec[0],
+            y: xyz_vec[1],
+            z: xyz_vec[2],
+            illuminant: Illuminant::D65
+        }.color_adapt(illuminant)
     }
 }
 

@@ -1,11 +1,14 @@
+extern crate termion;
 extern crate csv;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 extern crate geo;
+extern crate nalgebra as na;
 
 
 pub mod coord;
+pub mod consts;
 pub mod illuminants;
 pub mod color;
 mod visual_gamut;

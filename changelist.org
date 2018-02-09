@@ -28,3 +28,5 @@
  - Added Euclidean distance
  - Added some more color convenience functions, no tests though!
  - Added imaginary gamut check and closest visible function, only test fails so doesn't really count!
+** February 8, 2018
+ - Added exact RGB stuff

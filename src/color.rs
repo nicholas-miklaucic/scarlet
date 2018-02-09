@@ -11,10 +11,15 @@ use super::coord::Coord;
 use illuminants::{Illuminant};
 use colors::cielabcolor::CIELABColor;
 use colors::cielchcolor::CIELCHColor;
+use consts::BRADFORD_TRANSFORM_MAT as BRADFORD;
+use consts::STANDARD_RGB_TRANSFORM_MAT as SRGB;
+use consts;
 
-extern crate termion;
-use self::termion::color::{Fg, Bg, Reset, Rgb};
 
+use termion::color::{Fg, Bg, Reset, Rgb};
+use na::{Vector3};
+
+//
 
 
 /// A point in the CIE 1931 XYZ color space. Although any point in XYZ coordinate space is technically
@@ -42,13 +47,6 @@ pub struct XYZColor {
 }
 
 impl XYZColor {
-    /// Transforms a given XYZ coordinate to the Bradford RGB space.
-    fn bradford_transform(xyz: [f64; 3]) -> [f64; 3] {
-        let r = 00.8951 * xyz[0] + 0.2664 * xyz[1] - 0.1614 * xyz[2];
-        let g = -0.7502 * xyz[0] + 1.7135 * xyz[1] + 0.0367 * xyz[2];
-        let b = 00.0389 * xyz[0] - 0.0685 * xyz[1] + 1.0296 * xyz[2];
-        [r, g, b]
-    }
     pub fn color_adapt(&self, other_illuminant: Illuminant) -> XYZColor {
         // no need to transform if same illuminant
         if other_illuminant == self.illuminant {
@@ -56,13 +54,13 @@ impl XYZColor {
         }
         else {
             // convert to Bradford RGB space
-            let rgb = XYZColor::bradford_transform([self.x, self.y, self.z]);
+            let rgb = BRADFORD() * Vector3::new(self.x, self.y, self.z);
 
             // get the RGB values for the white point of the illuminant we are currently using and
             // the one we want: wr here stands for "white reference", i.e., the one we're converting
             // to
-            let rgb_w = XYZColor::bradford_transform(self.illuminant.white_point());
-            let rgb_wr = XYZColor::bradford_transform(other_illuminant.white_point());
+            let rgb_w = BRADFORD() * Vector3::from_column_slice(&self.illuminant.white_point());
+            let rgb_wr = BRADFORD() * Vector3::from_column_slice(&other_illuminant.white_point());
 
             // perform the transform
             // this usually includes a parameter indicating how much you want to adapt, but it's
@@ -71,24 +69,24 @@ impl XYZColor {
             // because each white point has already been normalized to Y = 1, we don't need ap
             // factor for it, which simplifies calculation even more than setting D = 1 and makes it
             // just a linear transform
+            // scale by the ratio of luminance: it should always be 1, but with rounding error it
+            // isn't
             let r_c = rgb[0] * rgb_wr[0] / rgb_w[0];
-            let g_c = rgb[1] * rgb_wr[1] / rgb_w[1];
+            let g_c = rgb[1] * rgb_wr[1] / rgb_w[1]; 
             // there's a slight nonlinearity here that I will omit
-            let b_c = rgb[2] * (rgb_wr[2] / rgb_w[2]);
-
-            // convert back to XYZ using closer matrix inverse than before
-            let x_c = 00.986993 * r_c - 0.147054 * g_c + 0.159963 * b_c;
-            let y_c = 00.432305 * r_c + 0.518360 * g_c + 0.049291 * b_c;
-            let z_c = -0.008529 * r_c + 0.040043 * g_c + 0.968487 * b_c;
-            XYZColor{x: x_c, y: y_c, z: z_c, illuminant: other_illuminant}
+            let b_c = rgb[2] * rgb_wr[2] / rgb_w[2];
+            // convert back to XYZ using inverse of previous matrix
+            
+            let xyz_c = consts::inv(BRADFORD()) * Vector3::new(r_c, g_c, b_c);
+            XYZColor{x: xyz_c[0], y: xyz_c[1], z: xyz_c[2], illuminant: other_illuminant}
         }
     }
     /// Returns `true` if the given other XYZ color's coordinates are all within 0.001 of each other,
     /// which helps account for necessary floating-point errors in conversions.
     pub fn approx_equal(&self, other: &XYZColor) -> bool {
-        ((self.x - other.x).abs() <= 0.001 &&
-         (self.y - other.y).abs() <= 0.001 &&
-         (self.z - other.z).abs() <= 0.001)
+        ((self.x - other.x).abs() <= 1e-4 &&
+         (self.y - other.y).abs() <= 1e-4 &&
+         (self.z - other.z).abs() <= 1e-4)
     }
         
     /// Returns `true` if the given other XYZ color would look identically in a different color
@@ -154,7 +152,7 @@ pub trait Color: Sized {
     /// conception of hue. This uses the CIELCH version of hue. To use another one, simply convert and
     /// set it manually. If the given hue is not between 0 and 360, it is shifted in that range by
     /// adding multiples of 360.
-    fn set_hue(&self, new_hue: f64) -> Self where Self: Sized {
+    fn set_hue(&mut self, new_hue: f64) -> () {
         let mut lch: CIELCHColor = self.convert();
         lch.h = if new_hue >= 0.0 && new_hue <= 360.0 {
             new_hue
@@ -163,7 +161,7 @@ pub trait Color: Sized {
         } else {
             new_hue - 360.0 * (new_hue / 360.0).ceil()
         };
-        lch.convert()
+        *self = lch.convert();
     }
 
     /// Gets a perceptually-accurate version of lightness as a value from 0 to 100, where 0 is black
@@ -178,7 +176,7 @@ pub trait Color: Sized {
 
     /// Sets a perceptually-accurate version of lightness, which ranges between 0 and 100 for visible
     /// colors. Any values outside of this range will be clamped within it.
-    fn set_lightness(&self, new_lightness: f64) -> Self where Self: Sized {
+    fn set_lightness(&mut self, new_lightness: f64) -> () {
         let mut lab: CIELABColor = self.convert();
         lab.l = if new_lightness >= 0.0 && new_lightness <= 100.0 {
             new_lightness
@@ -187,7 +185,7 @@ pub trait Color: Sized {
         } else {
             100.0
         };
-        lab.convert()
+        *self = lab.convert()
     }
 
     /// Gets a perceptually-accurate version of *chroma*, defined as colorfulness relative to a
@@ -203,14 +201,14 @@ pub trait Color: Sized {
     /// below 0 will be clamped up to 0, but because the upper bound depends on the hue and
     /// lightness no clamping will be done. This means that this method has a higher chance than
     /// normal of producing imaginary colors and any output from this method should be checked.
-    fn set_chroma(&self, new_chroma: f64) -> Self where Self: Sized {
+    fn set_chroma(&mut self, new_chroma: f64) -> () {
         let mut lch: CIELCHColor = self.convert();
         lch.c = if new_chroma < 0.0 {
             0.0
         } else {
             new_chroma
         };
-        lch.convert()
+        *self = lch.convert();
     }
 
     /// Gets a perceptually-accurate version of *saturation*, defined as chroma relative to
@@ -233,14 +231,14 @@ pub trait Color: Sized {
     /// lightness. Any negative value will be clamped to 0, but because the maximum saturation is not
     /// well-defined any positive value will be used as is: this means that this method is more likely
     /// than others to produce imaginary colors. Uses the CIELCH color space.
-    fn set_saturation(&self, new_sat: f64) -> Self where Self: Sized {
+    fn set_saturation(&mut self, new_sat: f64) -> () {
         let mut lch: CIELCHColor = self.convert();
         lch.c = if new_sat < 0.0 {
             0.0
         } else {
             new_sat * lch.l
         };
-        lch.convert()
+        *self = lch.convert();
     }
 
     /// Returns a new Color of the same type as before, but with chromaticity removed: effectively,
@@ -248,7 +246,9 @@ pub trait Color: Sized {
     /// before. This uses the CIELAB luminance definition, which is considered a good standard and is
     /// perceptually accurate for the most part.
     fn grayscale(&self) -> Self where Self: Sized {
-        self.set_chroma(0.0)
+        let mut lch: CIELCHColor = self.convert();
+        lch.c = 0.0;
+        lch.convert()
     }
     
     /// Returns a metric of the distance between the given color and another that attempts to
@@ -372,35 +372,91 @@ impl Color for XYZColor {
     }
 }
 
-#[derive(Debug, Copy, Clone, Eq)]
+#[derive(Debug, Copy, Clone)]
+/// A color with red, green, and blue primaries of specified intensity, specifically in the sRGB
+/// gamut: most computer screens use this to display colors. The attributes `r`, `g`, and `b` are
+/// floating-point numbers from 0 to 1 for visible colors, allowing the avoidance of rounding errors
+/// or clamping errors when converting to and from RGB. Many conveniences are afforded so that working
+/// with RGB as if it were instead three integers from 0-255 is painless. Note that the integers
+/// generated from the underlying floating-point numbers round away from 0.
 pub struct RGBColor {
-    pub r: u8,
-    pub g: u8,
-    pub b: u8,
+    // The red component. Ranges from 0 to 1 for numbers displayable by sRGB machines.
+    pub r: f64,
+    // The green component. Ranges from 0 to 1 for numbers displayable by sRGB machines.
+    pub g: f64,
+    // The blue component. Ranges from 0 to 1 for numbers displayable by sRGB machines.
+    pub b: f64,
     // TODO: add exact unclamped versions of each of these
 }
     
 impl RGBColor {
+    /// Gets an 8-byte version of the red component, as a `u8`. Clamps values outside of the range 0-1
+    /// and discretizes, so this may not correspond to the exact values kept internally.
+    pub fn int_r(&self) -> u8 {
+        // first clamp, then multiply by 255, round, and discretize
+        if self.r < 0.0 {
+            0_u8
+        } else if self.r > 1.0 {
+            255_u8
+        } else {
+            (self.r * 255.0).round() as u8
+        }
+    }
+    /// Gets an 8-byte version of the green component, as a `u8`. Clamps values outside of the range 0-1
+    /// and discretizes, so this may not correspond to the exact values kept internally.
+    pub fn int_g(&self) -> u8 {
+        // first clamp, then multiply by 255, round, and discretize
+        if self.g < 0.0 {
+            0_u8
+        } else if self.g > 1.0 {
+            255_u8
+        } else {
+            (self.g * 255.0).round() as u8
+        }
+    }
+    /// Gets an 8-byte version of the blue component, as a `u8`. Clamps values outside of the range 0-1
+    /// and discretizes, so this may not correspond to the exact values kept internally.
+    pub fn int_b(&self) -> u8 {
+        // first clamp, then multiply by 255, round, and discretize
+        if self.b < 0.0 {
+            0_u8
+        } else if self.b > 1.0 {
+            255_u8
+        } else {
+            (self.b * 255.0).round() as u8
+        }
+    }
+    /// Purely for convenience: gives a tuple with the three integer versions of the components. Used
+    /// over standard conversion traits to avoid ambiguous operations.
+    pub fn int_rgb_tup(&self) -> (u8, u8, u8) {
+        (self.int_r(), self.int_g(), self.int_b())
+    }
+
+    /// Purely for convenience: gives a slice with the three integer versions of the components. Used
+    /// over standard conversion traits to avoid ambiguous operations.
+    pub fn int_rgb(&self) -> [u8; 3] {
+        [self.int_r(), self.int_g(), self.int_b()]
+    }
+    
     /// Given a string, returns that string wrapped in codes that will color the foreground. Used for
     /// the trait implementation of write_colored_str, which should be used instead.
-    fn base_write_colored_str(&self, text: &str) -> String {
+    pub fn base_write_colored_str(&self, text: &str) -> String {
         format!("{code}{text}{reset}",
-                code=Fg(Rgb(self.r, self.g, self.b)),
+                code=Fg(Rgb(self.int_r(), self.int_g(), self.int_b())),
                 text=text,
                 reset=Fg(Reset)
         )
     }
-    fn base_write_color(&self) -> String {
+    pub fn base_write_color(&self) -> String {
         format!("{bg}{fg}{text}{reset_fg}{reset_bg}",
-                bg=Bg(Rgb(self.r, self.g, self.b)),
-                fg=Fg(Rgb(self.r, self.g, self.b)),
+                bg=Bg(Rgb(self.int_r(), self.int_g(), self.int_b())),
+                fg=Fg(Rgb(self.int_r(), self.int_g(), self.int_b())),
                 text="■",
                 reset_fg=Fg(Reset),
                 reset_bg=Bg(Reset),
         )
     }
 }
-// TODO: get RGB from string
 
 impl PartialEq for RGBColor {
     fn eq(&self, other: &RGBColor) -> bool {
@@ -412,19 +468,33 @@ impl PartialEq for RGBColor {
 impl From<(u8, u8, u8)> for RGBColor {
     fn from(rgb: (u8, u8, u8)) -> RGBColor {
         let (r, g, b) = rgb;
-        RGBColor{r, g, b}
+        RGBColor{r: r as f64 / 255.0,
+                 g: g as f64 / 255.0,
+                 b: b as f64 / 255.0}
     }
 }
 
 impl Into<(u8, u8, u8)> for RGBColor {
     fn into(self) -> (u8, u8, u8) {
-        (self.r, self.g, self.b)
+        (self.int_r(), self.int_g(), self.int_b())
+    }
+}
+
+impl From<Coord> for RGBColor {
+    fn from(c: Coord) -> RGBColor {
+        RGBColor{r: c.x, g: c.y, b: c.z}
+    }
+}
+
+impl Into<Coord> for RGBColor {
+    fn into(self) -> Coord {
+        Coord{x: self.r, y: self.g, z: self.b}
     }
 }
 
 impl ToString for RGBColor {
     fn to_string(&self) -> String {
-        format!("#{:02X}{:02X}{:02X}", self.r, self.g, self.b)
+        format!("#{:02X}{:02X}{:02X}", self.int_r(), self.int_g(), self.int_b())
     }
 }
 
@@ -435,10 +505,7 @@ impl Color for RGBColor {
         // first, get linear RGB values (i.e., without gamma correction)
         // https://en.wikipedia.org/wiki/SRGB#Specification_of_the_transformation
 
-        // note how the diagonals are large: X, Y, Z, roughly equivalent to R, G, B
-        let rgb_lin_vec = vec![3.2406 * xyz_d65.x - 1.5372 * xyz_d65.y - 0.4986 * xyz_d65.z,
-                               -0.9689 * xyz_d65.x + 1.8758 * xyz_d65.y + 0.0415 * xyz_d65.z,
-                               0.0557 * xyz_d65.x - 0.2040 * xyz_d65.y + 1.0570 * xyz_d65.z];
+        let lin_rgb_vec = SRGB() * Vector3::new(xyz_d65.x, xyz_d65.y, xyz_d65.z);
         // now we scale for gamma correction
         let gamma_correct = |x: &f64| {
             if x <= &0.0031308 {
@@ -448,31 +515,15 @@ impl Color for RGBColor {
                 &1.055 * x.powf(&1.0 / &2.4) - &0.055
             }
         };
-        let float_vec:Vec<f64> = rgb_lin_vec.iter().map(gamma_correct).collect();
-        // now rescale between 0 and 255 and cast to integers
-        // TODO: deal with clamping and exact values
-        // we're going to clamp values to between 0 and 255
-        let clamp = |x: &f64| {
-            if *x >= 1.0 {
-                1.0
-            } else if *x <= 0.0 {
-                0.0
-            } else {
-                *x
-            }
-        };
-        let rgb:Vec<u8> = float_vec.iter().map(clamp).map(|x| (x * 255.0).round() as u8).collect();
-        
+        let float_vec:Vec<f64> = lin_rgb_vec.iter().map(gamma_correct).collect();        
         RGBColor {
-            r: rgb[0],
-            g: rgb[1],
-            b: rgb[2]
+            r: float_vec[0],
+            g: float_vec[1],
+            b: float_vec[2]
         }
     }
 
     fn to_xyz(&self, illuminant: Illuminant) -> XYZColor {
-        // scale from 0 to 1 instead
-        // TODO: use exact values here?
         let uncorrect_gamma = |x: &f64| {
             if x <= &0.04045 {
                 x / &12.92
@@ -481,17 +532,19 @@ impl Color for RGBColor {
                 ((x + &0.055) / &1.055).powf(2.4)
             }
         };
-        let scaled_vec: Vec<f64> = vec![self.r, self.g, self.b].iter().map(|x| (*x as f64) / 255.0).collect();
-        let rgb_vec: Vec<f64> = scaled_vec.iter().map(uncorrect_gamma).collect();
+        let rgb_vec = Vector3::from_iterator([self.r, self.g, self.b].iter().map(uncorrect_gamma));
 
-        // essentially the inverse of the above matrix multiplication
-        let x = 0.4124 * rgb_vec[0] + 0.3576 * rgb_vec[1] + 0.1805 * rgb_vec[2];
-        let y = 0.2126 * rgb_vec[0] + 0.7152 * rgb_vec[1] + 0.0722 * rgb_vec[2];
-        let z = 0.0193 * rgb_vec[0] + 0.1192 * rgb_vec[1] + 0.9505 * rgb_vec[2];
-
+        // invert the matrix multiplication used in from_xyz()
+        let xyz_vec = consts::inv(SRGB()) * rgb_vec;
+        
         // sRGB, which this is based on, uses D65 as white, but you can convert to whatever
         // illuminant is specified
-        let converted = XYZColor{x, y, z, illuminant: Illuminant::D65};
+        let converted = XYZColor{
+            x: xyz_vec[0],
+            y: xyz_vec[1],
+            z: xyz_vec[2],
+            illuminant: Illuminant::D65
+        };
         converted.color_adapt(illuminant)        
     }
 }
@@ -542,7 +595,7 @@ impl RGBColor {
                     // return an OutOfRangeError
                     rgb.push(u8::from_str_radix(chars.drain(..2).collect::<String>().as_str(), 16).unwrap());
                 }
-                Ok(RGBColor{r: rgb[0], g: rgb[1], b: rgb[2]})
+                Ok(RGBColor::from((rgb[0], rgb[1], rgb[2])))
             }
             else { // len must be 3 from earlier
                 let mut rgb: Vec<u8> = Vec::new();
@@ -552,7 +605,7 @@ impl RGBColor {
                     let c: Vec<char> = chars.drain(..1).collect();
                     rgb.push(u8::from_str_radix(c.iter().chain(c.iter()).collect::<String>().as_str(), 16).unwrap());
                 }
-                Ok(RGBColor{r: rgb[0], g: rgb[1], b: rgb[2]})
+                Ok(RGBColor::from((rgb[0], rgb[1], rgb[2])))                   
             }
         }
     }
@@ -682,16 +735,6 @@ impl Mix for XYZColor {
     }
 }
 
-impl Mix for RGBColor {
-    fn mix(self, other: RGBColor) -> RGBColor {
-        let (r1, g1, b1) = self.into();
-        let (r2, g2, b2) = other.into();
-        let (r, g, b) = (((r1 as u16 + r2 as u16) / 2) as u8,
-                         ((g1 as u16 + g2 as u16) / 2) as u8,
-                         ((b1 as u16 + b2 as u16) / 2) as u8);
-        RGBColor{r, g, b}
-    }
-}
 
 #[cfg(test)]
 mod tests {
@@ -706,7 +749,7 @@ mod tests {
             let r = i * 16;
             for j in 0..8 {
                 let g = j * 16;
-                line.push_str(RGBColor{r, g, b}.write_colored_str("■").as_str());                
+                line.push_str(RGBColor::from((r, g, b)).write_colored_str("■").as_str());                
             }
             println!("{}", line);        }
     }
@@ -715,14 +758,14 @@ mod tests {
     fn xyz_to_rgb() {
         let xyz = XYZColor{x: 0.41874, y: 0.21967, z: 0.05649, illuminant: Illuminant::D65};
         let rgb: RGBColor = xyz.convert();
-        assert_eq!(rgb.r, 254);
-        assert_eq!(rgb.g, 23);
-        assert_eq!(rgb.b, 55);
+        assert_eq!(rgb.int_r(), 254);
+        assert_eq!(rgb.int_g(), 23);
+        assert_eq!(rgb.int_b(), 55);
     }
 
     #[test]
     fn rgb_to_xyz() {
-        let rgb = RGBColor{r: 45, g: 28, b: 156};
+        let rgb = RGBColor::from((45, 28, 156));
         let xyz: XYZColor = rgb.to_xyz(Illuminant::D65);
         // these won't match exactly cuz floats, so I just check within a margin
         assert!((xyz.x - 0.0750).abs() <= 0.01);
@@ -747,9 +790,9 @@ mod tests {
     }
     #[test]
     fn test_rgb_to_string() {
-        let c1 = RGBColor{r: 0, g: 0, b: 0};
-        let c2 = RGBColor{r: 244, g: 182, b: 33};
-        let c3 = RGBColor{r: 0, g: 255, b: 0};
+        let c1 = RGBColor::from((0, 0, 0));
+        let c2 = RGBColor::from((244, 182, 33));
+        let c3 = RGBColor::from((0, 255, 0));
         assert_eq!(c1.to_string(), "#000000");
         assert_eq!(c2.to_string(), "#F4B621");
         assert_eq!(c3.to_string(), "#00FF00");
@@ -759,9 +802,10 @@ mod tests {
         let c1 = RGBColor::from((0, 0, 255));
         let c2 = RGBColor::from((255, 0, 1));
         let c3 = RGBColor::from((127, 7, 19));
-        assert_eq!(c1.mix(c2).to_string(), "#7F0080");
-        assert_eq!(c1.mix(c3).to_string(), "#3F0389");
-        assert_eq!(c2.mix(c3).to_string(), "#BF030A");
+        // testing rounding away from 0
+        assert_eq!(c1.mix(c2).to_string(), "#800080");
+        assert_eq!(c1.mix(c3).to_string(), "#400489");
+        assert_eq!(c2.mix(c3).to_string(), "#BF040A");
     }
     #[test]
     fn test_mix_xyz() {
@@ -788,11 +832,25 @@ mod tests {
         assert!((c3.z - c2.z).abs() <= 0.01);
     }
     #[test]
+    fn test_error_buildup_color_adaptation() {
+        // this is essentially just seeing how consistent the inverse function is for the Bradford
+        // transform
+        let xyz = XYZColor{x: 0.5, y: 0.4, z: 0.6, illuminant: Illuminant::D65};
+        let mut xyz2;
+        const MAX_ITERS_UNTIL_UNACCEPTABLE_ERROR: usize = 100;
+        for i in 0..MAX_ITERS_UNTIL_UNACCEPTABLE_ERROR {
+            let lum = [Illuminant::D50, Illuminant::D55, Illuminant::D65, Illuminant::D75][i % 4];
+            xyz2 = xyz.color_adapt(lum);
+            assert!(xyz2.approx_visually_equal(&xyz));
+        }        
+    }
+    #[test]
     fn test_chromatic_adapation_to_same_light() {
         let xyz = XYZColor{x: 0.4, y: 0.6, z: 0.2, illuminant: Illuminant::D65};
         let xyz2 = xyz.color_adapt(Illuminant::D65);
         assert_eq!(xyz, xyz2);
     }
+    
     #[test]
     fn fun_color_adaptation_demo() {
         println!();
@@ -841,14 +899,14 @@ mod tests {
     fn test_rgb_from_hex() {
         // test rgb format
         let rgb = RGBColor::from_hex_code("#172844").unwrap();
-        assert_eq!(rgb.r, 23);
-        assert_eq!(rgb.g, 40);
-        assert_eq!(rgb.b, 68);
+        assert_eq!(rgb.int_r(), 23);
+        assert_eq!(rgb.int_g(), 40);
+        assert_eq!(rgb.int_b(), 68);
         // test with letters and no hex
         let rgb = RGBColor::from_hex_code("a1F1dB").unwrap();
-        assert_eq!(rgb.r, 161);
-        assert_eq!(rgb.g, 241);
-        assert_eq!(rgb.b, 219);
+        assert_eq!(rgb.int_r(), 161);
+        assert_eq!(rgb.int_g(), 241);
+        assert_eq!(rgb.int_b(), 219);
         // test for error if 7 chars
         let rgb = RGBColor::from_hex_code("#1244444");
         assert!(match rgb {
@@ -865,9 +923,9 @@ mod tests {
     #[test]
     fn test_rgb_from_name() {
         let rgb = RGBColor::from_color_name("yeLlowgreEn").unwrap();
-        assert_eq!(rgb.r, 154);
-        assert_eq!(rgb.g, 205);
-        assert_eq!(rgb.b, 50);
+        assert_eq!(rgb.int_r(), 154);
+        assert_eq!(rgb.int_g(), 205);
+        assert_eq!(rgb.int_b(), 50);
         // test error
         let rgb = RGBColor::from_color_name("thisisnotavalidnamelol");
         assert!(match rgb {
@@ -927,13 +985,47 @@ mod tests {
         }
     }
     #[test]
-    fn test_hue() {
-        let rgb1 = RGBColor::from_hex_code("#1866aa").unwrap();        
-        let xyz1: XYZColor = rgb1.convert();
-        println!("{:?}", (xyz1.x, xyz1.y, xyz1.z));
-        println!("{} {} {}", rgb1.lightness(), rgb1.chroma(), rgb1.hue());
-        assert!((rgb1.hue() - 273.767).abs() <= 1e-4);
-        let rgb2 = rgb1.set_hue(318.92);
-        assert_eq!(rgb2.to_string(), "#815092");
+    fn test_hue_chroma_lightness_saturation() {
+        let mut rgb;
+        let mut rgb2;
+        for code in ["#12000D", "#FAFA22", "#FF0000", "#0000FF", "#FF0FDF", "#2266AA",
+                     "#001200", "#FFAAFF", "#003462", "#466223", "#AAFFBC"].iter() {
+
+            // hue
+            rgb = RGBColor::from_hex_code(code).unwrap();
+            let h = rgb.hue();
+            rgb.set_hue(345.0);
+            assert!((rgb.hue() - 345.0).abs() <= 1e-4);
+            rgb2 = rgb;
+            rgb2.set_hue(h);
+            assert_eq!(rgb2.to_string(), String::from(*code));
+
+            // chroma
+            rgb = RGBColor::from_hex_code(code).unwrap();
+            let c = rgb.chroma();
+            rgb.set_chroma(45.0);
+            assert!((rgb.chroma() - 45.0).abs() <= 1e-4);
+            rgb2 = rgb;
+            rgb2.set_chroma(c);
+            assert_eq!(rgb2.to_string(), String::from(*code));
+
+            // lightness
+            rgb = RGBColor::from_hex_code(code).unwrap();
+            let l = rgb.lightness();
+            rgb.set_lightness(23.0);
+            assert!((rgb.lightness() - 23.0).abs() <= 1e-4);
+            rgb2 = rgb;
+            rgb2.set_lightness(l);
+            assert_eq!(rgb2.to_string(), String::from(*code));
+
+            // saturation
+            rgb = RGBColor::from_hex_code(code).unwrap();
+            let s = rgb.saturation();
+            rgb.set_saturation(0.4);
+            assert!((rgb.saturation() - 0.4).abs() <= 1e-4);
+            rgb2 = rgb;
+            rgb2.set_saturation(s);
+            assert_eq!(rgb2.to_string(), String::from(*code));
+        }
     }
 }
