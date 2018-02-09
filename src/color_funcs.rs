@@ -140,6 +140,29 @@ pub trait ColorPoint : Color + Into<Coord> + From<Coord> + Clone + Copy {
             self_luv.convert()
         }
     }
+
+    /// Returns a Vector of colors that starts with this color, ends with the given other color, and
+    /// evenly transitions between colors. The given `n` is the number of additional colors to add.
+    fn gradient_scale(&self, other: &Self, n: usize) -> Vec<Self> {
+        let mut grad_scale = Vec::new();
+        // n + 2 total colors: scale this range to [0, 1] inside the loop
+        for i in 0..n+2 {
+            let weight = i as f64 / (n + 1) as f64;
+            grad_scale.push((*other).weighted_midpoint(*self, weight));
+        }
+        grad_scale
+    }
+
+    /// Returns a pointer to a function that maps floating-point values from 0 to 1 to colors, such
+    /// that 0 returns `self`, 1 returns `other`, and anything in between returns a mix. Although it
+    /// is possible to extrapolate outside of the range [0, 1], this is not a guarantee and may change
+    /// without warning.
+    fn gradient(&self, other: &Self) -> Box<Fn(f64) -> Self> {
+        let c1: Coord = (*self).into();
+        let c2: Coord = (*other).into();
+        println!("{:?}, {:?}", c1, c2);
+        Box::new(move |x| Self::from(c2.weighted_midpoint(&c1, x)))
+    }
 }    
 
     
@@ -153,6 +176,7 @@ mod tests {
     #[allow(unused_imports)]
     use super::*;
     use colors::cielabcolor::CIELABColor;
+    use color::RGBColor;
 
     #[test]
     fn test_cielab_distance() {
@@ -161,5 +185,24 @@ mod tests {
         let lab2 = CIELABColor{l: 54.2, a: 65.0, b: 100.0};
         println!("{}", lab1.euclidean_distance(lab2));
         assert!((lab1.euclidean_distance(lab2) - 132.70150715).abs() <= 1e-7);
+    }
+    #[test]
+    fn test_grad_scale() {
+        let start = RGBColor::from_hex_code("#11457c").unwrap();
+        let end = RGBColor::from_hex_code("#774bdc").unwrap();
+        let grad_hexes: Vec<String> = start.gradient_scale(&end, 5).iter()
+            .map(|x| x.to_string())
+            .collect();
+        assert_eq!(grad_hexes, vec!["#11457C", "#22468C", "#33479C", "#4448AC", "#5549BC",
+                                    "#664ACC", "#774BDC"]);
+    }
+    #[test]
+    fn test_grad_func() {
+        let start = RGBColor::from_hex_code("#11457c").unwrap();
+        let end = RGBColor::from_hex_code("#774bdc").unwrap();
+        let grad = start.gradient(&end);
+        assert_eq!(grad(1.).to_string(), "#774BDC");
+        assert_eq!(grad(0.).to_string(), "#11457C");
+        assert_eq!(grad(2. / 6.).to_string(), "#33479C");
     }
 }
