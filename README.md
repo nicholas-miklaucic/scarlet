@@ -31,7 +31,9 @@ The gist of it is:
    unless you have a really good reason!
  * If you make changes to the public-facing API, you should make sure that those changes are
    consistent with best practices and explain why you feel the API should change.
- * If you make performance improvements to code that already works
+ * If you make performance improvements to code that already works, benchmark the change with test
+   code that does things users would want to do and publish the results showing that your
+   improvement actually improved something.
  * If you add new functionality, you should have test cases that thoroughly test that
    functionality.
 
