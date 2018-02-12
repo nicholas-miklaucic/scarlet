@@ -34,4 +34,4 @@ The gist of it is:
    functionality.
 
 ## General Philosophy
-To look at the general philosophy and API design of Scarlet, please look at `api.md`.
+To look at the general philosophy and API design of Scarlet, please look at `api.org`.
