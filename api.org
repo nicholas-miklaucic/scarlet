@@ -1,33 +1,113 @@
-* The Color Structs: API Design Notes
+* Scarlet API Design and Philosophy
 ** On Type Conversion
-Type conversion in Rust is very nice, because there's a design pattern for it built into the
-standard library, ~std::convert::From~ and its brethren. The basic idea is simple: there is a base
-trait ~Color~ that all color structs need to implement. The implementation of ~Color~ requires a way of
-converting to and from the ~BaseColor~ struct.
+Type conversion is usually done using the ~From~ trait in the standard library. There's a problem with
+using this for Scarlet, however: implementing ~From~ generically causes conflicts, because there's a
+default implementation for any given color to itself, which gets overridden. (Eventually,
+specialization will be a stable feature and ~From~ may be usable instead.) The ~convert~ method is used
+instead: a generic method of the ~Color~ trait, already implemented, that converts a color to any
+other given color type. Type inference allows you to sometimes avoid having to specify which type,
+but as with ~collect()~ in the standard library the "turbofish" is often required. Both of these
+examples will work with an ~XYZColor~ called ~xyz~: 
+ - ~let rgb: RGBColor = xyz.convert();~
+ - ~let rgb = xyz.convert::<RGBColor>();~
 
-There's a problem with interconversion between colorspaces: they all represent different subsets of
-the full gamut of human visual perception. The best solution to this issue is to have any color
-gamut that is not as large as the master space have exact versions of each of its attributes, so an
-example ~RGBColor~ might have ~color.r~ and ~color.exact_r~: the former is an integer from 0 to 255, and the
-latter is a float with a larger range of values. This allows for the user to choose whether to take
-on the extra complexity of dealing with gamuts, rather than be forced to deal with gamuts
-everywhere, even in situations where it's not a problem. This also prevents any errors being thrown
-by conversions, which is a requirement of ~From~.
+Unlike some other APIs that involve many different representations of the same thing, the philosophy
+behind Scarlet is instead that /explicit type conversion should be rare./ The reason for this is
+simple: color spaces are hard. Scarlet's implementations of color conversion algorithms are
+extremely useful, and it is often very hard to find libraries that implement them correctly, but a
+major part of Scarlet's intended use cases involve users who may not want to deal with the nuances
+they require. Changing gamuts, illuminants, etc., are all things that designers and UI creators may
+not want to deal with, and so Scarlet's goal is to hide as much of that from the user.
+
+This means that most conversions are implicit, used for the implementation of higher-level
+ideas. With that comes a very important problem: floating-point arithmetic can induce errors, and so
+implicit conversions run the risk of introducing errors that are nearly impossible to
+foresee. Scarlet fixes this by aggressively removing sources of error where they appear. Most
+notably, unlike most other conversion libraries, Scarlet computes the inverses of transformation
+matrices to as much precision as possible, not simply using tabulated values to 4 decimal
+points. This means that a conversion to and from a color space, one that should not modify the
+original at all, is guaranteed to be correct to 4 decimal places even when repeated hundreds of
+times. (The current test suite flags any conversion that isn't precise to 10 decimal points.)
+
+This allows for people with little knowledge of color spaces to work with spaces like RGB as if they
+had the perceptual uniformity, color appearance parameters, and accuracy of more complex spaces like
+CIELCH or CIELUV.
+** Encouraging Correctness Without Costs
+This brings us to one of the foundational point of Scarlet's philosophy: /doing the right thing
+should be the easiest thing./ Take an example: if you read in an RGB color, there are many different
+approaches to determining how light it is. Most of the commonly-used calculations for RGB aren't
+very good: the highest component, the sum of the components, etc., all have significant issues that
+can cause strange and incorrect results. The standard ~.lightness()~ method, however, uses CIELAB's
+lightness function, which is not perfect but much better than any of these methods. This comes with
+a very limited runtime cost, and is more than made up for its increased accuracy to human
+vision. This is the central design ethos, and one that very much aligns with Rust: make doing the
+perceptually-accurate thing easier than the alternative.
 ** Basic Structure
+This section will get a bit more technical, as it describes the API on a more fine-grained level.
+
 The master color space in which every other color is defined is the [[https://en.wikipedia.org/wiki/CIE_1931_color_space][CIE 1931 XYZ]] color space with
-the CIE standard observer. This is the "lowest-level" in the sense of being fairly close to LMS cone
-responses. Note that this space is rather unwieldy: it's not perceptually uniform, it doesn't
-accurately represent how computers display color, and it doesn't really have too many other useful
-properties. However, we can go between it and every other space in a well-defined manner, which is
-what we want. Conversions between colors all go through this space: it's a common "language" to
-every color representation I will use.
+the CIE standard observer. This is the "lowest-level" in the sense of being fairly close to actual
+physical cone responses. Note that this space is rather unwieldy: it's not perceptually uniform, it
+doesn't accurately represent how computers display color, and it doesn't really have too many other
+useful properties. However, we can go between it and every other space in a well-defined manner,
+which is what we want. Conversions between colors all go through this space: it's a common
+"language" to every color representation Scarlet has. Some XYZ color implementations are normalized
+so that Y = 100 represents white, but here it's 1 to align with other color spaces. Note that that
+isn't a bound, it's just the value of Y for white: many colors have values outside of this range in
+one or more axes.
 
 Each Color type first implements the trait ~Color~, which has two functions that convert to and from
-~XYZColor~. There's a really annoying design problem here, in that you're literally one type away from
-being able to get automatic conversions between each Color: you could implement a generic version of
-~From<T> for U~, where ~T: Color~ and ~U: Color~, but if ~T~ is ~U~ this is already implemented. It isn't a
-big problem, because all we have to do is just use named functions instead, but it'd be nicer the
-other way.
+~XYZColor~. This, in turn, allows conversion to and from any other color, the ~convert~
+method. Conversion is the backbone of most higher-level methods to do with color, so it's worth
+emphasizing.
 
-When specialization becomes part of Rust (RFC 1210), this will actually work!
+Conversion allows the other ~Color~ methods to essentially pick and choose from the best of each color
+space. From ~CIELCH~, we get definitions for lightness, chroma, hue, and saturation that are analogous
+to something like ~HSL~ but perceptually accurate. From ~RGB~ we get printing colors to the terminal,
+even wide-gamut monitors. From ~CIELAB~ we get a space that is close to being perceptually uniform,
+and serves as a springboard for implementing a more accurate function for color difference.
 
+Many color functions rely on /embedding/ colors in 3-D space: treating them as points and then working
+with them geometrically. The ~ColorPoint~ trait provides functions that deal with colors that can be
+embedded meaningfully, providing methods such as getting a color in between two other colors,
+generating gradients, or finding the closest analog to the color in a different gamut. This trait is
+implemented for all of the standard colors Scarlet defines, and it inherits directly from
+composition of other traits. These traits are: ~Clone~ and ~Copy~ (points shouldn't have data outside of
+their 3D location), ~Color~ (obviously), and ~From~ and ~Into~ a type called ~Coord~. ~Coord~ is essentially a
+point in 3D space, with added methods that allow addition, subtraction, scalar multiplication, and
+more.
+** Illuminants
+Something not very common in discussions about color or libraries that deal with it but still very
+important is the idea of a /lighting environment./ For reflecting colors (not lights, but things that
+require a light source to be seen), the exact type of light being used changes how the color is
+viewed. Conversions that fail to deal with these are often very inaccurate, a problem which plagues
+any web implementations of these color spaces.
+
+Here again, Scarlet makes a distinction between a /master/ and /derived/ space. The CIE 1931 XYZ color
+system maps directly to the physiological response humans have to color, regardless of viewing
+conditions. The problem with using this in everyday work is that, in different lighting, colors that
+produce different responses in our eyes are nontheless processed as equivalent: walking outside
+doesn't cause someone to think that your face is turning blue!
+
+Thus, the ~XYZColor~ struct keeps track of illuminant data, via its ~illuminant~ attribute, which maps
+to an enum that contains data on some of the more common standardized illuminants along with a
+method of using custom illuminants. Derived color spaces usually define viewing conditions and the
+lighting environment they are designed for: for instance, the sRGB system that your computer is most
+likely using right now assumes an illuminant with a color temperature of roughly 6500 K. Even if
+this isn't actually accurate, it nontheless helps with color constancy across different media.
+
+Derived spaces, therefore, usually don't have associated illuminants. This models how most people
+think of color spaces like RGB: they define the color of an object in some manner that is
+independent of lighting conditions.
+
+The astute reader might wonder how conversion is done if conversion to XYZ requires an
+illuminant. The answer is that Scarlet currently uses D50 for all such conversions. This is, to be
+clear, inconsequential if implemented correctly, as it is immediately converted back into a derived
+space. (Using the ~to_xyz~ method explicitly allows you to control which illuminant is used, if it is
+important.) D50 is also specified as implicit for any derived space that doesn't have an explicitly
+defined lighting environment, such as CIELAB.
+
+The trickiest thing about illuminants is answering a fairly basic question: how would an object look
+in a different lighting environment. Answering this question is called /chromatic adaptation/, and it
+is highly complex and nontrivial. Scarlet uses one of the leading algorithms, called a /Bradford
+transform/: other libraries may use different ones and so contradict Scarlet's output.

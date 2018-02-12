@@ -32,3 +32,6 @@ The gist of it is:
  * If you make performance improvements to code that already works
  * If you add new functionality, you should have test cases that thoroughly test that
    functionality.
+
+## General Philosophy
+To look at the general philosophy and API design of Scarlet, please look at `api.md`.
