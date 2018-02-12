@@ -24,7 +24,6 @@ pub struct CIELCHuvColor {
     pub h: f64,
 }
 
-
 impl Color for CIELCHuvColor {
     /// Converts from XYZ to CIELCHuv through CIELUV.
     fn from_xyz(xyz: XYZColor) -> CIELCHuvColor {
@@ -34,26 +33,34 @@ impl Color for CIELCHuvColor {
         // compute c and h using f64 methods
         let h = luv.v.atan2(luv.u);
         let c = luv.v.hypot(luv.u);
-        CIELCHuvColor{l: luv.l, c, h}
+        CIELCHuvColor { l: luv.l, c, h }
     }
     /// Gets the XYZ color that corresponds to this one, through CIELUV.
     fn to_xyz(&self, illuminant: Illuminant) -> XYZColor {
         // go through CIELUV
         let u = self.c * self.h.cos();
         let v = self.c * self.h.sin();
-        CIELUVColor{l: self.l, u, v}.to_xyz(illuminant)
-    }        
+        CIELUVColor { l: self.l, u, v }.to_xyz(illuminant)
+    }
 }
 
 impl From<Coord> for CIELCHuvColor {
     fn from(c: Coord) -> CIELCHuvColor {
-        CIELCHuvColor{l: c.x, c: c.y, h: c.z}
+        CIELCHuvColor {
+            l: c.x,
+            c: c.y,
+            h: c.z,
+        }
     }
 }
 
 impl Into<Coord> for CIELCHuvColor {
     fn into(self) -> Coord {
-        Coord{x: self.l, y: self.c, z: self.h}
+        Coord {
+            x: self.l,
+            y: self.c,
+            z: self.h,
+        }
     }
 }
 
@@ -65,7 +72,12 @@ mod tests {
 
     #[test]
     fn test_cielchuv_xyz_conversion_d50() {
-        let xyz = XYZColor{x: 0.4, y: 0.6, z: 0.2, illuminant: Illuminant::D50};
+        let xyz = XYZColor {
+            x: 0.4,
+            y: 0.6,
+            z: 0.2,
+            illuminant: Illuminant::D50,
+        };
         let lchuv: CIELCHuvColor = xyz.convert();
         let xyz2: XYZColor = lchuv.convert();
         assert!(xyz.approx_visually_equal(&xyz2));
@@ -73,7 +85,12 @@ mod tests {
 
     #[test]
     fn test_cielchuv_xyz_conversion_d65() {
-        let xyz = XYZColor{x: 0.4, y: 0.6, z: 0.2, illuminant: Illuminant::D65};
+        let xyz = XYZColor {
+            x: 0.4,
+            y: 0.6,
+            z: 0.2,
+            illuminant: Illuminant::D65,
+        };
         let lchuv: CIELCHuvColor = xyz.convert();
         let xyz2: XYZColor = lchuv.convert();
         assert!(xyz.approx_visually_equal(&xyz2));
@@ -81,8 +98,16 @@ mod tests {
 
     #[test]
     fn test_cielchuv_xyz_mixing() {
-        let lch = CIELCHuvColor{l: 50.0, c: 45.0, h: 27.0};
-        let lch2 = CIELCHuvColor{l: 70.0, c: 25.0, h: 127.0};
+        let lch = CIELCHuvColor {
+            l: 50.0,
+            c: 45.0,
+            h: 27.0,
+        };
+        let lch2 = CIELCHuvColor {
+            l: 70.0,
+            c: 25.0,
+            h: 127.0,
+        };
         let lch3 = lch.mix(lch2);
         assert!((lch3.l - 60.0).abs() <= 1e-7);
         assert!((lch3.c - 35.0).abs() <= 1e-7);

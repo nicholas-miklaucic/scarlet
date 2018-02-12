@@ -3,7 +3,7 @@
 //! standard](https://www.astm.org/Standards/E308.htm). The only one I could find available freely was
 //! the outdated E308-01 standard, but these values should be the same: they're both copied
 //! photographically from the CIE standard itself. These are normalized so that the Y (luminance)
-//! value is 100. 
+//! value is 100.
 
 /// A listing of the supported CIE standard illuminants, standards that describe a particular set of
 /// lighting conditions. The most common ones for computers are D50 and D65, differing kinds of
@@ -16,9 +16,8 @@ pub enum Illuminant {
     D65,
     D75,
     /// Represents a light of any given hue, as an array [X, Y, Z] in CIE 1931 space.
-    Custom([f64; 3])
+    Custom([f64; 3]),
 }
-
 
 /// An array of illuminants, in alphabetical and numerical order (the same order as below).
 pub static ILLUMINANTS: [Illuminant; 4] = [
@@ -36,7 +35,7 @@ pub static ILLUMINANT_WHITE_POINTS: [[f64; 3]; 4] = [
     [0.96422, 1.00000, 0.82521],
     [0.95682, 1.00000, 0.92129],
     [0.95047, 1.00000, 1.08884],
-    [0.94972, 1.00000, 1.22638]
+    [0.94972, 1.00000, 1.22638],
 ];
 
 impl Illuminant {
@@ -47,11 +46,7 @@ impl Illuminant {
             Illuminant::D55 => ILLUMINANT_WHITE_POINTS[1],
             Illuminant::D65 => ILLUMINANT_WHITE_POINTS[2],
             Illuminant::D75 => ILLUMINANT_WHITE_POINTS[3],
-            Illuminant::Custom(xyz) => [
-                xyz[0] / xyz[1],
-                1.0,
-                xyz[2] / xyz[1],
-            ]
+            Illuminant::Custom(xyz) => [xyz[0] / xyz[1], 1.0, xyz[2] / xyz[1]],
         }
     }
 }

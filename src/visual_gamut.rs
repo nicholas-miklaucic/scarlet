@@ -29,7 +29,7 @@ pub fn read_cie_spectral_data() -> (Vec<u16>, Vec<XYZColor>) {
         // we should panic on bad data: this file is supplied by us!
         let record: Record = result.unwrap();
         wavelengths.push(record.wavelength);
-        xyz_data.push(XYZColor{
+        xyz_data.push(XYZColor {
             x: record.xbar,
             y: record.ybar,
             z: record.zbar,
@@ -38,4 +38,3 @@ pub fn read_cie_spectral_data() -> (Vec<u16>, Vec<XYZColor>) {
     }
     (wavelengths, xyz_data)
 }
-
