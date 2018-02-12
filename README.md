@@ -1,6 +1,8 @@
 # Scarlet
 ## Colors and color spaces made simple, for Rustaceans.
 
+[![Build Status](https://travis-ci.org/nicholas-miklaucic/scarlet.svg?branch=master)](https://travis-ci.org/nicholas-miklaucic/scarlet)
+
 **Note: This is still in development and is not ready for use. Stay tuned for version 1.0 before
 June 2018. This README, in its current state, describes what Scarlet will be, not what it is.**
 
