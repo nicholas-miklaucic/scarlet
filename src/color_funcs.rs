@@ -10,17 +10,15 @@ use visual_gamut::read_cie_spectral_data;
 use super::geo::{Closest, LineString, Point};
 use super::geo::prelude::*;
 
-
 /// Some errors that might pop up when dealing with colors as coordinates.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum ColorCalcError {
     MismatchedWeights,
 }
 
-
 /// A trait that indicates that the current Color can be embedded in 3D space. This also requires
 /// `Clone` and `Copy`: there shouldn't be any necessary information outside of the coordinate data.
-pub trait ColorPoint : Color + Into<Coord> + From<Coord> + Clone + Copy {
+pub trait ColorPoint: Color + Into<Coord> + From<Coord> + Clone + Copy {
     /// Gets the Euclidean distance between these two points when embedded in 3D space. This should
     /// **not** be used as an analog of color similarity: use the `distance()` function for
     /// that. Formally speaking, this is a *metric*: it is 0 if and only if self and other are the
@@ -57,16 +55,19 @@ pub trait ColorPoint : Color + Into<Coord> + From<Coord> + Clone + Copy {
     /// # Errors
     /// Returns `ColorCalcError::MismatchedWeights` if the number of colors (`self` and anything in
     /// `others`) and the number of weights mismatch.
-    fn weighted_average(self, others: Vec<Self>, weights: Vec<f64>) -> Result<Self, ColorCalcError>  {
+    fn weighted_average(
+        self,
+        others: Vec<Self>,
+        weights: Vec<f64>,
+    ) -> Result<Self, ColorCalcError> {
         if others.len() + 1 != weights.len() {
             Err(ColorCalcError::MismatchedWeights)
-        }
-        else {
+        } else {
             let c1: Coord = self.into();
             let norm: f64 = weights.iter().sum();
             let mut coord = c1 * weights[0] / norm;
             for i in 1..weights.len() {
-                coord = coord + others[i-1].into() * weights[i] / norm;
+                coord = coord + others[i - 1].into() * weights[i] / norm;
             }
             Ok(Self::from(coord))
         }
@@ -128,12 +129,13 @@ pub trait ColorPoint : Color + Into<Coord> + From<Coord> + Clone + Copy {
                 Closest::Intersection(p) => {
                     self_luv.u = p.x();
                     self_luv.v = p.y();
-                },
+                }
                 Closest::SinglePoint(p) => {
                     self_luv.u = p.x();
                     self_luv.v = p.y();
-                },
-                Closest::Indeterminate => {  // should never happen
+                }
+                Closest::Indeterminate => {
+                    // should never happen
                     panic!("Indeterminate closest point! Please report this error");
                 }
             }
@@ -146,7 +148,7 @@ pub trait ColorPoint : Color + Into<Coord> + From<Coord> + Clone + Copy {
     fn gradient_scale(&self, other: &Self, n: usize) -> Vec<Self> {
         let mut grad_scale = Vec::new();
         // n + 2 total colors: scale this range to [0, 1] inside the loop
-        for i in 0..n+2 {
+        for i in 0..n + 2 {
             let weight = i as f64 / (n + 1) as f64;
             grad_scale.push((*other).weighted_midpoint(*self, weight));
         }
@@ -163,13 +165,11 @@ pub trait ColorPoint : Color + Into<Coord> + From<Coord> + Clone + Copy {
         println!("{:?}, {:?}", c1, c2);
         Box::new(move |x| Self::from(c2.weighted_midpoint(&c1, x)))
     }
-}    
+}
 
-    
 impl<T: Color + Into<Coord> + From<Coord> + Copy + Clone> ColorPoint for T {
     // nothing to do
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -181,8 +181,16 @@ mod tests {
     #[test]
     fn test_cielab_distance() {
         // pretty much should work the same for any type, so why not just CIELAB?
-        let lab1 = CIELABColor{l: 10.5, a: -45.0, b: 40.0};
-        let lab2 = CIELABColor{l: 54.2, a: 65.0, b: 100.0};
+        let lab1 = CIELABColor {
+            l: 10.5,
+            a: -45.0,
+            b: 40.0,
+        };
+        let lab2 = CIELABColor {
+            l: 54.2,
+            a: 65.0,
+            b: 100.0,
+        };
         println!("{}", lab1.euclidean_distance(lab2));
         assert!((lab1.euclidean_distance(lab2) - 132.70150715).abs() <= 1e-7);
     }
@@ -190,11 +198,17 @@ mod tests {
     fn test_grad_scale() {
         let start = RGBColor::from_hex_code("#11457c").unwrap();
         let end = RGBColor::from_hex_code("#774bdc").unwrap();
-        let grad_hexes: Vec<String> = start.gradient_scale(&end, 5).iter()
+        let grad_hexes: Vec<String> = start
+            .gradient_scale(&end, 5)
+            .iter()
             .map(|x| x.to_string())
             .collect();
-        assert_eq!(grad_hexes, vec!["#11457C", "#22468C", "#33479C", "#4448AC", "#5549BC",
-                                    "#664ACC", "#774BDC"]);
+        assert_eq!(
+            grad_hexes,
+            vec![
+                "#11457C", "#22468C", "#33479C", "#4448AC", "#5549BC", "#664ACC", "#774BDC"
+            ]
+        );
     }
     #[test]
     fn test_grad_func() {
