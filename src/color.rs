@@ -360,6 +360,12 @@ pub trait Color: Sized {
          + (delta_h / s_h).powi(2)
          + r_t * (delta_c / s_c) * (delta_h / s_h)).sqrt()
     }
+    /// Using the metric that two colors with a CIEDE2000 distance of less than 1 are
+    /// indistinguishable, determines whether two colors are visually distinguishable from each
+    /// other.
+    fn within_tolerance(&self, other: &T) {
+        self.distance(other) <= 1.0
+    }
 }
 
 impl Color for XYZColor {
