@@ -363,7 +363,7 @@ pub trait Color: Sized {
     /// Using the metric that two colors with a CIEDE2000 distance of less than 1 are
     /// indistinguishable, determines whether two colors are visually distinguishable from each
     /// other.
-    fn within_tolerance(&self, other: &T) {
+    fn visually_indistinguishable<T: Color> (&self, other: &T) -> bool {
         self.distance(other) <= 1.0
     }
 }
