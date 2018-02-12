@@ -10,8 +10,6 @@ use color::{Color, XYZColor};
 use coord::Coord;
 use illuminants::Illuminant;
 
-
-
 /// A color in the CIELAB color space.
 #[derive(Debug, Copy, Clone)]
 pub struct CIELABColor {
@@ -45,17 +43,18 @@ impl Color for CIELABColor {
             let delta: f64 = 6.0 / 29.0;
             if *x <= delta.powf(3.0) {
                 x / (3.0 * delta * delta) + 4.0 / 29.0
-            }
-            else {
+            } else {
                 x.powf(1.0 / 3.0)
             }
         };
         // now get the XYZ coordinates normalized using D50: convert to that beforehand if not
         let white_point = Illuminant::D50.white_point();
         let xyz_adapted = xyz.color_adapt(Illuminant::D50);
-        let xyz_scaled = [xyz_adapted.x / white_point[0],
-                          xyz_adapted.y / white_point[1],
-                          xyz_adapted.z / white_point[2]];
+        let xyz_scaled = [
+            xyz_adapted.x / white_point[0],
+            xyz_adapted.y / white_point[1],
+            xyz_adapted.z / white_point[2],
+        ];
         let xyz_transformed: Vec<f64> = xyz_scaled.iter().map(f).collect();
 
         // xyz_transformed was modified to allow for human nonlinearity of color vision
@@ -64,7 +63,7 @@ impl Color for CIELABColor {
         let l = 116.0 * xyz_transformed[1] - 16.0;
         let a = 500.0 * (xyz_transformed[0] - xyz_transformed[1]);
         let b = 200.0 * (xyz_transformed[1] - xyz_transformed[2]);
-        CIELABColor{l, a, b}
+        CIELABColor { l, a, b }
     }
     /// Returns an XYZ color that corresponds to the CIELAB color. Note that, because implicitly every
     /// CIELAB color is D50, conversion is done by first converting to a D50 XYZ color and then using
@@ -76,8 +75,7 @@ impl Color for CIELABColor {
             let delta: f64 = 6.0 / 29.0;
             if x > delta {
                 x * x * x
-            }
-            else {
+            } else {
                 3.0 * delta * delta * (x - 4.0 / 29.0)
             }
         };
@@ -87,22 +85,34 @@ impl Color for CIELABColor {
         let y = xyz_n[1] * f_inv((self.l + 16.0) / 116.0);
         let z = xyz_n[2] * f_inv((self.l + 16.0) / 116.0 - (self.b / 200.0));
         // this is CIELAB D50, so to use custom illuminant do chromatic adaptation
-        XYZColor{x, y, z, illuminant: Illuminant::D50}.color_adapt(illuminant)
+        XYZColor {
+            x,
+            y,
+            z,
+            illuminant: Illuminant::D50,
+        }.color_adapt(illuminant)
     }
 }
 
 impl From<Coord> for CIELABColor {
     fn from(c: Coord) -> CIELABColor {
-        CIELABColor{l: c.x, a: c.y, b: c.z}
+        CIELABColor {
+            l: c.x,
+            a: c.y,
+            b: c.z,
+        }
     }
 }
 
 impl Into<Coord> for CIELABColor {
     fn into(self) -> Coord {
-        Coord{x: self.l, y: self.a, z: self.b}
+        Coord {
+            x: self.l,
+            y: self.a,
+            z: self.b,
+        }
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -111,14 +121,24 @@ mod tests {
     use color::{Mix, RGBColor};
     #[test]
     fn test_cielab_xyz_conversion_d50() {
-        let xyz = XYZColor{x: 0.4, y: 0.2, z: 0.6, illuminant: Illuminant::D50};
+        let xyz = XYZColor {
+            x: 0.4,
+            y: 0.2,
+            z: 0.6,
+            illuminant: Illuminant::D50,
+        };
         let lab = CIELABColor::from_xyz(xyz);
         let xyz2 = lab.to_xyz(Illuminant::D50);
         assert!(xyz.approx_equal(&xyz2));
     }
     #[test]
     fn test_cielab_xyz_conversion() {
-        let xyz = XYZColor{x: 0.4, y: 0.2, z: 0.6, illuminant: Illuminant::D65};
+        let xyz = XYZColor {
+            x: 0.4,
+            y: 0.2,
+            z: 0.6,
+            illuminant: Illuminant::D65,
+        };
         let lab = CIELABColor::from_xyz(xyz);
         let xyz_d50 = lab.to_xyz(Illuminant::D50);
         let xyz2 = xyz_d50.color_adapt(Illuminant::D65);
@@ -126,8 +146,16 @@ mod tests {
     }
     #[test]
     fn test_cielab_color_mixing() {
-        let lab = CIELABColor{l: 50.0, a: -45.0, b: 65.0};
-        let lab2 = CIELABColor{l: 60.0, a: -25.0, b: 75.0};
+        let lab = CIELABColor {
+            l: 50.0,
+            a: -45.0,
+            b: 65.0,
+        };
+        let lab2 = CIELABColor {
+            l: 60.0,
+            a: -25.0,
+            b: 75.0,
+        };
         let lab_mixed = lab.mix(lab2);
         assert!((lab_mixed.l - 55.0).abs() <= 1e-7);
         assert!((lab_mixed.a + 35.0).abs() <= 1e-7);
@@ -136,7 +164,11 @@ mod tests {
     #[test]
     fn test_out_of_gamut() {
         // this color doesn't exist in sRGB! (that's probably a good thing, this can't really be represented)
-        let color1 = CIELABColor{l: 0.0, a: 100.0, b: 100.0};
+        let color1 = CIELABColor {
+            l: 0.0,
+            a: 100.0,
+            b: 100.0,
+        };
         let color2: RGBColor = color1.convert();
         println!("{}", color2.to_string());
         let color3: CIELABColor = color2.convert();

@@ -33,21 +33,17 @@ impl Color for AdobeRGBColor {
         let clamp = |x: f64| {
             if x > 1.0 {
                 1.0
-            }
-            else if x < 0.0 {
+            } else if x < 0.0 {
                 0.0
-            }
-            else {
+            } else {
                 x
             }
         };
-        
-        // now we apply gamma transformation
-        let gamma = |x: f64| {
-            x.powf(256.0 / 563.0)
-        };
 
-        AdobeRGBColor{
+        // now we apply gamma transformation
+        let gamma = |x: f64| x.powf(256.0 / 563.0);
+
+        AdobeRGBColor {
             r: gamma(clamp(rgb[0])),
             g: gamma(clamp(rgb[1])),
             b: gamma(clamp(rgb[2])),
@@ -56,22 +52,17 @@ impl Color for AdobeRGBColor {
     /// Converts from Adobe RGB to an XYZ color in a given illuminant (via chromatic adaptation).
     fn to_xyz(&self, illuminant: Illuminant) -> XYZColor {
         // undo gamma transformation
-        let ungamma = |x: f64| {
-            x.powf(563.0 / 256.0)
-        };
+        let ungamma = |x: f64| x.powf(563.0 / 256.0);
 
         // inverse matrix to the one in from_xyz
-        let xyz_vec = consts::inv(ADOBE_RGB()) * Vector3::new(
-            ungamma(self.r),
-            ungamma(self.g),
-            ungamma(self.b)
-        );
+        let xyz_vec = consts::inv(ADOBE_RGB())
+            * Vector3::new(ungamma(self.r), ungamma(self.g), ungamma(self.b));
 
-        XYZColor{
+        XYZColor {
             x: xyz_vec[0],
             y: xyz_vec[1],
             z: xyz_vec[2],
-            illuminant: Illuminant::D65
+            illuminant: Illuminant::D65,
         }.color_adapt(illuminant)
     }
 }
@@ -83,21 +74,27 @@ impl From<Coord> for AdobeRGBColor {
         let clamp = |x: f64| {
             if x <= 0.0 {
                 0.0
-            }
-            else if x >= 1.0 {
+            } else if x >= 1.0 {
                 1.0
-            }
-            else {
+            } else {
                 x
             }
         };
-        AdobeRGBColor{r: clamp(c.x), g: clamp(c.y), b: clamp(c.z)}
+        AdobeRGBColor {
+            r: clamp(c.x),
+            g: clamp(c.y),
+            b: clamp(c.z),
+        }
     }
 }
 
 impl Into<Coord> for AdobeRGBColor {
     fn into(self) -> Coord {
-        Coord{x: self.r, y: self.g, z: self.b}
+        Coord {
+            x: self.r,
+            y: self.g,
+            z: self.b,
+        }
     }
 }
 
@@ -109,25 +106,49 @@ mod tests {
 
     #[test]
     fn test_adobe_rgb_xyz_conversion() {
-        let xyz1 = XYZColor{x: 0.4, y: 0.2, z: 0.5, illuminant: Illuminant::D75};
+        let xyz1 = XYZColor {
+            x: 0.4,
+            y: 0.2,
+            z: 0.5,
+            illuminant: Illuminant::D75,
+        };
         let xyz2 = AdobeRGBColor::from_xyz(xyz1).to_xyz(Illuminant::D75);
         assert!(xyz1.approx_equal(&xyz2));
     }
     #[test]
     fn test_adobe_rgb_clamping() {
-        let argb = AdobeRGBColor{r: 1.1, g: 0.6, b: 0.8};
-        let argb2 = AdobeRGBColor{r: 1.0, g: 0.6, b: 0.8};
+        let argb = AdobeRGBColor {
+            r: 1.1,
+            g: 0.6,
+            b: 0.8,
+        };
+        let argb2 = AdobeRGBColor {
+            r: 1.0,
+            g: 0.6,
+            b: 0.8,
+        };
         let argbprime = argb.convert::<XYZColor>().convert::<AdobeRGBColor>();
         let argb2prime = argb2.convert::<XYZColor>().convert::<AdobeRGBColor>();
         let xyz1 = argbprime.to_xyz(Illuminant::D50);
         let xyz2 = argb2prime.to_xyz(Illuminant::D50);
-        println!("{} {} {} {} {} {}", xyz1.x, xyz2.x, xyz1.y, xyz2.y, xyz1.z, xyz2.z);
+        println!(
+            "{} {} {} {} {} {}",
+            xyz1.x, xyz2.x, xyz1.y, xyz2.y, xyz1.z, xyz2.z
+        );
         assert!(xyz1.approx_equal(&xyz2));
     }
     #[test]
     fn test_adobe_rgb_mixing() {
-        let argb = AdobeRGBColor{r: 0.4, g: 0.2, b: 0.5};
-        let argb2 = AdobeRGBColor{r: 0.6, g: 0.6, b: 0.8};
+        let argb = AdobeRGBColor {
+            r: 0.4,
+            g: 0.2,
+            b: 0.5,
+        };
+        let argb2 = AdobeRGBColor {
+            r: 0.6,
+            g: 0.6,
+            b: 0.8,
+        };
         let argb_mixed = argb.mix(argb2);
         assert!((argb_mixed.r - 0.5).abs() <= 1e-7);
         assert!((argb_mixed.g - 0.4).abs() <= 1e-7);

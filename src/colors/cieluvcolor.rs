@@ -6,7 +6,6 @@ use color::{Color, XYZColor};
 use coord::Coord;
 use illuminants::Illuminant;
 
-
 #[derive(Debug, Copy, Clone)]
 pub struct CIELUVColor {
     /// The luminance component of LUV. Ranges from 0 to 100 by definition.
@@ -30,16 +29,10 @@ impl Color for CIELUVColor {
         // because cieluv chromatic adaptation sucks, use the good one
         let xyz_c = xyz.color_adapt(Illuminant::D50);
         let wp = XYZColor::white_point(Illuminant::D50);
-        let denom = |color: XYZColor| {
-            color.x + 15.0 * color.y + 3.0 * color.z
-        };
-        let u_func = |color: XYZColor| {
-            4.0 * color.x / denom(color)
-        };
-        let v_func = |color: XYZColor| {
-            9.0 * color.y / denom(color)
-        };
-            
+        let denom = |color: XYZColor| color.x + 15.0 * color.y + 3.0 * color.z;
+        let u_func = |color: XYZColor| 4.0 * color.x / denom(color);
+        let v_func = |color: XYZColor| 9.0 * color.y / denom(color);
+
         let u_prime_n = u_func(wp);
         let v_prime_n = v_func(wp);
 
@@ -59,7 +52,7 @@ impl Color for CIELUVColor {
 
         let u = 13.0 * l * (u_prime - u_prime_n);
         let v = 13.0 * l * (v_prime - v_prime_n);
-        CIELUVColor{l, u, v}
+        CIELUVColor { l, u, v }
     }
     /// Returns a new `XYZColor` that matches the given color. Note that Scarlet uses CIELUV D50 to
     /// get around compatibility issues, so any other illuminant will be chromatically adapted after
@@ -68,44 +61,51 @@ impl Color for CIELUVColor {
         // https://en.wikipedia.org/wiki/CIELUV literally has the equations in order
         // pretty straightforward
         let wp = XYZColor::white_point(Illuminant::D50);
-        let denom = |color: XYZColor| {
-            color.x + 15.0 * color.y + 3.0 * color.z
-        };
-        let u_func = |color: XYZColor| {
-            4.0 * color.x / denom(color)
-        };
-        let v_func = |color: XYZColor| {
-            9.0 * color.y / denom(color)
-        };
+        let denom = |color: XYZColor| color.x + 15.0 * color.y + 3.0 * color.z;
+        let u_func = |color: XYZColor| 4.0 * color.x / denom(color);
+        let v_func = |color: XYZColor| 9.0 * color.y / denom(color);
         let u_prime_n = u_func(wp);
         let v_prime_n = v_func(wp);
 
         let u_prime = self.u / (13.0 * self.l) + u_prime_n;
         let v_prime = self.v / (13.0 * self.l) + v_prime_n;
-        
+
         let delta: f64 = 6.0 / 29.0;
-        
+
         let y = if self.l <= 8.0 {
             wp.y * self.l * (delta / 2.0).powf(3.0)
         } else {
             wp.y * ((self.l + 16.0) / 116.0).powf(3.0)
         };
-        
+
         let x = y * 9.0 * u_prime / (4.0 * v_prime);
         let z = y * (12.0 - 3.0 * u_prime - 20.0 * v_prime) / (4.0 * v_prime);
-        XYZColor{x, y, z, illuminant: Illuminant::D50}.color_adapt(illuminant)
+        XYZColor {
+            x,
+            y,
+            z,
+            illuminant: Illuminant::D50,
+        }.color_adapt(illuminant)
     }
 }
 
 impl From<Coord> for CIELUVColor {
     fn from(c: Coord) -> CIELUVColor {
-        CIELUVColor{l: c.x, u: c.y, v: c.z}
+        CIELUVColor {
+            l: c.x,
+            u: c.y,
+            v: c.z,
+        }
     }
 }
 
 impl Into<Coord> for CIELUVColor {
     fn into(self) -> Coord {
-        Coord{x: self.l, y: self.u, z: self.v}
+        Coord {
+            x: self.l,
+            y: self.u,
+            z: self.v,
+        }
     }
 }
 
@@ -114,10 +114,15 @@ mod tests {
     #[allow(unused_imports)]
     use super::*;
     use color::Mix;
-    
+
     #[test]
     fn test_cieluv_xyz_conversion_d50() {
-        let xyz = XYZColor{x: 0.3, y: 0.53, z: 0.65, illuminant: Illuminant::D50};
+        let xyz = XYZColor {
+            x: 0.3,
+            y: 0.53,
+            z: 0.65,
+            illuminant: Illuminant::D50,
+        };
         let luv: CIELUVColor = xyz.convert();
         let xyz2: XYZColor = luv.convert();
         assert!(xyz2.approx_equal(&xyz));
@@ -125,7 +130,12 @@ mod tests {
 
     #[test]
     fn test_cieluv_xyz_conversion_d65() {
-        let xyz = XYZColor{x: 0.3, y: 0.53, z: 0.65, illuminant: Illuminant::D65};
+        let xyz = XYZColor {
+            x: 0.3,
+            y: 0.53,
+            z: 0.65,
+            illuminant: Illuminant::D65,
+        };
         let luv: CIELUVColor = xyz.convert();
         let xyz2: XYZColor = luv.convert();
         assert!(xyz2.approx_visually_equal(&xyz));
@@ -133,8 +143,16 @@ mod tests {
 
     #[test]
     fn test_cieluv_color_mixing() {
-        let luv = CIELUVColor{l: 45.0, u: 67.0, v: 49.0};
-        let luv2 = CIELUVColor{l: 53.0, u: 59.0, v: 3.0};
+        let luv = CIELUVColor {
+            l: 45.0,
+            u: 67.0,
+            v: 49.0,
+        };
+        let luv2 = CIELUVColor {
+            l: 53.0,
+            u: 59.0,
+            v: 3.0,
+        };
         let luv_mixed = luv.mix(luv2);
         assert!((luv_mixed.l - 49.0).abs() <= 1e-7);
         assert!((luv_mixed.u - 63.0).abs() <= 1e-7);
