@@ -156,14 +156,25 @@ pub trait ColorPoint: Color + Into<Coord> + From<Coord> + Clone + Copy {
     }
 
     /// Returns a pointer to a function that maps floating-point values from 0 to 1 to colors, such
-    /// that 0 returns `self`, 1 returns `other`, and anything in between returns a mix. Although it
-    /// is possible to extrapolate outside of the range [0, 1], this is not a guarantee and may change
-    /// without warning.
+    /// that 0 returns `self`, 1 returns `other`, and anything in between returns a mix (calculated
+    /// linearly). Although it is possible to extrapolate outside of the range [0, 1], this is not
+    /// a guarantee and may change without warning.
     fn gradient(&self, other: &Self) -> Box<Fn(f64) -> Self> {
         let c1: Coord = (*self).into();
         let c2: Coord = (*other).into();
         println!("{:?}, {:?}", c1, c2);
         Box::new(move |x| Self::from(c2.weighted_midpoint(&c1, x)))
+    }
+
+    /// Returns a pointer to a function that maps floating-point values from 0 to 1 to colors, such
+    /// that 0 returns `self`, 1 returns `other`, and anything in between returns a mix (calculated
+    /// by the cube root of the given value). Although it is possible to extrapolate outside of the
+    /// range [0, 1], this is not a guarantee and may change without warning.
+    fn cbrt_gradient(&self, other: &Self) -> Box<Fn(f64) -> Self> {
+        let c1: Coord = (*self).into();
+        let c2: Coord = (*other).into();
+        println!("{:?}, {:?}", c1, c2);
+        Box::new(move |x| Self::from(c2.weighted_midpoint(&c1, x.cbrt())))
     }
 }
 
@@ -218,5 +229,14 @@ mod tests {
         assert_eq!(grad(1.).to_string(), "#774BDC");
         assert_eq!(grad(0.).to_string(), "#11457C");
         assert_eq!(grad(2. / 6.).to_string(), "#33479C");
+    }
+    #[test]
+    fn test_cbrt_grad_func() {
+        let start = RGBColor::from_hex_code("#11457c").unwrap();
+        let end = RGBColor::from_hex_code("#774bdc").unwrap();
+        let grad = start.cbrt_gradient(&end);
+        assert_eq!(grad(1.).to_string(), "#774BDC");
+        assert_eq!(grad(0.).to_string(), "#11457C");
+        assert_eq!(grad(2. / 6.).to_string(), "#5849BF");
     }
 }
