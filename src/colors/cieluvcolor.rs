@@ -6,7 +6,7 @@ use color::{Color, XYZColor};
 use coord::Coord;
 use illuminants::Illuminant;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub struct CIELUVColor {
     /// The luminance component of LUV. Ranges from 0 to 100 by definition.
     pub l: f64,

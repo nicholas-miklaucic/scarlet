@@ -8,7 +8,7 @@ use illuminants::Illuminant;
 use super::cielabcolor::CIELABColor;
 
 /// A cylindrical form of CIELAB, analogous to the relationship between HSL and RGB.
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub struct CIELCHColor {
     /// The luminance component, identical to CIELAB's and CIELUV's. Ranges between 0 and 100.
     pub l: f64,

@@ -11,7 +11,7 @@ use coord::Coord;
 use illuminants::Illuminant;
 
 /// A color in the CIELAB color space.
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub struct CIELABColor {
     /// The luminance (loosely, brightness) of a given color. 0 is the lowest visible value and gives
     /// black, whereas 100 is the value of diffuse white: it is perhaps possible to have a higher

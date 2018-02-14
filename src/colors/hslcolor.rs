@@ -26,7 +26,7 @@ use illuminants::Illuminant;
 /// A color in the HSL color space, a direct transformation of the sRGB space. sHSL is used to
 /// distinguish this space from a similar transformation of a different RGB space, which can cause
 /// some confusion as other implementations of HSL (such as on the web) omit this distinction.
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub struct HSLColor {
     /// The hue component. Ranges from 0 to 360, as the angle in a cylindrical space. Exactly the same
     /// as the hue component of HSV.
