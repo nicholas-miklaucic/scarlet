@@ -159,6 +159,18 @@ pub trait ColorPoint: Color + Into<Coord> + From<Coord> + Clone + Copy {
     /// that 0 returns `self`, 1 returns `other`, and anything in between returns a mix (calculated
     /// linearly). Although it is possible to extrapolate outside of the range [0, 1], this is not
     /// a guarantee and may change without warning.
+    ///
+    /// # Examples
+    /// ```rust
+    /// use scarlet::color::RGBColor;
+    /// use scarlet::color_funcs::ColorPoint;
+    /// let start = RGBColor::from_hex_code("#11457c").unwrap();
+    /// let end = RGBColor::from_hex_code("#774bdc").unwrap();
+    /// let grad = start.gradient(&end);
+    /// let color_at_start = grad(0.).to_string(); // #11457C
+    /// let color_at_end = grad(1.).to_string(); // #774BDC
+    /// let color_at_third = grad(2./6.).to_string(); // #33479C
+    /// ```
     fn gradient(&self, other: &Self) -> Box<Fn(f64) -> Self> {
         let c1: Coord = (*self).into();
         let c2: Coord = (*other).into();
@@ -170,6 +182,18 @@ pub trait ColorPoint: Color + Into<Coord> + From<Coord> + Clone + Copy {
     /// that 0 returns `self`, 1 returns `other`, and anything in between returns a mix (calculated
     /// by the cube root of the given value). Although it is possible to extrapolate outside of the
     /// range [0, 1], this is not a guarantee and may change without warning.
+    ///
+    /// # Examples
+    /// ```rust
+    /// use scarlet::color::RGBColor;
+    /// use scarlet::color_funcs::ColorPoint;
+    /// let start = RGBColor::from_hex_code("#11457c").unwrap();
+    /// let end = RGBColor::from_hex_code("#774bdc").unwrap();
+    /// let grad = start.cbrt_gradient(&end);
+    /// let color_at_start = grad(0.).to_string(); // #11457C
+    /// let color_at_end = grad(1.).to_string(); // #774BDC
+    /// let color_at_third = grad(2./6.).to_string(); // #5849BF
+    /// ```
     fn cbrt_gradient(&self, other: &Self) -> Box<Fn(f64) -> Self> {
         let c1: Coord = (*self).into();
         let c2: Coord = (*other).into();
