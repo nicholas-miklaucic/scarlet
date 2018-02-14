@@ -6,7 +6,7 @@ use color::{Color, XYZColor};
 use coord::Coord;
 use illuminants::Illuminant;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub struct CIELCHuvColor {
     /// The luminance component. Exactly the same as CIELAB, CIELUV, and CIELCH. Varies between 0 and
     /// 100 by definition.

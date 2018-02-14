@@ -9,7 +9,7 @@ use consts;
 use na::Vector3;
 use illuminants::Illuminant;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub struct AdobeRGBColor {
     /// The red primary component. This is a float that should range between 0 and 1.
     pub r: f64,

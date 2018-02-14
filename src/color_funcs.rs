@@ -11,7 +11,7 @@ use super::geo::{Closest, LineString, Point};
 use super::geo::prelude::*;
 
 /// Some errors that might pop up when dealing with colors as coordinates.
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum ColorCalcError {
     MismatchedWeights,
 }

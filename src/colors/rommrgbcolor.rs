@@ -14,7 +14,7 @@ use consts;
 use na::Vector3;
 use illuminants::Illuminant;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub struct ROMMRGBColor {
     /// The red primary component, as a floating point. Ranges from 0 to 1 for most representable
     /// colors.
