@@ -218,7 +218,7 @@ pub trait ColorPoint: Color + Into<Coord> + From<Coord> + Clone + Copy {
     ///
     /// // the following would be equivalent to start.gradient(&end)(0) at 0.2 and
     /// // equivalent to start.gradient(&end)(1) at 0.8.
-    /// let padded_grad = start.padded_gradient(&end, 0.2, .8);
+    /// let padded_grad = start.padded_gradient(&end, 0.2, 0.8);
     /// ```
     fn padded_gradient(&self, other: &Self, lower_pad: f64, upper_pad: f64) -> Box<Fn(f64) -> Self> {
         let c1: Coord = (*self).into();
@@ -289,5 +289,21 @@ mod tests {
         assert_eq!(grad(1.).to_string(), "#774BDC");
         assert_eq!(grad(0.).to_string(), "#11457C");
         assert_eq!(grad(2. / 6.).to_string(), "#5849BF");
+    }
+    #[test]
+    fn test_padded_grad_func() {
+        let start = RGBColor::from_hex_code("#11457c").unwrap();
+        let end = RGBColor::from_hex_code("#774bdc").unwrap();
+        let grad = start.gradient(&end);
+        let equiv_pad_grad = start.padded_gradient(&end, 0., 1.);
+        assert_eq!(grad(1.).to_string(), equiv_pad_grad(1.).to_string());
+        assert_eq!(grad(0.2).to_string(), equiv_pad_grad(0.2).to_string());
+        assert_eq!(grad(0.3).to_string(), equiv_pad_grad(0.3).to_string());
+        assert_eq!(grad(0.4).to_string(), equiv_pad_grad(0.4).to_string());
+
+        let middle_pad_grad = start.padded_gradient(&end, 0.25, 0.75);
+        assert_eq!(grad(0.5).to_string(), middle_pad_grad(0.5).to_string());
+        assert_eq!(grad(0.75).to_string(), middle_pad_grad(1.).to_string());
+        assert_eq!(grad(0.25).to_string(), middle_pad_grad(0.).to_string());
     }
 }
