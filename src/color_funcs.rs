@@ -216,9 +216,9 @@ pub trait ColorPoint: Color + Into<Coord> + From<Coord> + Clone + Copy {
     /// // the following would be equivalent to start.gradient(&end);
     /// let normal_grad = start.padded_gradient(&end, 0., 1.);
     ///
-    /// // the following would be equivalent to start.gradient(&end)(0) at 0.2 and
-    /// // equivalent to start.gradient(&end)(1) at 0.8.
-    /// let padded_grad = start.padded_gradient(&end, 0.2, 0.8);
+    /// let padded_grad = start.padded_gradient(&end, 1. / 6., 5. / 6.);
+    /// // 0.25 is 1/4 of the way between 1/6 and 5/6, so it's equivalent to a 2/6 call
+    /// assert_eq!(padded_grad(0.25).to_string(), normal_grad(1./3.).to_string());
     /// ```
     fn padded_gradient(&self, other: &Self, lower_pad: f64, upper_pad: f64) -> Box<Fn(f64) -> Self> {
         let c1: Coord = (*self).into();
