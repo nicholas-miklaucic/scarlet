@@ -200,6 +200,33 @@ pub trait ColorPoint: Color + Into<Coord> + From<Coord> + Clone + Copy {
         println!("{:?}, {:?}", c1, c2);
         Box::new(move |x| Self::from(c2.weighted_midpoint(&c1, x.cbrt())))
     }
+
+    /// Returns a pointer to a function that maps floating-point values from 0 to 1 to colors with
+    /// padding `lower_pad` and `upper_pad` such that an input of 0 returns the gradient at
+    /// `lower_pad`, an input of 1 returns the gradient at `upper_pad`, and values in-between
+    /// are mapped linearly inside that range.
+    ///
+    /// # Examples
+    /// ```rust
+    /// use scarlet::color::RGBColor;
+    /// use scarlet::color_funcs::ColorPoint;
+    /// let start = RGBColor::from_hex_code("#11457c").unwrap();
+    /// let end = RGBColor::from_hex_code("#774bdc").unwrap();
+    ///
+    /// // the following would be equivalent to start.gradient(&end);
+    /// let normal_grad = start.padded_gradient(&end, 0., 1.);
+    ///
+    /// let padded_grad = start.padded_gradient(&end, 1. / 6., 5. / 6.);
+    /// // 0.25 is 1/4 of the way between 1/6 and 5/6, so it's equivalent to a 2/6 call
+    /// assert_eq!(padded_grad(0.25).to_string(), normal_grad(1./3.).to_string());
+    /// ```
+    fn padded_gradient(&self, other: &Self, lower_pad: f64, upper_pad: f64) -> Box<Fn(f64) -> Self> {
+        let c1: Coord = (*self).into();
+        let c2: Coord = (*other).into();
+        println!("{:?}, {:?}", c1, c2);
+        let length = upper_pad - lower_pad;
+        Box::new(move |x| Self::from(c2.weighted_midpoint(&c1, length*x+lower_pad)))
+    }
 }
 
 impl<T: Color + Into<Coord> + From<Coord> + Copy + Clone> ColorPoint for T {
@@ -262,5 +289,21 @@ mod tests {
         assert_eq!(grad(1.).to_string(), "#774BDC");
         assert_eq!(grad(0.).to_string(), "#11457C");
         assert_eq!(grad(2. / 6.).to_string(), "#5849BF");
+    }
+    #[test]
+    fn test_padded_grad_func() {
+        let start = RGBColor::from_hex_code("#11457c").unwrap();
+        let end = RGBColor::from_hex_code("#774bdc").unwrap();
+        let grad = start.gradient(&end);
+        let equiv_pad_grad = start.padded_gradient(&end, 0., 1.);
+        assert_eq!(grad(1.).to_string(), equiv_pad_grad(1.).to_string());
+        assert_eq!(grad(0.2).to_string(), equiv_pad_grad(0.2).to_string());
+        assert_eq!(grad(0.3).to_string(), equiv_pad_grad(0.3).to_string());
+        assert_eq!(grad(0.4).to_string(), equiv_pad_grad(0.4).to_string());
+
+        let middle_pad_grad = start.padded_gradient(&end, 0.25, 0.75);
+        assert_eq!(grad(0.5).to_string(), middle_pad_grad(0.5).to_string());
+        assert_eq!(grad(0.75).to_string(), middle_pad_grad(1.).to_string());
+        assert_eq!(grad(0.25).to_string(), middle_pad_grad(0.).to_string());
     }
 }
