@@ -366,6 +366,20 @@ pub trait Color: Sized {
     /// Using the metric that two colors with a CIEDE2000 distance of less than 1 are
     /// indistinguishable, determines whether two colors are visually distinguishable from each
     /// other.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use scarlet::color::{RGBColor, Color};
+    ///
+    /// let color1 = RGBColor::from_hex_code("#123456").unwrap();
+    /// let color2 = RGBColor::from_hex_code("#123556").unwrap();
+    /// let color3 = RGBColor::from_hex_code("#333333").unwrap();
+    ///
+    /// assert!(color1.visually_indistinguishable(&color2)); // yes, they are visually indistinguishable
+    /// assert!(color2.visually_indistinguishable(&color1)); // yes, the same two points
+    /// assert!(!color1.visually_indistinguishable(&color3)); // not visually distinguishable
+    /// ```
     fn visually_indistinguishable<T: Color>(&self, other: &T) -> bool {
         self.distance(other) <= 1.0
     }
@@ -904,6 +918,16 @@ impl Mix for XYZColor {
 mod tests {
     #[allow(unused_imports)]
     use super::*;
+
+    #[test]
+    fn test_visual_distinguishability(){
+        let color1 = RGBColor::from_hex_code("#123456").unwrap();
+        let color2 = RGBColor::from_hex_code("#123556").unwrap();
+        let color3 = RGBColor::from_hex_code("#333333").unwrap();
+        assert!(color1.visually_indistinguishable(&color2));
+        assert!(color2.visually_indistinguishable(&color1));
+        assert!(!color1.visually_indistinguishable(&color3));
+    }
 
     #[test]
     fn can_display_colors() {
