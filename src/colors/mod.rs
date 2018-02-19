@@ -5,4 +5,5 @@ pub mod cielchcolor;
 pub mod cieluvcolor;
 pub mod cielchuvcolor;
 pub mod hslcolor;
+pub mod hsvcolor;
 pub mod rommrgbcolor;

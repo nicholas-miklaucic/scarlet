@@ -917,7 +917,18 @@ impl Mix for XYZColor {
 #[cfg(test)]
 mod tests {
     #[allow(unused_imports)]
-    use super::*;
+    use super::*;    
+
+    #[test]
+    #[ignore]
+    fn test_visual_distinguishability(){
+        let color1 = RGBColor::from_hex_code("#123456").unwrap();
+        let color2 = RGBColor::from_hex_code("#123556").unwrap();
+        let color3 = RGBColor::from_hex_code("#333333").unwrap();
+        assert!(color1.visually_indistinguishable(&color2));
+        assert!(color2.visually_indistinguishable(&color1));
+        assert!(!color1.visually_indistinguishable(&color3));
+    }
 
     #[test]
     fn test_visual_distinguishability(){
@@ -931,16 +942,23 @@ mod tests {
 
     #[test]
     fn can_display_colors() {
-        let b = 128;
-        for i in 0..8 {
-            let mut line = String::from("");
-            let r = i * 16;
-            for j in 0..8 {
-                let g = j * 16;
-                line.push_str(RGBColor::from((r, g, b)).write_colored_str("■").as_str());
+        let range = 120;
+        let mut col;
+        let mut line;
+        let mut c;
+        let mut h;
+        println!("");
+        for i in 0..range {
+            h = (i as f64) / (range as f64) * 360.;
+            line = String::new();
+            for j in 0..range {
+                c = j as f64;
+                col = CIELCHColor{l: 70., c: c / 2., h};
+                line += col.write_color().as_str();
             }
             println!("{}", line);
         }
+        println!("");
     }
 
     #[test]
@@ -965,30 +983,6 @@ mod tests {
         assert!((xyz.x - 0.0750).abs() <= 0.01);
         assert!((xyz.y - 0.0379).abs() <= 0.01);
         assert!((xyz.z - 0.3178).abs() <= 0.01);
-    }
-    // for now, not gonna use since the fun color adaptation demo already runs this
-    #[allow(dead_code)]
-    fn test_xyz_color_display() {
-        println!();
-        let y = 0.5;
-        for i in 0..21 {
-            let mut line = String::from("");
-            for j in 0..21 {
-                let x = i as f64 * 0.8 / 20.0;
-                let z = j as f64 * 0.8 / 20.0;
-                line.push_str(
-                    XYZColor {
-                        x,
-                        y,
-                        z,
-                        illuminant: Illuminant::D65,
-                    }.write_colored_str("■")
-                        .as_str(),
-                );
-            }
-
-            println!("{}", line);
-        }
     }
     #[test]
     fn test_rgb_to_string() {
@@ -1087,8 +1081,49 @@ mod tests {
         let xyz2 = xyz.color_adapt(Illuminant::D65);
         assert_eq!(xyz, xyz2);
     }
+    #[test]
+    fn fun_dress_color_adaptation_demo() {
+        // the famous dress colors, taken completely out of the lighting conditions using GIMP
+        let dress_bg = RGBColor::from_hex_code("#7d6e47").unwrap().to_xyz(Illuminant::D65);
+        let dress_fg = RGBColor::from_hex_code("#9aabd6").unwrap().to_xyz(Illuminant::D65);
+
+        // helper closure to print block of color
+        let block_size = 50;
+        let print_col = |c: XYZColor| {
+            println!();
+            for _i in 0..block_size {
+                println!("{}", c.write_color().repeat(block_size));
+            }
+        };
+
+        // make two "proposed" illuminants: different observers disagree on which one from the image!
+        // bright sunlight, clearly the incorrect one (actually, correct, just the one I don't see)
+        let sunlight = Illuminant::D50;  // essentially daylight in East US, approximately
+        // dark shade, clear the correct one (actually, incorrect, but the one I see)
+        // to get this, I used GIMP again and picked the brightest point on the dress
+        let dress_wp = RGBColor::from_hex_code("#b0c5e4").unwrap();
+        let shade_wp = dress_wp.to_xyz(Illuminant::D65);
+        let shade = Illuminant::Custom([shade_wp.x, shade_wp.y, shade_wp.z]);
+        // print alternate blocks of color: first the dress interpreted in sunlight (black and blue),
+        // then the dress interpreted in shade (white and gold)
+        let mut black = dress_bg;
+        let mut blue = dress_fg;
+        black.illuminant = sunlight;
+        blue.illuminant = sunlight;
+
+        let mut gold = dress_bg;
+        let mut white = dress_fg;
+        gold.illuminant = shade;
+        white.illuminant = shade;
+        
+        print_col(black);
+        print_col(blue);
+        print_col(gold);
+        print_col(white);
+    }
 
     #[test]
+    #[ignore]
     fn fun_color_adaptation_demo() {
         println!();
         let w: usize = 120;
