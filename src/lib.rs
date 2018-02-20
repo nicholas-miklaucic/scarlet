@@ -13,6 +13,7 @@ pub mod color;
 mod visual_gamut;
 pub mod colors;
 pub mod color_funcs;
+pub mod material_colors;
 
 #[cfg(test)]
 mod tests {

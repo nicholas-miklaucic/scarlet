@@ -920,17 +920,6 @@ mod tests {
     use super::*;    
 
     #[test]
-    #[ignore]
-    fn test_visual_distinguishability(){
-        let color1 = RGBColor::from_hex_code("#123456").unwrap();
-        let color2 = RGBColor::from_hex_code("#123556").unwrap();
-        let color3 = RGBColor::from_hex_code("#333333").unwrap();
-        assert!(color1.visually_indistinguishable(&color2));
-        assert!(color2.visually_indistinguishable(&color1));
-        assert!(!color1.visually_indistinguishable(&color3));
-    }
-
-    #[test]
     fn test_visual_distinguishability(){
         let color1 = RGBColor::from_hex_code("#123456").unwrap();
         let color2 = RGBColor::from_hex_code("#123556").unwrap();
@@ -1355,5 +1344,5 @@ mod tests {
             rgb2.set_saturation(s);
             assert_eq!(rgb2.to_string(), String::from(*code));
         }
-    }
+    }    
 }

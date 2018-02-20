@@ -30,3 +30,10 @@
  - Added imaginary gamut check and closest visible function, only test fails so doesn't really count!
 ** February 8, 2018
  - Added exact RGB stuff
+** February 9-18, 2018
+ - Worked with external pull requests
+ - Added new doctest: "the dress" color adaptation
+** February 19, 2018
+ - Added HSV
+** February 20, 2018
+ - Added Material Design color palette
