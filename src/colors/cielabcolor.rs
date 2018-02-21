@@ -118,7 +118,8 @@ impl Into<Coord> for CIELABColor {
 mod tests {
     #[allow(unused_imports)]
     use super::*;
-    use color::{Mix, RGBColor};
+    use color::{RGBColor};
+    use mix::Mix;
     #[test]
     fn test_cielab_xyz_conversion_d50() {
         let xyz = XYZColor {

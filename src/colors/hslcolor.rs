@@ -164,7 +164,7 @@ impl Bound for HSLColor {
 mod tests {
     #[allow(unused_imports)]
     use super::*;
-    use color::Mix;
+    use mix::Mix;
 
     #[test]
     fn test_hsl_rgb_conversion() {

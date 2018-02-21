@@ -5,6 +5,7 @@ use std::convert::From;
 use std::marker::Sized;
 use std::num::ParseIntError;
 use std::result::Result::Err;
+use std::str::FromStr;
 use std::string::ToString;
 
 use super::coord::Coord;
@@ -659,177 +660,8 @@ impl RGBColor {
         // I used a Python script to process it from this site:
         // https://github.com/bahamas10/css-color-names/blob/master/css-color-names.json let
         // I added the special "transparent" referring to #00000000
-        let color_names: Vec<&str> = [
-            "aliceblue",
-            "antiquewhite",
-            "aqua",
-            "aquamarine",
-            "azure",
-            "beige",
-            "bisque",
-            "black",
-            "blanchedalmond",
-            "blue",
-            "blueviolet",
-            "brown",
-            "burlywood",
-            "cadetblue",
-            "chartreuse",
-            "chocolate",
-            "coral",
-            "cornflowerblue",
-            "cornsilk",
-            "crimson",
-            "cyan",
-            "darkblue",
-            "darkcyan",
-            "darkgoldenrod",
-            "darkgray",
-            "darkgreen",
-            "darkgrey",
-            "darkkhaki",
-            "darkmagenta",
-            "darkolivegreen",
-            "darkorange",
-            "darkorchid",
-            "darkred",
-            "darksalmon",
-            "darkseagreen",
-            "darkslateblue",
-            "darkslategray",
-            "darkslategrey",
-            "darkturquoise",
-            "darkviolet",
-            "deeppink",
-            "deepskyblue",
-            "dimgray",
-            "dimgrey",
-            "dodgerblue",
-            "firebrick",
-            "floralwhite",
-            "forestgreen",
-            "fuchsia",
-            "gainsboro",
-            "ghostwhite",
-            "gold",
-            "goldenrod",
-            "gray",
-            "green",
-            "greenyellow",
-            "grey",
-            "honeydew",
-            "hotpink",
-            "indianred",
-            "indigo",
-            "ivory",
-            "khaki",
-            "lavender",
-            "lavenderblush",
-            "lawngreen",
-            "lemonchiffon",
-            "lightblue",
-            "lightcoral",
-            "lightcyan",
-            "lightgoldenrodyellow",
-            "lightgray",
-            "lightgreen",
-            "lightgrey",
-            "lightpink",
-            "lightsalmon",
-            "lightseagreen",
-            "lightskyblue",
-            "lightslategray",
-            "lightslategrey",
-            "lightsteelblue",
-            "lightyellow",
-            "lime",
-            "limegreen",
-            "linen",
-            "magenta",
-            "maroon",
-            "mediumaquamarine",
-            "mediumblue",
-            "mediumorchid",
-            "mediumpurple",
-            "mediumseagreen",
-            "mediumslateblue",
-            "mediumspringgreen",
-            "mediumturquoise",
-            "mediumvioletred",
-            "midnightblue",
-            "mintcream",
-            "mistyrose",
-            "moccasin",
-            "navajowhite",
-            "navy",
-            "oldlace",
-            "olive",
-            "olivedrab",
-            "orange",
-            "orangered",
-            "orchid",
-            "palegoldenrod",
-            "palegreen",
-            "paleturquoise",
-            "palevioletred",
-            "papayawhip",
-            "peachpuff",
-            "peru",
-            "pink",
-            "plum",
-            "powderblue",
-            "purple",
-            "rebeccapurple",
-            "red",
-            "rosybrown",
-            "royalblue",
-            "saddlebrown",
-            "salmon",
-            "sandybrown",
-            "seagreen",
-            "seashell",
-            "sienna",
-            "silver",
-            "skyblue",
-            "slateblue",
-            "slategray",
-            "slategrey",
-            "snow",
-            "springgreen",
-            "steelblue",
-            "tan",
-            "teal",
-            "thistle",
-            "tomato",
-            "turquoise",
-            "violet",
-            "wheat",
-            "white",
-            "whitesmoke",
-            "yellow",
-            "yellowgreen",
-        ].to_vec();
-        let color_codes: Vec<&str> = [
-            "#f0f8ff", "#faebd7", "#00ffff", "#7fffd4", "#f0ffff", "#f5f5dc", "#ffe4c4", "#000000",
-            "#ffebcd", "#0000ff", "#8a2be2", "#a52a2a", "#deb887", "#5f9ea0", "#7fff00", "#d2691e",
-            "#ff7f50", "#6495ed", "#fff8dc", "#dc143c", "#00ffff", "#00008b", "#008b8b", "#b8860b",
-            "#a9a9a9", "#006400", "#a9a9a9", "#bdb76b", "#8b008b", "#556b2f", "#ff8c00", "#9932cc",
-            "#8b0000", "#e9967a", "#8fbc8f", "#483d8b", "#2f4f4f", "#2f4f4f", "#00ced1", "#9400d3",
-            "#ff1493", "#00bfff", "#696969", "#696969", "#1e90ff", "#b22222", "#fffaf0", "#228b22",
-            "#ff00ff", "#dcdcdc", "#f8f8ff", "#ffd700", "#daa520", "#808080", "#008000", "#adff2f",
-            "#808080", "#f0fff0", "#ff69b4", "#cd5c5c", "#4b0082", "#fffff0", "#f0e68c", "#e6e6fa",
-            "#fff0f5", "#7cfc00", "#fffacd", "#add8e6", "#f08080", "#e0ffff", "#fafad2", "#d3d3d3",
-            "#90ee90", "#d3d3d3", "#ffb6c1", "#ffa07a", "#20b2aa", "#87cefa", "#778899", "#778899",
-            "#b0c4de", "#ffffe0", "#00ff00", "#32cd32", "#faf0e6", "#ff00ff", "#800000", "#66cdaa",
-            "#0000cd", "#ba55d3", "#9370db", "#3cb371", "#7b68ee", "#00fa9a", "#48d1cc", "#c71585",
-            "#191970", "#f5fffa", "#ffe4e1", "#ffe4b5", "#ffdead", "#000080", "#fdf5e6", "#808000",
-            "#6b8e23", "#ffa500", "#ff4500", "#da70d6", "#eee8aa", "#98fb98", "#afeeee", "#db7093",
-            "#ffefd5", "#ffdab9", "#cd853f", "#ffc0cb", "#dda0dd", "#b0e0e6", "#800080", "#663399",
-            "#ff0000", "#bc8f8f", "#4169e1", "#8b4513", "#fa8072", "#f4a460", "#2e8b57", "#fff5ee",
-            "#a0522d", "#c0c0c0", "#87ceeb", "#6a5acd", "#708090", "#708090", "#fffafa", "#00ff7f",
-            "#4682b4", "#d2b48c", "#008080", "#d8bfd8", "#ff6347", "#40e0d0", "#ee82ee", "#f5deb3",
-            "#ffffff", "#f5f5f5", "#ffff00", "#9acd32",
-        ].to_vec();
+        let color_names: Vec<&str> = consts::X11_NAMES.to_vec();
+        let color_codes: Vec<&str> = consts::X11_COLOR_CODES.to_vec();
         let mut names_to_codes = HashMap::new();
 
         for (i, color_name) in color_names.iter().enumerate() {
@@ -844,74 +676,17 @@ impl RGBColor {
     }
 }
 
-/// Describes a Color that can be mixed with other colors in its own 3D space. Mixing, in this
-/// context, is taking the midpoint of two color projections in some space, or something consistent
-/// with that idea: if colors A and B mix to A, that should mean B is the same as A, for
-/// example. Although this is not currently the case, note that this implies that the gamut of this
-/// Color is convex: any two Colors of the same type may be mixed to form a third valid one.
+impl FromStr for RGBColor {
+    type Err = RGBParseError;
 
-/// Note that there is one very crucial thing to remember about mixing: it differs depending on the
-/// color space being used. For example, if there are two colors A and B, A.mix(B) may produce very
-/// different results than A_conv.mix(B_conv) if A_conv and B_conv are the results of A.convert() and
-/// B.convert(). For this reason, A.mix(B) is only allowed if A and B share a type: otherwise,
-/// A.mix(B) could be different than B.mix(A), which is error-prone and unintuitive.
-
-/// There is a default implementation for Colors that can interconvert to Coord. This helps ensure
-/// that the most basic case functions appropriately. For any other type of Color, special logic is
-/// needed because of range and rounding issues, so it's on the type itself to implement it.
-
-/// Especially note that color mixing as one thinks of with paints or other subtractive mixtures will
-/// almost definitely not agree with the output of Scarlet, because computer monitors use additive
-/// mixing while pigments use subtractive mixing. Yellow mixed with blue in most RGB or other systems
-/// is gray, not green
-
-pub trait Mix: Color {
-    /// Given two Colors, returns a Color representing their midpoint: usually, this means their
-    /// midpoint in some projection into three-dimensional space.
-    fn mix(self, other: Self) -> Self;
-}
-
-impl<T: Color + From<Coord> + Into<Coord>> Mix for T {
-    /// Given two colors that represent the points (a1, b1, c1) and (a2, b2, c2) in some common
-    /// projection, returns the color (a1 + a2, b1 + b2, c1 + c2) / 2.
-    fn mix(self, other: T) -> T {
-        // convert to 3D space, add, divide by 2, come back
-        let c1: Coord = self.into();
-        let c2: Coord = other.into();
-        T::from(c1.midpoint(&c2))
-    }
-}
-
-// `XYZColor` notably doesn't implement conversion to and from `Coord` because illuminant information
-// can't be preserved: this means that mixing colors with different illuminants would produce
-// incorrect results. The following custom implementation of the Mix trait fixes this by converting
-// colors to the same gamut first.
-impl Mix for XYZColor {
-    /// Uses the current XYZ illuminant as the base, and uses the chromatic adapation transform that
-    /// the `XYZColor` struct defines (as `color_adapt`).
-    fn mix(self, other: XYZColor) -> XYZColor {
-        // convert to same illuminant
-        let other_c = other.color_adapt(self.illuminant);
-        // now just take the midpoint in 3D space
-        let c1: Coord = Coord {
-            x: self.x,
-            y: self.y,
-            z: self.z,
-        };
-        let c2: Coord = Coord {
-            x: other_c.x,
-            y: other_c.y,
-            z: other_c.z,
-        };
-        let mixed_coord = (c1 + c2) / 2.0;
-        XYZColor {
-            x: mixed_coord.x,
-            y: mixed_coord.y,
-            z: mixed_coord.z,
-            illuminant: self.illuminant,
+    fn from_str(s: &str) -> Result<RGBColor, RGBParseError> {
+        match RGBColor::from_hex_code(s) {
+            Err(_e) => RGBColor::from_color_name(s),
+            Ok(rgb) => Ok(rgb)
         }
     }
 }
+
 
 #[cfg(test)]
 mod tests {
@@ -980,40 +755,6 @@ mod tests {
         assert_eq!(c1.to_string(), "#000000");
         assert_eq!(c2.to_string(), "#F4B621");
         assert_eq!(c3.to_string(), "#00FF00");
-    }
-    #[test]
-    fn test_mix_rgb() {
-        let c1 = RGBColor::from((0, 0, 255));
-        let c2 = RGBColor::from((255, 0, 1));
-        let c3 = RGBColor::from((127, 7, 19));
-        // testing rounding away from 0
-        assert_eq!(c1.mix(c2).to_string(), "#800080");
-        assert_eq!(c1.mix(c3).to_string(), "#400489");
-        assert_eq!(c2.mix(c3).to_string(), "#BF040A");
-    }
-    #[test]
-    fn test_mix_xyz() {
-        // note how I'm using fractions with powers of 2 in the denominator to prevent floating-point issues
-        let c1 = XYZColor {
-            x: 0.5,
-            y: 0.25,
-            z: 0.75,
-            illuminant: Illuminant::D65,
-        };
-        let c2 = XYZColor {
-            x: 0.625,
-            y: 0.375,
-            z: 0.5,
-            illuminant: Illuminant::D65,
-        };
-        let c3 = XYZColor {
-            x: 0.75,
-            y: 0.5,
-            z: 0.25,
-            illuminant: Illuminant::D65,
-        };
-        assert_eq!(c1.mix(c3), c2);
-        assert_eq!(c3.mix(c1), c2);
     }
     #[test]
     fn test_xyz_color_adaptation() {

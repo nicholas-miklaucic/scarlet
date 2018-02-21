@@ -150,7 +150,7 @@ impl Into<Coord> for ROMMRGBColor {
 mod tests {
     #[allow(unused_imports)]
     use super::*;
-    use color::Mix;
+    use mix::Mix;
 
     #[test]
     fn test_romm_rgb_xyz_conversion() {

@@ -98,7 +98,7 @@ impl Bound for AdobeRGBColor {
 mod tests {
     #[allow(unused_imports)]
     use super::*;
-    use color::Mix;
+    use mix::Mix;
 
     #[test]
     fn test_adobe_rgb_xyz_conversion() {

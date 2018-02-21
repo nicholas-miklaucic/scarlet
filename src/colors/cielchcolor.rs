@@ -90,7 +90,7 @@ impl Into<Coord> for CIELCHColor {
 mod tests {
     #[allow(unused_imports)]
     use super::*;
-    use color::Mix;
+    use mix::Mix;
 
     #[test]
     fn test_lch_xyz_conversion_same_illuminant() {

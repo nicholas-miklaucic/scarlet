@@ -68,7 +68,7 @@ impl Into<Coord> for CIELCHuvColor {
 mod tests {
     #[allow(unused_imports)]
     use super::*;
-    use color::Mix;
+    use mix::Mix;
 
     #[test]
     fn test_cielchuv_xyz_conversion_d50() {

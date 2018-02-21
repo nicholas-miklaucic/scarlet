@@ -113,7 +113,7 @@ impl Into<Coord> for CIELUVColor {
 mod tests {
     #[allow(unused_imports)]
     use super::*;
-    use color::Mix;
+    use mix::Mix;
 
     #[test]
     fn test_cieluv_xyz_conversion_d50() {
