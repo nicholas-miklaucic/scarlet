@@ -11,7 +11,7 @@ pub trait Scalar: NumCast + Num {}
 impl<T: NumCast + Num> Scalar for T {}
 
 /// A point in 3D space.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Deserialize, Serialize)]
 pub struct Coord {
     pub x: f64,
     pub y: f64,
