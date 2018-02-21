@@ -174,7 +174,6 @@ pub trait ColorPoint: Color + Into<Coord> + From<Coord> + Clone + Copy {
     fn gradient(&self, other: &Self) -> Box<Fn(f64) -> Self> {
         let c1: Coord = (*self).into();
         let c2: Coord = (*other).into();
-        println!("{:?}, {:?}", c1, c2);
         Box::new(move |x| Self::from(c2.weighted_midpoint(&c1, x)))
     }
 
@@ -197,7 +196,6 @@ pub trait ColorPoint: Color + Into<Coord> + From<Coord> + Clone + Copy {
     fn cbrt_gradient(&self, other: &Self) -> Box<Fn(f64) -> Self> {
         let c1: Coord = (*self).into();
         let c2: Coord = (*other).into();
-        println!("{:?}, {:?}", c1, c2);
         Box::new(move |x| Self::from(c2.weighted_midpoint(&c1, x.cbrt())))
     }
 
@@ -223,7 +221,6 @@ pub trait ColorPoint: Color + Into<Coord> + From<Coord> + Clone + Copy {
     fn padded_gradient(&self, other: &Self, lower_pad: f64, upper_pad: f64) -> Box<Fn(f64) -> Self> {
         let c1: Coord = (*self).into();
         let c2: Coord = (*other).into();
-        println!("{:?}, {:?}", c1, c2);
         let length = upper_pad - lower_pad;
         Box::new(move |x| Self::from(c2.weighted_midpoint(&c1, length*x+lower_pad)))
     }

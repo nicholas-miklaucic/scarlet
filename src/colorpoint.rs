@@ -158,7 +158,8 @@ pub trait ColorPoint: Color + Into<Coord> + From<Coord> + Clone + Copy {
     /// Returns a pointer to a function that maps floating-point values from 0 to 1 to colors, such
     /// that 0 returns `self`, 1 returns `other`, and anything in between returns a mix (calculated
     /// linearly). Although it is possible to extrapolate outside of the range [0, 1], this is not
-    /// a guarantee and may change without warning.
+    /// a guarantee and may change without warning. For more fine-grained control of gradients, see
+    /// the GradientColorMap struct.
     ///
     /// # Examples
     /// ```rust
@@ -174,14 +175,14 @@ pub trait ColorPoint: Color + Into<Coord> + From<Coord> + Clone + Copy {
     fn gradient(&self, other: &Self) -> Box<Fn(f64) -> Self> {
         let c1: Coord = (*self).into();
         let c2: Coord = (*other).into();
-        println!("{:?}, {:?}", c1, c2);
         Box::new(move |x| Self::from(c2.weighted_midpoint(&c1, x)))
     }
 
     /// Returns a pointer to a function that maps floating-point values from 0 to 1 to colors, such
     /// that 0 returns `self`, 1 returns `other`, and anything in between returns a mix (calculated
     /// by the cube root of the given value). Although it is possible to extrapolate outside of the
-    /// range [0, 1], this is not a guarantee and may change without warning.
+    /// range [0, 1], this is not a guarantee and may change without warning. For more fine-grained
+    /// control of gradients, see the GradientColorMap struct.
     ///
     /// # Examples
     /// ```rust
@@ -204,7 +205,8 @@ pub trait ColorPoint: Color + Into<Coord> + From<Coord> + Clone + Copy {
     /// Returns a pointer to a function that maps floating-point values from 0 to 1 to colors with
     /// padding `lower_pad` and `upper_pad` such that an input of 0 returns the gradient at
     /// `lower_pad`, an input of 1 returns the gradient at `upper_pad`, and values in-between
-    /// are mapped linearly inside that range.
+    /// are mapped linearly inside that range. For more fine-grained control over gradients, see the
+    /// GradientColorMap struct.
     ///
     /// # Examples
     /// ```rust
