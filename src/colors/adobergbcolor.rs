@@ -2,6 +2,7 @@
 //! sRGB: its components are floating points that range between 0 and 1, and it has a set of
 //! primaries designed to give it a wider coverage (over half of CIE 1931).
 
+use bound::Bound;
 use coord::Coord;
 use color::{Color, XYZColor};
 use consts::ADOBE_RGB_TRANSFORM_MAT as ADOBE_RGB;
@@ -68,22 +69,11 @@ impl Color for AdobeRGBColor {
 }
 
 impl From<Coord> for AdobeRGBColor {
-    /// Converts from a Coordinate (R, G, B) to a color. Clamps values outside of the range [0, 1].
     fn from(c: Coord) -> AdobeRGBColor {
-        // clamp values
-        let clamp = |x: f64| {
-            if x <= 0.0 {
-                0.0
-            } else if x >= 1.0 {
-                1.0
-            } else {
-                x
-            }
-        };
         AdobeRGBColor {
-            r: clamp(c.x),
-            g: clamp(c.y),
-            b: clamp(c.z),
+            r: c.x,
+            g: c.y,
+            b: c.z,
         }
     }
 }
@@ -95,6 +85,12 @@ impl Into<Coord> for AdobeRGBColor {
             y: self.g,
             z: self.b,
         }
+    }
+}
+
+impl Bound for AdobeRGBColor {
+    fn bounds() -> [(f64, f64); 3] {
+        [(0., 1.), (0., 1.), (0., 1.)]
     }
 }
 

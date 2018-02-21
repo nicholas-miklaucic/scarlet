@@ -10,9 +10,10 @@ pub mod coord;
 pub mod consts;
 pub mod illuminants;
 pub mod color;
+pub mod bound;
 mod visual_gamut;
 pub mod colors;
-pub mod color_funcs;
+pub mod colorpoint;
 pub mod material_colors;
 
 #[cfg(test)]

@@ -19,6 +19,7 @@
 
 use std::f64;
 
+use bound::Bound;
 use color::{Color, RGBColor, XYZColor};
 use coord::Coord;
 use illuminants::Illuminant;
@@ -150,6 +151,12 @@ impl Into<Coord> for HSLColor {
             y: self.s,
             z: self.l,
         }
+    }
+}
+
+impl Bound for HSLColor {
+    fn bounds() -> [(f64, f64); 3] {
+        [(0., 360.), (0., 1.), (0., 1.)]
     }
 }
 

@@ -118,7 +118,6 @@ pub trait Color: Sized {
     /// don't include illuminant information, it is provided instead, as an enum. For most
     /// applications, D50 or D65 is a good choice.
     fn to_xyz(&self, illuminant: Illuminant) -> XYZColor;
-
     /// Converts the given Color to a different Color type, without consuming the curreppnt color. `T`
     /// is the color that is being converted to.  This currently converts back and forth using the
     /// D50 standard illuminant. However, this shouldn't change the actual value if the color

@@ -7,6 +7,7 @@
 //! 1) maps to it. It also have to undo the nonlinearity and flare correction, which could still
 //! contain small errors.
 
+use bound::Bound;
 use color::{Color, XYZColor};
 use coord::Coord;
 use consts::ROMM_RGB_TRANSFORM_MAT as ROMM;
@@ -229,5 +230,11 @@ mod tests {
         assert!((rgb_mixed.r - 0.35).abs() <= 1e-7);
         assert!((rgb_mixed.g - 0.4).abs() <= 1e-7);
         assert!((rgb_mixed.b - 0.5).abs() <= 1e-7);
+    }
+}
+
+impl Bound for ROMMRGBColor {
+    fn bounds() -> [(f64, f64); 3] {
+        [(0., 1.), (0., 1.), (0., 1.)]
     }
 }

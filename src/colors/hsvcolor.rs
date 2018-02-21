@@ -6,6 +6,7 @@
 //! color appearance parameters and is outclassed by CIELCH for that purpose, but it is nontheless
 //! important as the closest to such a space one can get using only basic transformations of RGB.
 
+use bound::Bound;
 use coord::Coord;
 use color::{Color, RGBColor, XYZColor};
 use illuminants::Illuminant;
@@ -133,6 +134,12 @@ impl Into<Coord> for HSVColor {
     }
 }
 
+impl Bound for HSVColor {
+    fn bounds() -> [(f64, f64); 3] {
+        [(0., 360.), (0., 1.), (0., 1.)]
+    }
+}
+
 #[cfg(test)]
 mod tests {
     #[allow(unused_imports)]
@@ -204,3 +211,5 @@ mod tests {
         assert!((hsv4.v - hsv3.v).abs() <= 0.0001);
     }
 }
+
+
