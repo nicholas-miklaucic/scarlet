@@ -23,6 +23,8 @@
 
 use std::collections::HashMap;
 use std::convert::From;
+use std::error::Error;
+use std::fmt;
 use std::marker::Sized;
 use std::num::ParseIntError;
 use std::result::Result::Err;
@@ -96,7 +98,7 @@ impl XYZColor {
     /// screen the different colors.
     ///
     /// ```rust
-    /// # use scarlet::{Color, RGBColor, Illuminant};
+    /// # use scarlet::prelude::*;
     /// let dress_bg = RGBColor::from_hex_code("#7d6e47").unwrap().to_xyz(Illuminant::D65);
     /// let dress_fg = RGBColor::from_hex_code("#9aabd6").unwrap().to_xyz(Illuminant::D65);
     /// // proposed sunlight illuminant: daylight in North America
@@ -104,9 +106,9 @@ impl XYZColor {
     /// // point, but this will do
     /// let sunlight = Illuminant::D50;
     /// // proposed "shade" illuminant: created by picking the brightest point on the dress without
-    /// glare subjectively, and then treating that as white
-    /// let shade_white_point = RGBColor::from_hex_code("#b0c5e4").unwrap().to_xyz(Illuminant::D65);
-    /// let shade = Illuminant::Custom([shade_wp.x, shade_wp.y, shade_wp.z]);
+    /// // glare subjectively, and then treating that as white
+    /// let shade_white = RGBColor::from_hex_code("#b0c5e4").unwrap().to_xyz(Illuminant::D65);
+    /// let shade = Illuminant::Custom([shade_white.x, shade_white.y, shade_white.z]);
     /// // make copies of the colors and set illuminants
     /// let mut black = dress_bg;
     /// let mut blue = dress_fg;
@@ -119,8 +121,12 @@ impl XYZColor {
     /// // we can just print them out now: the chromatic adaptation is done automatically to get back
     /// // to the color space of the viewing monitor. This isn't exact, mostly because the shade
     /// // illuminant is entirely fudged, but it's surprisingly good
-    /// println!("Black: {} Blue: {}", black.to_string(), blue.to_string());
-    /// println!("Gold: {}, White: {}", gold.to_string(), white.to_string());
+    /// let black_rgb: RGBColor = black.convert();
+    /// let blue_rgb: RGBColor = blue.convert();
+    /// let gold_rgb: RGBColor = gold.convert();
+    /// let white_rgb: RGBColor = white.convert();
+    /// println!("Black: {} Blue: {}", black_rgb.to_string(), blue_rgb.to_string());
+    /// println!("Gold: {}, White: {}", gold_rgb.to_string(), white_rgb.to_string());
     /// ```
     pub fn color_adapt(&self, other_illuminant: Illuminant) -> XYZColor {
         // no need to transform if same illuminant
@@ -216,20 +222,69 @@ impl XYZColor {
     }
 }
 
-/// A trait that includes any color representation that can be converted to and from the CIE 1931 XYZ
-/// color space.
+/// A trait that represents any color representation that can be converted to and from the CIE 1931 XYZ
+/// color space. See module-level documentation for more information and examples.
 pub trait Color: Sized {
     /// Converts from a color in CIE 1931 XYZ to the given color type.
+    /// # Example
+    ///
+    /// ```
+    /// # use scarlet::color::XYZColor;
+    /// # use scarlet::prelude::*;
+    /// # use std::error::Error;
+    /// # fn try_main() -> Result<(), Box<Error>> {
+    /// let rgb1 = RGBColor::from_hex_code("#ffffff")?;
+    /// // note that D65 is used because that's the space of RGB: if a different illuminant was given,
+    /// // it would be a different white and may not be the same
+    /// let rgb2 = RGBColor::from_xyz(XYZColor::white_point(Illuminant::D65));
+    /// assert_eq!(rgb1.to_string(), rgb2.to_string());
+    /// # Ok(())
+    /// # }
+    /// # fn main () {
+    /// #     try_main().unwrap();
+    /// # }
+    /// ```
     fn from_xyz(XYZColor) -> Self;
     /// Converts from the given color type to a color in CIE 1931 XYZ space. Because most color types
     /// don't include illuminant information, it is provided instead, as an enum. For most
     /// applications, D50 or D65 is a good choice.
+    /// # Example
+    ///
+    /// ```
+    /// # use scarlet::prelude::*;
+    /// # use scarlet::colors::{CIELABColor, CIELCHColor};
+    /// // CIELAB is implicitly D50
+    /// let lab = CIELABColor{l: 100., a: 0., b: 0.};
+    /// // sRGB is implicitly D65
+    /// let rgb = RGBColor{r: 1., g: 1., b: 1.};
+    /// // conversion to a different illuminant keeps their difference
+    /// let lab_xyz = lab.to_xyz(Illuminant::D75);
+    /// let rgb_xyz = rgb.to_xyz(Illuminant::D75);
+    /// assert!(!lab_xyz.approx_equal(&rgb_xyz));
+    /// // on the other hand, CIELCH is in D50, so its white will be the same as CIELAB
+    /// let lch_xyz = CIELCHColor{l: 100., c: 0., h: 0.}.to_xyz(Illuminant::D75);
+    /// assert!(lab_xyz.approx_equal(&lch_xyz));
+    /// ```
     fn to_xyz(&self, illuminant: Illuminant) -> XYZColor;
-    /// Converts the given Color to a different Color type, without consuming the curreppnt color. `T`
-    /// is the color that is being converted to.  This currently converts back and forth using the
-    /// D50 standard illuminant. However, this shouldn't change the actual value if the color
-    /// conversion methods operate correctly, and this value should not be relied upon and can be
-    /// changed without notice.
+    /// Converts generic colors from one representation to another. This is done by going back and
+    /// forth from the CIE 1931 XYZ space, using the illuminant D50 (although this should not affect
+    /// the results). Just like `collect()` and other methods in the standard library, the use of type
+    /// inference will usually allow for clean syntax, but occasionally the turbofish is necessary.
+    /// # Example
+    ///
+    /// ```
+    /// # use scarlet::prelude::*;
+    /// # use scarlet::color::XYZColor;
+    /// let xyz = XYZColor{x: 0.2, y: 0.6, z: 0.3, illuminant: Illuminant::D65};
+    /// // how would this look like as the closest hex code?
+    ///
+    /// // the following two lines are equivalent. The first is preferred for simple variable
+    /// // allocation, but in more complex scenarios sometimes it's unnecessarily cumbersome
+    /// let rgb1: RGBColor = xyz.convert();
+    /// let rgb2 = xyz.convert::<RGBColor>();
+    /// assert_eq!(rgb1.to_string(), rgb2.to_string());
+    /// println!("{}", rgb1.to_string());
+    /// ```
     fn convert<T: Color>(&self) -> T {
         // theoretically, the illuminant shouldn't matter as long as the color conversions are
         // correct. D50 is a common gamut for use in internal conversions, so for spaces like CIELAB
@@ -238,12 +293,67 @@ pub trait Color: Sized {
     }
     /// "Colors" a given piece of text with terminal escape codes to allow it to be printed out in the
     /// given foreground color. Will cause problems with terminals that do not support truecolor.
+    /// # Example
+    /// This demo prints out a square of colors that have the same luminance in CIELAB and HSL to
+    /// compare the validity of their lightness correlates. It can also simply be used to test whether
+    /// a terminal supports printing color. Note that, in some terminal emulators, this can be very
+    /// slow: it's unclear why.
+    ///
+    /// ```
+    /// # use scarlet::prelude::*;
+    /// # use scarlet::colors::{CIELABColor, HSLColor};
+    /// let mut line;
+    /// println!("");
+    /// for i in 0..20 {
+    ///     line = String::from("");
+    ///     for j in 0..20 {
+    ///         let lab = CIELABColor{l: 50., a: 5. * i as f64, b: 5. * j as f64};
+    ///         line.push_str(lab.write_colored_str("#").as_str());
+    ///     }
+    ///     println!("{}", line);
+    /// }
+    /// println!("");
+    /// for i in 0..20 {
+    ///     line = String::from("");
+    ///     for j in 0..20 {
+    ///         let hsl = HSLColor{h: i as f64 * 18., s: j as f64 * 0.05, l: 0.50};
+    ///         line.push_str(hsl.write_colored_str("#").as_str());
+    ///     }
+    ///     println!("{}", line);
+    /// }
+    /// ```
     fn write_colored_str(&self, text: &str) -> String {
         let rgb: RGBColor = self.convert();
         rgb.base_write_colored_str(text)
     }
     /// Returns a string which, when printed in a truecolor-supporting terminal, will hopefully have
     /// both the foreground and background of the desired color, appearing as a complete square.
+    /// # Example
+    /// This is the same one as above, but with a complete block of color instead of the # mark.
+    ///
+    /// ```
+    /// # use scarlet::prelude::*;
+    /// # use scarlet::colors::{CIELABColor, HSLColor};
+    /// let mut line;
+    /// println!("");
+    /// for i in 0..20 {
+    ///     line = String::from("");
+    ///     for j in 0..20 {
+    ///         let lab = CIELABColor{l: 50., a: 5. * i as f64, b: 5. * j as f64};
+    ///         line.push_str(lab.write_color().as_str());
+    ///     }
+    ///     println!("{}", line);
+    /// }
+    /// println!("");
+    /// for i in 0..20 {
+    ///     line = String::from("");
+    ///     for j in 0..20 {
+    ///         let hsl = HSLColor{h: i as f64 * 18., s: j as f64 * 0.05, l: 0.50};
+    ///         line.push_str(hsl.write_color().as_str());
+    ///     }
+    ///     println!("{}", line);
+    /// }
+    /// ```
     fn write_color(&self) -> String {
         let rgb: RGBColor = self.convert();
         rgb.base_write_color()
@@ -254,7 +364,28 @@ pub trait Color: Sized {
     /// decomposable into other hues (when mixing additively): these are red, yellow, green, and
     /// blue. These unique hues have values of 0, 90, 180, and 270 degrees respectively, with other
     /// colors interpolated between them. This returned value will never be outside the range 0 to
-    /// 360.
+    /// 360. For more information, you can start at [the Wikpedia
+    /// page](https://en.wikipedia.org/wiki/Hue).
+    ///
+    /// This generally shouldn't differ all that much from HSL or HSV, but it is slightly more
+    /// accurate to human perception and so is generally superior. This should be preferred over
+    /// manually converting to HSL or HSV.
+    /// # Example
+    /// One problem with using RGB to work with lightness and hue is that it fails to account for hue
+    /// shifts as lightness changes, such as the difference between yellow and brown. When this causes a shift from red towards blue, it's called the
+    /// [*Purkinje effect*](https://en.wikipedia.org/wiki/Purkinje_effect). This example demonstrates
+    /// how this can trip up color manipulation if you don't use more perceptually accurate color spaces.
+    ///
+    /// ```
+    /// # use scarlet::prelude::*;
+    /// let bright_red = RGBColor{r: 0.9, g: 0., b: 0.};
+    /// // One would think that adding or subtracting red here would keep the hue constant
+    /// let darker_red = RGBColor{r: 0.3, g: 0., b: 0.};
+    /// // However, note that the hue has shifted towards the blue end of the spectrum: in this case,
+    /// // closer to 0 by a substantial amount
+    /// println!("{} {}", bright_red.hue(), darker_red.hue());
+    /// assert!(bright_red.hue() - darker_red.hue() >= 8.);
+    /// ```
     fn hue(&self) -> f64 {
         let lch: CIELCHColor = self.convert();
         lch.h
@@ -264,6 +395,20 @@ pub trait Color: Sized {
     /// conception of hue. This uses the CIELCH version of hue. To use another one, simply convert and
     /// set it manually. If the given hue is not between 0 and 360, it is shifted in that range by
     /// adding multiples of 360.
+    /// # Example
+    /// This example shows that RGB primaries are not exact standins for the hue they're named for,
+    /// and using Scarlet can improve color accuracy.
+    ///
+    /// ```
+    /// # use scarlet::prelude::*;
+    /// let blue = RGBColor{r: 0., g: 0., b: 1.};
+    /// // this is a setter, so we make a copy first so we have two colors
+    /// let mut red = blue;
+    /// red.set_hue(0.); // "ideal" red
+    /// // not the same red as RGB's red!
+    /// println!("{}", red.to_string());
+    /// assert!(!red.visually_indistinguishable(&RGBColor{r: 1., g: 0., b: 0.}));
+    /// ```
     fn set_hue(&mut self, new_hue: f64) -> () {
         let mut lch: CIELCHColor = self.convert();
         lch.h = if new_hue >= 0.0 && new_hue <= 360.0 {
@@ -281,6 +426,41 @@ pub trait Color: Sized {
     /// generally considered a very good standard. Note that this is nonlinear with respect to the
     /// physical amount of light emitted: a material with 18% reflectance has a lightness value of 50,
     /// not 18.
+    /// # Examples
+    /// HSL and HSV are often used to get luminance. We'll see why this can be horrifically
+    /// inaccurate.
+    ///
+    /// HSL uses the average of the largest and smallest RGB components. This doesn't account for the
+    /// fact that some colors have inherently more or less brightness (for instance, yellow looks much
+    /// brighter than purple). This is sometimes called *chroma*: we would say that purple has high
+    /// chroma. (In Scarlet, chroma usually means something else: check the [`chroma`] method for more info.
+    ///
+    /// ```
+    /// # use scarlet::prelude::*;
+    /// # use scarlet::colors::HSLColor;
+    /// let purple = HSLColor{h: 300., s: 0.8, l: 0.5};
+    /// let yellow = HSLColor{h: 60., s: 0.8, l: 0.5};
+    /// // these have completely different perceptual luminance values
+    /// println!("{} {}", purple.lightness(), yellow.lightness());
+    /// assert!(yellow.lightness() - purple.lightness() >= 30.);
+    /// ```
+    /// HSV has to take the cake: it simply uses the maximum RGB component. This means that for
+    /// highly-saturated colors with high chroma, it gives results that aren't even remotely close to
+    /// the true perception of lightness.
+    ///
+    /// ```
+    /// # use scarlet::prelude::*;
+    /// # use scarlet::colors::HSVColor;
+    /// let purple = HSVColor{h: 300., s: 1., v: 1.};
+    /// let white = HSVColor{h: 300., s: 0., v: 1.};
+    /// println!("{} {}", purple.lightness(), white.lightness());
+    /// assert!(white.lightness() - purple.lightness() >= 39.);
+    /// ```
+    /// Hue has only small differences across different color systems, but as you can see lightness is
+    /// a completely different story. HSL/HSV and CIELAB can disagree by up to a third of the entire
+    /// range of lightness! This means that any use of HSL or HSV for luminance is liable to be
+    /// extraordinarily inaccurate if used for widely different chromas. Thus, use of this method is
+    /// always preferred unless you explicitly need HSL or HSV.
     fn lightness(&self) -> f64 {
         let lab: CIELABColor = self.convert();
         lab.l
@@ -288,6 +468,28 @@ pub trait Color: Sized {
 
     /// Sets a perceptually-accurate version of lightness, which ranges between 0 and 100 for visible
     /// colors. Any values outside of this range will be clamped within it.
+    /// # Example
+    /// As we saw in the ['lightness'] method, purple and yellow tend to trip up HSV and HSL: the
+    /// color system doesn't account for how much brighter the color yellow is compared to the color
+    /// purple. What would equiluminant purple and yellow look like? We can find out.
+    ///
+    /// ```
+    /// # use scarlet::prelude::*;
+    /// # use scarlet::colors::HSLColor;
+    /// let purple = HSLColor{h: 300., s: 0.8, l: 0.8};
+    /// let mut yellow = HSLColor{h: 60., s: 0.8, l: 0.8};
+    /// // increasing purple's brightness to yellow results in colors outside the HSL gamut, so we'll
+    /// // do it the other way
+    /// yellow.set_lightness(purple.lightness());
+    /// // note that the hue has to shift a little, at least according to HSL, but they barely disagree
+    /// println!("{}", yellow.h); // prints 60.611 or thereabouts
+    /// // the L component has to shift a lot to achieve perceptual equiluminance, as well as a ton of
+    /// // desaturation, because a saturated dark yellow is really more like brown and is a different
+    /// // hue or out of gamut
+    /// assert!(purple.l - yellow.l > 0.15);
+    /// // essentially, the different hue and saturation is worth .15 luminance
+    /// assert!(yellow.s < 0.4);  // saturation has decreased a lot
+    /// ```
     fn set_lightness(&mut self, new_lightness: f64) -> () {
         let mut lab: CIELABColor = self.convert();
         lab.l = if new_lightness >= 0.0 && new_lightness <= 100.0 {
@@ -303,6 +505,20 @@ pub trait Color: Sized {
     /// Gets a perceptually-accurate version of *chroma*, defined as colorfulness relative to a
     /// similarly illuminated white. This has no explicit upper bound, but is always positive and
     /// generally between 0 and 180 for visible colors. This is done using the CIELCH model.
+    /// # Example
+    /// Chroma differs from saturation in that it doesn't account for lightness as much as saturation:
+    /// there are just fewer colors at really low light levels, and so most colors appear less
+    /// colorful. This can either be the desired measure of this effect, or it can be more suitable to
+    /// use saturation. A comparison:
+    ///
+    /// ```
+    /// # use scarlet::prelude::*;
+    /// let dark_purple = RGBColor{r: 0.4, g: 0., b: 0.4};
+    /// let bright_purple = RGBColor{r: 0.8, g: 0., b: 0.8};
+    /// println!("{} {}", dark_purple.chroma(), bright_purple.chroma());
+    /// // chromas differ widely: about 57 for the first and 94 for the second
+    /// assert!(bright_purple.chroma() - dark_purple.chroma() >= 35.);
+    /// ```
     fn chroma(&self) -> f64 {
         let lch: CIELCHColor = self.convert();
         lch.c
@@ -313,6 +529,19 @@ pub trait Color: Sized {
     /// below 0 will be clamped up to 0, but because the upper bound depends on the hue and
     /// lightness no clamping will be done. This means that this method has a higher chance than
     /// normal of producing imaginary colors and any output from this method should be checked.
+    /// # Example
+    /// We can use the purple example from above, and see what an equivalent chroma to the dark purple
+    /// would look like at a high lightness.
+    ///
+    /// ```
+    /// # use scarlet::prelude::*;
+    /// let dark_purple = RGBColor{r: 0.4, g: 0., b: 0.4};
+    /// let bright_purple = RGBColor{r: 0.8, g: 0., b: 0.8};
+    /// let mut changed_purple = bright_purple;
+    /// changed_purple.set_chroma(dark_purple.chroma());
+    /// println!("{} {}", bright_purple.to_string(), changed_purple.to_string());
+    /// // prints #CC00CC #AC4FA8
+    /// ```
     fn set_chroma(&mut self, new_chroma: f64) -> () {
         let mut lch: CIELCHColor = self.convert();
         lch.c = if new_chroma < 0.0 { 0.0 } else { new_chroma };
@@ -326,6 +555,15 @@ pub trait Color: Sized {
     /// divided by lightness: if the lightness is 0, the saturation is also said to be 0. There is
     /// no official formula except ones that require more information than this model of colors has,
     /// but the CIELCH formula is fairly standard.
+    /// # Example
+    /// 
+    /// ```
+    /// # use scarlet::prelude::*;
+    /// let red = RGBColor{r: 1., g: 0.2, b: 0.2};
+    /// let dark_red = RGBColor{r: 0.7, g: 0., b: 0.};
+    /// assert!(dark_red.saturation() > red.saturation());
+    /// assert!(dark_red.chroma() < red.chroma());
+    /// ```
     fn saturation(&self) -> f64 {
         let lch: CIELCHColor = self.convert();
         if lch.l == 0.0 {
@@ -338,7 +576,18 @@ pub trait Color: Sized {
     /// Sets a perceptually-accurate version of *saturation*, defined as chroma relative to
     /// lightness. Any negative value will be clamped to 0, but because the maximum saturation is not
     /// well-defined any positive value will be used as is: this means that this method is more likely
-    /// than others to produce imaginary colors. Uses the CIELCH color space.
+    /// than others to produce imaginary colors. Uses the CIELCH color space. Generally, saturation
+    /// ranges from 0 to about 1.
+    /// # Example
+    ///
+    /// ```
+    /// # use scarlet::prelude::*;
+    /// let red = RGBColor{r: 0.5, g: 0.2, b: 0.2};
+    /// let mut changed_red = red;
+    /// changed_red.set_saturation(1.5);
+    /// println!("{} {}", red.to_string(), changed_red.to_string());
+    /// // prints #803333 #8B262C
+    /// ```
     fn set_saturation(&mut self, new_sat: f64) -> () {
         let mut lch: CIELCHColor = self.convert();
         lch.c = if new_sat < 0.0 {
@@ -348,7 +597,6 @@ pub trait Color: Sized {
         };
         *self = lch.convert();
     }
-
     /// Returns a new Color of the same type as before, but with chromaticity removed: effectively,
     /// a color created solely using a mix of black and white that has the same lightness as
     /// before. This uses the CIELAB luminance definition, which is considered a good standard and is
@@ -706,9 +954,26 @@ pub enum RGBParseError {
     InvalidX11Name,
 }
 
+impl fmt::Display for RGBParseError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", "RGB parsing error")
+    }
+}
+
 impl From<ParseIntError> for RGBParseError {
     fn from(_err: ParseIntError) -> RGBParseError {
         RGBParseError::OutOfRange
+    }
+}
+
+impl Error for RGBParseError {
+    fn description(&self) -> &str {
+        match self {
+            &RGBParseError::OutOfRange => "RGB coordinates out of range",
+            &RGBParseError::InvalidHexSyntax => "Invalid hex code syntax",
+            &RGBParseError::InvalidFuncSyntax => "Invalid \"rgb(\" function call syntax",
+            &RGBParseError::InvalidX11Name => "Invalid X11 color name",
+        }
     }
 }
 
@@ -1080,6 +1345,30 @@ mod tests {
     fn test_to_string() {
         for hex in ["#000000", "#ABCDEF", "#1A2B3C", "#D00A12", "#40AA50"].iter() {
             assert_eq!(*hex, RGBColor::from_hex_code(hex).unwrap().to_string());
+        }
+    }
+    #[test]
+    #[ignore]
+    fn lightness_demo() {
+        use colors::{CIELABColor, HSLColor};
+        let mut line;
+        println!("");
+        for i in 0..20 {
+            line = String::from("");
+            for j in 0..20 {
+                let lab = CIELABColor{l: 50., a: 5. * i as f64, b: 5. * j as f64};
+                line.push_str(lab.write_colored_str("#").as_str());
+            }
+            println!("{}", line);
+        }
+        println!("");
+        for i in 0..20 {
+            line = String::from("");
+            for j in 0..20 {
+                let hsl = HSLColor{h: i as f64 * 18., s: j as f64 * 0.05, l: 0.50};
+                line.push_str(hsl.write_colored_str("#").as_str());
+            }
+            println!("{}", line);
         }
     }
     #[test]

@@ -62,7 +62,7 @@ impl Color for HSLColor {
         // hue is crazy in a hexagon! no more trig functions for us!
         // it's technically the proportion of the length of the hexagon through the point, but it's
         // treated as degrees
-        let hue = if chroma == 0.0 {
+        let mut hue = if chroma == 0.0 {
             // could be anything, undefined according to Wikipedia, in Scarlet just 0 for gray
             0.0
         } else if max_c == rgb.r {
@@ -72,11 +72,18 @@ impl Color for HSLColor {
             (((rgb.g - rgb.b) / chroma) % 6.0) * 60.0
         } else if max_c == rgb.g {
             // similar to above, but you add an offset
-            ((rgb.b - rgb.r) / chroma) * 60.0 + 120.0
+            (((rgb.b - rgb.r) / chroma) % 6.0) * 60.0 + 120.0
         } else {
             // same as above, different offset
-            ((rgb.r - rgb.g) / chroma) * 60.0 + 240.0
+            (((rgb.r - rgb.g) / chroma) % 6.0) * 60.0 + 240.0
         };
+        // if hue still not in 0-360, add until it does: this can sometimes happen
+        while hue < 0. {
+            hue += 360.;
+        }
+        while hue >= 360. {
+            hue -= 360.;
+        }       
 
         // saturation, scientifically speaking, is chroma adjusted for lightness. For HSL, it's
         // defined relative to the maximum chroma, which varies depending on the place on the
