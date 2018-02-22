@@ -9,7 +9,7 @@ use na::Matrix3;
 
 /// Not safe for general use. If `const fn` was stable, it would be used instead. The only reason this
 /// is here is to calculate the inverse of constant matrices. This panics on singular matrices!
-pub fn inv(m: Matrix3<f64>) -> Matrix3<f64> {
+pub(crate) fn inv(m: Matrix3<f64>) -> Matrix3<f64> {
     if !m.is_invertible() {
         panic!("Constant matrix not invertible!")
     } else {
@@ -18,7 +18,7 @@ pub fn inv(m: Matrix3<f64>) -> Matrix3<f64> {
 }
 
 #[allow(non_snake_case)]
-pub fn ADOBE_RGB_TRANSFORM_MAT() -> Matrix3<f64> {
+pub(crate) fn ADOBE_RGB_TRANSFORM_MAT() -> Matrix3<f64> {
     Matrix3::new(
         02.04159,
         -0.56501,
@@ -33,7 +33,7 @@ pub fn ADOBE_RGB_TRANSFORM_MAT() -> Matrix3<f64> {
 }
 
 #[allow(non_snake_case)]
-pub fn BRADFORD_TRANSFORM_MAT() -> Matrix3<f64> {
+pub(crate) fn BRADFORD_TRANSFORM_MAT() -> Matrix3<f64> {
     Matrix3::new(
         00.8951,
         00.2664,
@@ -48,7 +48,7 @@ pub fn BRADFORD_TRANSFORM_MAT() -> Matrix3<f64> {
 }
 
 #[allow(non_snake_case)]
-pub fn ROMM_RGB_TRANSFORM_MAT() -> Matrix3<f64> {
+pub(crate) fn ROMM_RGB_TRANSFORM_MAT() -> Matrix3<f64> {
     Matrix3::new(
         0.7976749,
         0.1351917,
@@ -63,7 +63,7 @@ pub fn ROMM_RGB_TRANSFORM_MAT() -> Matrix3<f64> {
 }
 
 #[allow(non_snake_case)]
-pub fn STANDARD_RGB_TRANSFORM_MAT() -> Matrix3<f64> {
+pub(crate) fn STANDARD_RGB_TRANSFORM_MAT() -> Matrix3<f64> {
     Matrix3::new(
         03.2406,
         -1.5372,
@@ -82,7 +82,7 @@ pub fn STANDARD_RGB_TRANSFORM_MAT() -> Matrix3<f64> {
 // This is the color names
 // I used a Python script to process it from this site:
 // https://github.com/bahamas10/css-color-names/blob/master/css-color-names.json let
-pub const X11_NAMES: [&str; 148] = [
+pub(crate) const X11_NAMES: [&str; 148] = [
     "aliceblue",
     "antiquewhite",
     "aqua",
@@ -233,7 +233,7 @@ pub const X11_NAMES: [&str; 148] = [
     "yellowgreen",
 ];
 
-pub const X11_COLOR_CODES: [&str; 148] = ["#f0f8ff", "#faebd7", "#00ffff", "#7fffd4", "#f0ffff",
+pub(crate) const X11_COLOR_CODES: [&str; 148] = ["#f0f8ff", "#faebd7", "#00ffff", "#7fffd4", "#f0ffff",
     "#f5f5dc", "#ffe4c4", "#000000", "#ffebcd", "#0000ff", "#8a2be2", "#a52a2a", "#deb887",
     "#5f9ea0", "#7fff00", "#d2691e", "#ff7f50", "#6495ed", "#fff8dc", "#dc143c", "#00ffff",
     "#00008b", "#008b8b", "#b8860b", "#a9a9a9", "#006400", "#a9a9a9", "#bdb76b", "#8b008b",

@@ -1,4 +1,25 @@
-/// This file defines the Color trait and all of the standard color types that implement it.
+//! This file defines the `Color` trait, the foundational defining trait of the entire
+//! library. Despite the dizzying amount of things `Color` can do in Scarlet, especially with its
+//! extending traits, the definition is quite simple: anything that can be converted to and from the
+//! [CIE 1931 XYZ space](https://en.wikipedia.org/wiki/CIE_1931_color_space). This color space is
+//! common to use as a master space, and Scarlet is no different. What makes XYZ unique is that it
+//! can be computed directly from the spectral data of a color. Although Scarlet does not implement
+//! this due to its scope, this property makes it possible to derive XYZ colors from real-world data,
+//! something that no other color space can do the same way.
+//! The thing that makes `XYZColor`, the base implementation of the CIE 1931 XYZ space, special is
+//! that it is the only color object in Scarlet that keeps track of its own illuminant data. Every
+//! other color space assumes a viewing environment, but because XYZ color maps directly to neural
+//! perception it keeps track of what environment the color is being viewed in. This allows Scarlet
+//! to translate between color spaces that have different assumptions seamlessly. (If you notice that
+//! Scarlet's values for conversions differ from other sources, this may be why: some sources don't
+//! do this properly or implement it differently. Scarlet generally follows best practices and
+//! industry standards, but file an issue if you feel this is not true.)
+//! The essential workflow of `Color`, and therefore Scarlet, is generally like this: convert between
+//! different color spaces using the generic [`convert`] method, which allows any `Color` to be
+//! interconverted to any other representation. Leverage the specific attributes of each color space
+//! if need be (for example, using the hue or luminance attributes), and then convert back to a
+//! suitable display space. The many other methods of `Color` make some of the more common such
+//! patterns simple to do.
 
 use std::collections::HashMap;
 use std::convert::From;
@@ -26,13 +47,13 @@ use na::Vector3;
 /// whatever illuminant is being worked with.
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct XYZColor {
-    // these need to all be positive
-    // TODO: way of implementing this constraint in code?
     /// The X axis of the CIE 1931 XYZ space, roughly representing the long-wavelength receptors in
     /// the human eye: the red receptors. Usually between 0 and 1, but can range more than that.
     pub x: f64,
     /// The Y axis of the CIE 1931 XYZ space, roughly representing the middle-wavelength receptors in
-    /// the human eye. In CIE 1931, this is fudged to correspond exactly with perceived luminance.
+    /// the human eye. In CIE 1931, this is fudged a little to correspond exactly with perceived
+    /// luminance, so while this doesn't exactly map to middle-wavelength receptors it has a far more
+    /// useful analogue.
     pub y: f64,
     /// The Z axis of the CIE 1931 XYZ space, roughly representing the short-wavelength receptors in
     /// the human eye. Usually between 0 and 1, but can range more than that.
@@ -40,12 +61,67 @@ pub struct XYZColor {
     /// The illuminant that is assumed to be the lighting environment for this color. Although XYZ
     /// itself describes the human response to a color and so is independent of lighting, it is useful
     /// to consider the question "how would an object in one light look different in another?" and so,
-    /// to contain all the information needed to track this, the illuminant is set. Don't modify this
-    /// directly in most cases: use the `color_adapt` function to do it.
+    /// to contain all the information needed to track this, the illuminant is set. See the
+    /// [`color_adapt`] method to examine how this is used in the wild.
     pub illuminant: Illuminant,
 }
 
 impl XYZColor {
+    /// Converts from one illuminant to a different one, such that a human receiving both sets of
+    /// sensory stimuli in the corresponding lighting conditions would perceive an object with that
+    /// color as not having changed. This process, called [*chromatic
+    /// adaptation*](https://en.wikipedia.org/wiki/Chromatic_adaptation), happens subconsciously all
+    /// the time: when someone walks into the shade, we don't interpret that shift as their face
+    /// turning blue. This process is not at all simple to compute, however, and many different
+    /// algorithms for doing so exist: it is most likely that each person has their own idiosyncrasies
+    /// with chromatic adaptation and so there is no perfect solution. Scarlet implements the
+    /// *Bradford transform*, which is generally acknowledged to be one of the leading chromatic
+    /// adaptation transforms. Nonetheless, for exact color science work other models are more
+    /// appropriate, such as CIECAM02 if you can measure viewing conditions exactly. This transform
+    /// may not give very good results when used with custom illuminants that wildly differ, but with
+    /// the standard illuminants it does a very good job.
+    /// # Example: The Fabled Dress
+    /// The most accessible way of describing color transformation is to take a look at [this
+    /// image](https://upload.wikimedia.org/wikipedia/en/a/a8/The_Dress_%28viral_phenomenon%29.png),
+    /// otherwise known as "the dress". This showcases in a very apparent fashion the problems with
+    /// very ambiguous lighting in chromatic adaptation: the photo is cropped to the point that some
+    /// of the population perceives it to be in deep shade and for the dress to therefore be white and
+    /// gold, while others perceive instead harsh sunlight and therefore perceive it as black and
+    /// blue. (For reference, it is actually black and blue.) Scarlet can help us answer the question
+    /// "how would this look to an observer with either judgment about the lighting conditions?"
+    /// without needing the human eye!
+    /// First, we use a photo editor to pick out two colors that represent both colors of the
+    /// dress. Then, we'll change the illuminant directly (without using chromatic adaptation, because
+    /// we want to actually change the color), and then we'll adapt back to D65 to represent on a
+    /// screen the different colors.
+    ///
+    /// ```rust
+    /// # use scarlet::{Color, RGBColor, Illuminant};
+    /// let dress_bg = RGBColor::from_hex_code("#7d6e47").unwrap().to_xyz(Illuminant::D65);
+    /// let dress_fg = RGBColor::from_hex_code("#9aabd6").unwrap().to_xyz(Illuminant::D65);
+    /// // proposed sunlight illuminant: daylight in North America
+    /// // We could exaggerate the effect by creating an illuminant with greater Y value at the white
+    /// // point, but this will do
+    /// let sunlight = Illuminant::D50;
+    /// // proposed "shade" illuminant: created by picking the brightest point on the dress without
+    /// glare subjectively, and then treating that as white
+    /// let shade_white_point = RGBColor::from_hex_code("#b0c5e4").unwrap().to_xyz(Illuminant::D65);
+    /// let shade = Illuminant::Custom([shade_wp.x, shade_wp.y, shade_wp.z]);
+    /// // make copies of the colors and set illuminants
+    /// let mut black = dress_bg;
+    /// let mut blue = dress_fg;
+    /// let mut gold = dress_bg;
+    /// let mut white = dress_fg;
+    /// black.illuminant = sunlight;
+    /// blue.illuminant = sunlight;
+    /// gold.illuminant = shade;
+    /// white.illuminant = shade;
+    /// // we can just print them out now: the chromatic adaptation is done automatically to get back
+    /// // to the color space of the viewing monitor. This isn't exact, mostly because the shade
+    /// // illuminant is entirely fudged, but it's surprisingly good
+    /// println!("Black: {} Blue: {}", black.to_string(), blue.to_string());
+    /// println!("Gold: {}, White: {}", gold.to_string(), white.to_string());
+    /// ```
     pub fn color_adapt(&self, other_illuminant: Illuminant) -> XYZColor {
         // no need to transform if same illuminant
         if other_illuminant == self.illuminant {
@@ -85,7 +161,21 @@ impl XYZColor {
         }
     }
     /// Returns `true` if the given other XYZ color's coordinates are all within acceptable error of
-    /// each other, which helps account for necessary floating-point errors in conversions.
+    /// each other, which helps account for necessary floating-point errors in conversions. To test
+    /// whether two colors are indistinguishable to humans, use instead
+    /// `Color::visually_indistinguishable`.
+    /// # Example
+    ///
+    /// ```
+    /// # use scarlet::color::XYZColor;
+    /// # use scarlet::illuminants::Illuminant;
+    /// let xyz1 = XYZColor{x: 0.3, y: 0., z: 0., illuminant: Illuminant::D65};
+    /// // note that the difference in illuminant won't be taken into account
+    /// let xyz2 = XYZColor{x: 0.1 + 0.1 + 0.1, y: 0., z: 0., illuminant: Illuminant::D55};
+    /// // note that because of rounding error these aren't exactly equal!
+    /// assert!(xyz1.x != xyz2.x);
+    /// // using approx_equal, we can avoid these sorts of errors
+    /// assert!(xyz1.approx_equal(&xyz2));
     pub fn approx_equal(&self, other: &XYZColor) -> bool {
         ((self.x - other.x).abs() <= 1e-15 && (self.y - other.y).abs() <= 1e-15
             && (self.z - other.z).abs() <= 1e-15)
@@ -94,11 +184,27 @@ impl XYZColor {
     /// Returns `true` if the given other XYZ color would look identically in a different color
     /// space. Uses an approximate float equality that helps resolve errors due to floating-point
     /// representation, only testing if the two floats are within 0.001 of each other.
+    /// # Example
+    ///
+    /// ```
+    /// # use scarlet::color::XYZColor;
+    /// # use scarlet::illuminants::Illuminant;
+    /// assert!(XYZColor::white_point(Illuminant::D65).approx_visually_equal(&XYZColor::white_point(Illuminant::D50)));
+    /// ```
     pub fn approx_visually_equal(&self, other: &XYZColor) -> bool {
         let other_c = other.color_adapt(self.illuminant);
         self.approx_equal(&other_c)
     }
     /// Gets the XYZColor corresponding to pure white in the given light environment.
+    /// # Example
+    ///
+    /// ```
+    /// # use scarlet::color::XYZColor;
+    /// # use scarlet::illuminants::Illuminant;
+    /// let white1 = XYZColor::white_point(Illuminant::D65);
+    /// let white2 = XYZColor::white_point(Illuminant::D50);
+    /// assert!(white1.approx_visually_equal(&white2));
+    /// ```
     pub fn white_point(illuminant: Illuminant) -> XYZColor {
         let wp = illuminant.white_point();
         XYZColor {
@@ -813,8 +919,8 @@ mod tests {
     #[test]
     fn fun_dress_color_adaptation_demo() {
         // the famous dress colors, taken completely out of the lighting conditions using GIMP
-        let dress_bg = RGBColor::from_hex_code("#7d6e47").unwrap().to_xyz(Illuminant::D65);
-        let dress_fg = RGBColor::from_hex_code("#9aabd6").unwrap().to_xyz(Illuminant::D65);
+        let dress_bg = RGBColor::from_hex_code("#7d6e47").unwrap().to_xyz(Illuminant::D65); let
+        dress_fg = RGBColor::from_hex_code("#9aabd6").unwrap().to_xyz(Illuminant::D65);
 
         // helper closure to print block of color
         let block_size = 50;
