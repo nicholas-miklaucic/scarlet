@@ -130,7 +130,6 @@ impl Into<Coord> for CIELUVColor {
 mod tests {
     #[allow(unused_imports)]
     use super::*;
-    use mix::Mix;
 
     #[test]
     fn test_cieluv_xyz_conversion_d50() {
@@ -156,22 +155,5 @@ mod tests {
         let luv: CIELUVColor = xyz.convert();
         let xyz2: XYZColor = luv.convert();
         assert!(xyz2.approx_visually_equal(&xyz));
-    }
-
-    fn test_cieluv_color_mixing() {
-        let luv = CIELUVColor {
-            l: 45.0,
-            u: 67.0,
-            v: 49.0,
-        };
-        let luv2 = CIELUVColor {
-            l: 53.0,
-            u: 59.0,
-            v: 3.0,
-        };
-        let luv_mixed = luv.mix(luv2);
-        assert!((luv_mixed.l - 49.0).abs() <= 1e-7);
-        assert!((luv_mixed.u - 63.0).abs() <= 1e-7);
-        assert!((luv_mixed.v - 26.0).abs() <= 1e-7);
     }
 }

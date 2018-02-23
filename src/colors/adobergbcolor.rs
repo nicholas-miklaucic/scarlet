@@ -123,7 +123,6 @@ impl Bound for AdobeRGBColor {
 mod tests {
     #[allow(unused_imports)]
     use super::*;
-    use mix::Mix;
 
     #[test]
     fn test_adobe_rgb_xyz_conversion() {
@@ -157,22 +156,5 @@ mod tests {
             xyz1.x, xyz2.x, xyz1.y, xyz2.y, xyz1.z, xyz2.z
         );
         assert!(xyz1.approx_equal(&xyz2));
-    }
-    #[test]
-    fn test_adobe_rgb_mixing() {
-        let argb = AdobeRGBColor {
-            r: 0.4,
-            g: 0.2,
-            b: 0.5,
-        };
-        let argb2 = AdobeRGBColor {
-            r: 0.6,
-            g: 0.6,
-            b: 0.8,
-        };
-        let argb_mixed = argb.mix(argb2);
-        assert!((argb_mixed.r - 0.5).abs() <= 1e-7);
-        assert!((argb_mixed.g - 0.4).abs() <= 1e-7);
-        assert!((argb_mixed.b - 0.65).abs() <= 1e-7);
     }
 }

@@ -90,7 +90,6 @@ impl Into<Coord> for CIELCHColor {
 mod tests {
     #[allow(unused_imports)]
     use super::*;
-    use mix::Mix;
 
     #[test]
     fn test_lch_xyz_conversion_same_illuminant() {
@@ -123,22 +122,5 @@ mod tests {
             xyz.x, xyz.y, xyz.z, xyz2.x, xyz2.y, xyz2.z
         );
         assert!(xyz2.approx_visually_equal(&xyz));
-    }
-    #[test]
-    fn test_cielch_color_mixing() {
-        let lch = CIELCHColor {
-            l: 50.0,
-            c: 40.0,
-            h: 65.0,
-        };
-        let lch2 = CIELCHColor {
-            l: 60.0,
-            c: 25.0,
-            h: 75.0,
-        };
-        let lch_mixed = lch.mix(lch2);
-        assert!((lch_mixed.l - 55.0).abs() <= 1e-7);
-        assert!((lch_mixed.c - 32.5).abs() <= 1e-7);
-        assert!((lch_mixed.h - 70.0).abs() <= 1e-7);
     }
 }

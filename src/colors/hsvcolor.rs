@@ -144,7 +144,6 @@ impl Bound for HSVColor {
 mod tests {
     #[allow(unused_imports)]
     use super::*;
-    use mix::Mix;
 
     #[test]
     fn test_hsl_rgb_conversion() {
@@ -165,50 +164,6 @@ mod tests {
         };
         let lavender_rgb: RGBColor = lavender_hsv.convert();
         assert_eq!(lavender_rgb.to_string(), "#6E66EC");
-    }
-    #[test]
-    fn test_hsv_color_mixing() {
-        // red mixed with green should be yellow, as little sense as that makes
-        let red = HSVColor {
-            h: 0.0,
-            s: 1.0,
-            v: 1.0,
-        };
-        let green = HSVColor {
-            h: 120.0,
-            s: 1.0,
-            v: 1.0,
-        };
-        let yellow = HSVColor {
-            h: 60.0,
-            s: 1.0,
-            v: 1.0,
-        };
-        let mixed = red.mix(green);
-        assert!((mixed.h - yellow.h).abs() <= 0.0001);
-        assert!((mixed.s - yellow.s).abs() <= 0.0001);
-        assert!((mixed.v - yellow.v).abs() <= 0.0001);
-
-        // test with all three components changing
-        let hsv1 = HSVColor {
-            h: 234.0,
-            s: 0.6,
-            v: 0.7,
-        };
-        let hsv2 = HSVColor {
-            h: 134.0,
-            s: 1.0,
-            v: 0.5,
-        };
-        let hsv3 = HSVColor {
-            h: 184.0,
-            s: 0.8,
-            v: 0.6,
-        };
-        let hsv4 = hsv1.mix(hsv2);
-        assert!((hsv4.h - hsv3.h).abs() <= 0.0001);
-        assert!((hsv4.s - hsv3.s).abs() <= 0.0001);
-        assert!((hsv4.v - hsv3.v).abs() <= 0.0001);
     }
 }
 

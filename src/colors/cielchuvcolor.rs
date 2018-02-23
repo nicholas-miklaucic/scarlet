@@ -72,7 +72,6 @@ impl Into<Coord> for CIELCHuvColor {
 mod tests {
     #[allow(unused_imports)]
     use super::*;
-    use mix::Mix;
 
     #[test]
     fn test_cielchuv_xyz_conversion_d50() {
@@ -98,23 +97,5 @@ mod tests {
         let lchuv: CIELCHuvColor = xyz.convert();
         let xyz2: XYZColor = lchuv.convert();
         assert!(xyz.approx_visually_equal(&xyz2));
-    }
-
-    #[test]
-    fn test_cielchuv_xyz_mixing() {
-        let lch = CIELCHuvColor {
-            l: 50.0,
-            c: 45.0,
-            h: 27.0,
-        };
-        let lch2 = CIELCHuvColor {
-            l: 70.0,
-            c: 25.0,
-            h: 127.0,
-        };
-        let lch3 = lch.mix(lch2);
-        assert!((lch3.l - 60.0).abs() <= 1e-7);
-        assert!((lch3.c - 35.0).abs() <= 1e-7);
-        assert!((lch3.h - 77.0).abs() <= 1e-7);
     }
 }

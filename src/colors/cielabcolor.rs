@@ -119,7 +119,7 @@ mod tests {
     #[allow(unused_imports)]
     use super::*;
     use color::{RGBColor};
-    use mix::Mix;
+
     #[test]
     fn test_cielab_xyz_conversion_d50() {
         let xyz = XYZColor {
@@ -144,23 +144,6 @@ mod tests {
         let xyz_d50 = lab.to_xyz(Illuminant::D50);
         let xyz2 = xyz_d50.color_adapt(Illuminant::D65);
         assert!(xyz.approx_equal(&xyz2));
-    }
-    #[test]
-    fn test_cielab_color_mixing() {
-        let lab = CIELABColor {
-            l: 50.0,
-            a: -45.0,
-            b: 65.0,
-        };
-        let lab2 = CIELABColor {
-            l: 60.0,
-            a: -25.0,
-            b: 75.0,
-        };
-        let lab_mixed = lab.mix(lab2);
-        assert!((lab_mixed.l - 55.0).abs() <= 1e-7);
-        assert!((lab_mixed.a + 35.0).abs() <= 1e-7);
-        assert!((lab_mixed.b - 70.0).abs() <= 1e-7);
     }
     #[test]
     fn test_out_of_gamut() {

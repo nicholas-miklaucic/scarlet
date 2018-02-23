@@ -172,11 +172,16 @@ impl Into<Coord> for ROMMRGBColor {
     }
 }
 
+impl Bound for ROMMRGBColor {
+    fn bounds() -> [(f64, f64); 3] {
+        [(0., 1.), (0., 1.), (0., 1.)]
+    }
+}
+
 #[cfg(test)]
 mod tests {
     #[allow(unused_imports)]
     use super::*;
-    use mix::Mix;
 
     #[test]
     fn test_romm_rgb_xyz_conversion() {
@@ -239,28 +244,5 @@ mod tests {
         );
         assert!(xyz.approx_visually_equal(&xyz2));
     }
-
-    #[test]
-    fn test_romm_rgb_color_mixing() {
-        let rgb = ROMMRGBColor {
-            r: 0.2,
-            g: 0.3,
-            b: 0.4,
-        };
-        let rgb2 = ROMMRGBColor {
-            r: 0.5,
-            g: 0.5,
-            b: 0.6,
-        };
-        let rgb_mixed = rgb.mix(rgb2);
-        assert!((rgb_mixed.r - 0.35).abs() <= 1e-7);
-        assert!((rgb_mixed.g - 0.4).abs() <= 1e-7);
-        assert!((rgb_mixed.b - 0.5).abs() <= 1e-7);
-    }
 }
 
-impl Bound for ROMMRGBColor {
-    fn bounds() -> [(f64, f64); 3] {
-        [(0., 1.), (0., 1.), (0., 1.)]
-    }
-}
