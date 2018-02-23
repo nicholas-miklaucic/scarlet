@@ -1,6 +1,7 @@
 //! This module implements the Romm, or ProPhoto, RGB space. Unlike other RGB gamuts, ProPhnoto trades
 //! having some imaginary colors in its gamut (13% of it can't be seen) in exchange for a much wider
 //! gamut than other RGB spaces (90% of CIELAB surface colors).
+//!
 //! The specification of this color space is... challenging. The forward side is fine, but there's no
 //! inverse given. Scarlet mathematically calculates the inverse by using the tabulated primary XYZ values
 //! as a basis for a change-of-basis matrix, scaling by the values of D50 reference white so (1, 1,
@@ -15,6 +16,31 @@ use consts;
 use na::Vector3;
 use illuminants::Illuminant;
 
+
+/// A color in the ROMM RGB color space, also known as the ProPhoto RGB space. This is a very wide RGB
+/// gamut, wider than both Adobe RGB and sRGB, but the tradeoff is that the colors it uses as
+/// primaries aren't ones that actually exist on reflective objects in the real world.
+/// # Example
+/// How big is sRGB's gamut compared to ROMM RGB?
+///
+/// ```
+/// # use scarlet::prelude::*;
+/// # use scarlet::colors::ROMMRGBColor;
+/// // Get the range (min, max) for each ROMM RGB component, using bright red, green, and
+/// // blue. Technically, the primaries are different hues, but this is a rough estimate and good enough
+/// // for this example. This probably throws it off a fair amount, but the ballpark is right. The
+/// // other thing to keep in mind is that not all of ROMM RGB's gamut is actually visible, so this
+/// // number makes ROMM RGB seem better than it is.
+/// let black: ROMMRGBColor = RGBColor{r: 0., g: 0., b: 0.}.convert();
+/// let red: ROMMRGBColor = RGBColor{r: 1., g: 0., b: 0.}.convert();
+/// let green: ROMMRGBColor = RGBColor{r: 0., g: 1., b: 1.}.convert();
+/// let blue: ROMMRGBColor = RGBColor{r: 0., g: 0., b: 1.}.convert();
+/// let r_range = red.r - black.r;
+/// let g_range = green.g - black.g;
+/// let b_range = blue.b - black.b;
+/// let percent_coverage = r_range * g_range * b_range * 100.;
+/// assert!((percent_coverage - 15.57).abs() <= 0.01);
+/// ```
 #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub struct ROMMRGBColor {
     /// The red primary component, as a floating point. Ranges from 0 to 1 for most representable

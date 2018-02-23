@@ -13,6 +13,7 @@ use super::geo::prelude::*;
 /// Some errors that might pop up when dealing with colors as coordinates.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum ColorCalcError {
+    /// Returned when the number of weights given and the number of colors being averaged differ.
     MismatchedWeights,
 }
 

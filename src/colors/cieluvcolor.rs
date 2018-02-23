@@ -6,15 +6,32 @@ use color::{Color, XYZColor};
 use coord::Coord;
 use illuminants::Illuminant;
 
+/// A similar color system to CIELAB, adapted at the same time and with similar goals. It attempts to
+/// be an easy-to-convert color space from XYZ that approaches perceptual uniformity. U and V
+/// represent chromaticity and roughly equate to CIELAB's A and B, but they're scaled differently and
+/// act slightly differently. These coordinates are often referred to as the CIE 1976 UCS (uniform
+/// chromaticity scale) diagram, and they're good descriptors of chromaticity.
+/// # Example
+///
+/// ```
+/// # use scarlet::prelude::*;
+/// # use scarlet::colors::{CIELUVColor};
+/// # use scarlet::color::XYZColor;
+/// // D50 is the implied illuminant and white point
+/// let white: CIELUVColor = XYZColor::white_point(Illuminant::D50).convert();
+/// assert_eq!(white.l, 100.);
+/// assert_eq!(white.u, 0.);
+/// assert_eq!(white.v, 0.);
+/// ```
 #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub struct CIELUVColor {
     /// The luminance component of LUV. Ranges from 0 to 100 by definition.
     pub l: f64,
-    /// The component of LUV that roughly equates to how red the color is. Ranges from 0 to 100 in
-    /// most visible colors.
+    /// The component of LUV that roughly equates to how red the color is vs. how green it is. Ranges
+    /// from 0 to 100 in most visible colors, where 0 is bright green and 100 is bright red.
     pub u: f64,
-    /// The component of LUV that roughly equates to how green vs. blue the color is. Ranges from 0 to
-    /// 100 in most visible colors.
+    /// The component of LUV that roughly equates to how yellow vs. blue the color is. Ranges from 0 to
+    /// 100 in most visible colors, where 0 is bright blue and 100 is bright yellow.
     pub v: f64,
 }
 
@@ -141,7 +158,6 @@ mod tests {
         assert!(xyz2.approx_visually_equal(&xyz));
     }
 
-    #[test]
     fn test_cieluv_color_mixing() {
         let luv = CIELUVColor {
             l: 45.0,

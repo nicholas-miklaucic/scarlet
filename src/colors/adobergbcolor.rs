@@ -11,6 +11,31 @@ use na::Vector3;
 use illuminants::Illuminant;
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
+/// A color in the Adobe RGB color space. This is a rarer color space, but one that is still pretty
+/// common, especially in color-managed design work. It can represent more colors than sRGB, which is
+/// a plus if you have a monitor that can support it.
+/// # Example
+///
+/// We can find the percentage of Adobe RGB that is inside the sRGB gamut:
+/// Adobe RGB, in 3D space, is a cube 1 by 1 by 1. sRGB is within that a rectangular prism, so all we
+/// need to do is just multiply together all of the sRGB ranges.
+///
+/// ```
+/// # use scarlet::prelude::*;
+/// # use scarlet::colors::AdobeRGBColor;
+/// // Get the range (min, max) for each Adobe RGB component, using bright red, green, and
+/// // blue. Technically, the primaries are different hues, but this is a rough estimate and good enough
+/// // for this example.
+/// let black: AdobeRGBColor = RGBColor{r: 0., g: 0., b: 0.}.convert();
+/// let red: AdobeRGBColor = RGBColor{r: 1., g: 0., b: 0.}.convert();
+/// let green: AdobeRGBColor = RGBColor{r: 0., g: 1., b: 1.}.convert();
+/// let blue: AdobeRGBColor = RGBColor{r: 0., g: 0., b: 1.}.convert();
+/// let r_range = red.r - black.r;
+/// let g_range = green.g - black.g;
+/// let b_range = blue.b - black.b;
+/// let percent_coverage = r_range * g_range * b_range * 100.;
+/// assert!((percent_coverage - 84.23).abs() <= 0.01);
+/// ```
 pub struct AdobeRGBColor {
     /// The red primary component. This is a float that should range between 0 and 1.
     pub r: f64,

@@ -6,6 +6,10 @@ use color::{Color, XYZColor};
 use coord::Coord;
 use illuminants::Illuminant;
 
+/// The polar version of CIELUV, analogous to the relationship between CIELCH and CIELAB. Sometimes
+/// referred to as CIEHCL, but Scarlet uses CIELCHuv to be explicit and avoid any confusion, as well
+/// as keep consistency: in every hue-saturation-value color space or any variation of it, the
+/// coordinates are listed in the exact same order.
 #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub struct CIELCHuvColor {
     /// The luminance component. Exactly the same as CIELAB, CIELUV, and CIELCH. Varies between 0 and

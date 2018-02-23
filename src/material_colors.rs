@@ -7,6 +7,7 @@ use color::{RGBColor};
 /// A neutral tint or shade of a given Material Design hue. Although the values are usually given as
 /// numerical literals, numerical literals are not valid identifiers.
 #[derive(Debug, PartialEq, Eq, Hash, Copy, Clone)]
+#[allow(missing_docs)]
 pub enum NeutralTone {
     W50,
     W100,
@@ -22,6 +23,7 @@ pub enum NeutralTone {
 
 /// An accent tone, notated with an A prefix in the Material Design document and here.
 #[derive(Debug, PartialEq, Eq, Hash, Copy, Clone)]
+#[allow(missing_docs)]
 pub enum AccentTone {
     A100,
     A200,
@@ -33,7 +35,9 @@ pub enum AccentTone {
 /// Either a neutral or accent tone, with a prefix to distinguish them.
 #[derive(Debug, PartialEq, Eq, Hash, Copy, Clone)]
 pub enum MaterialTone {
+    /// A neutral Material tone, ranging from 50-900 in weight from light to dark.
     Neutral(NeutralTone),
+    /// An accent Material tone, which is one of A100, A200, A400, or A700 (light to dark).
     Accent(AccentTone),
 }
 
@@ -64,7 +68,10 @@ fn to_index(tone: MaterialTone) -> usize {
 
 #[derive(Debug, Copy, Clone, Hash, Eq, PartialEq)]
 /// A fully specified Material color. Note that, depending on whether the color has accent tones,
-/// different tone enums need to be used.
+/// different tone enums need to be used. The names of the variants reflect the official Material
+/// Design names. For more information, check the [Material Design
+/// spec](https://material.io/guidelines/style/color.html).
+#[allow(missing_docs)]
 pub enum MaterialPrimary {
     Red(MaterialTone),
     Pink(MaterialTone),
@@ -117,6 +124,16 @@ const BROWN_COLORS: [&str; 10] = ["#795548","#efebe9","#d7ccc8","#bcaaa4","#a188
 
 impl RGBColor {
     /// Gets a Color from the Material palette, given a specification of such a color.
+    /// # Example
+    ///
+    /// ```
+    /// # use scarlet::prelude::*;
+    /// # use scarlet::material_colors::{MaterialPrimary, MaterialTone, NeutralTone, AccentTone};
+    /// let red_400 = RGBColor::from_material_palette(MaterialPrimary::Red(MaterialTone::Neutral(NeutralTone::W400)));
+    /// let amber_a100 = RGBColor::from_material_palette(MaterialPrimary::Amber(MaterialTone::Accent(AccentTone::A100)));
+    /// assert_eq!(red_400.to_string(), "#EF5350");
+    /// assert_eq!(amber_a100.to_string(), "#FFE57F");
+    /// ```
     pub fn from_material_palette(prim: MaterialPrimary) -> RGBColor {
         // get hex code
         let hex_code = match prim {

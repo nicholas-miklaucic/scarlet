@@ -601,6 +601,25 @@ pub trait Color: Sized {
     /// a color created solely using a mix of black and white that has the same lightness as
     /// before. This uses the CIELAB luminance definition, which is considered a good standard and is
     /// perceptually accurate for the most part.
+    /// # Example
+    ///
+    /// ```
+    /// # use scarlet::prelude::*;
+    /// # use scarlet::colors::HSVColor;
+    /// let rgb = RGBColor{r: 0.7, g: 0.5, b: 0.9};
+    /// let hsv = HSVColor{h: 290., s: 0.5, v: 0.8};
+    /// // type annotation is superfluous: just note how grayscale works within the type of a color.
+    /// let rgb_grey: RGBColor = rgb.grayscale();
+    /// let hsv_grey: HSVColor = hsv.grayscale();
+    /// // saturation may not be truly zero because of different illuminants and definitions of grey,
+    /// // but it's pretty close
+    /// println!("{:?} {:?}", hsv_grey, rgb_grey);
+    /// assert!(hsv_grey.s < 0.001);
+    /// // ditto for RGB
+    /// assert!((rgb_grey.r - rgb_grey.g).abs() <= 0.01);
+    /// assert!((rgb_grey.r - rgb_grey.b).abs() <= 0.01);
+    /// assert!((rgb_grey.g - rgb_grey.b).abs() <= 0.01);
+    /// ```
     fn grayscale(&self) -> Self
     where
         Self: Sized,
@@ -616,6 +635,62 @@ pub trait Color: Sized {
     /// negative: it has no defined upper bound, although anything larger than 100 would be very
     /// extreme. A distance of 1.0 is conservatively the smallest possible noticeable difference:
     /// anything that is below 1.0 is almost guaranteed to be indistinguishable to most people.
+    ///
+    /// It's important to note that, just like chromatic adaptation, there's no One True Function for
+    /// determining color difference. This is a best effort by the scientific community, but
+    /// individual variance, difficulty of testing, and the idiosyncrasies of human vision make this
+    /// difficult. For the vast majority of applications, however, this should work correctly. It
+    /// works best with small differences, so keep that in mind: it's relatively hard to quantify
+    /// whether bright pink and brown are more or less similar than bright blue and dark red.
+    ///
+    /// # Examples
+    /// Using the distance between points in RGB space, or really any color space, as a way
+    /// of measuring difference runs into some problems, which we can examine using a more accurate
+    /// function. The main problem, as the below image shows, is that our sensitivity to color
+    /// variance shifts a lot depending on what hue the colors being compared are. Perceptual
+    /// uniformity is the goal for color spaces like CIELAB, but this is a failure point.
+    ///
+    /// ![MacAdam ellipses showing areas of indistinguishability scaled by a factor of 10. The green
+    /// ellipses are much wider than the blue.][macadam]
+    /// [macadam]: https://en.wikipedia.org/wiki/MacAdam_ellipse#/media/File:CIExy1931_MacAdam.png
+    ///
+    /// The other problem is that our sensitivity to lightness also shifts a lot depending on the
+    /// conditions: we're not as at distinguishing dark grey from black, but better at
+    /// distinguishing very light grey from white. We can examine these phenomena using Scarlet.
+    ///
+    /// ```
+    /// # use scarlet::prelude::*;
+    /// let dark_grey = RGBColor{r: 0.05, g: 0.05, b: 0.05};
+    /// let black = RGBColor{r: 0.0, g: 0.0, b: 0.0};
+    /// let light_grey = RGBColor{r: 0.95, g: 0.95, b: 0.95};
+    /// let white = RGBColor{r: 1., g: 1., b: 1.,};
+    /// // RGB already includes a factor to attempt to compensate for the color difference due to
+    /// // lighting. As we'll see, however, it's not enough to compensate for this.
+    /// println!("{} {} {} {}", dark_grey.to_string(), black.to_string(), light_grey.to_string(),
+    /// white.to_string());
+    /// // prints #0D0D0D #000000 #F2F2F2 #FFFFFF
+    /// //
+    /// // noticeable error: not very large at this scale, but the effect exaggerates for very similar colors
+    /// assert!(dark_grey.distance(&black) < 0.9 * light_grey.distance(&white));
+    /// ```
+    ///
+    /// ```
+    /// # use scarlet::prelude::*;
+    /// let mut green1 = RGBColor{r: 0.05, g: 0.9, b: 0.05};
+    /// let mut green2 = RGBColor{r: 0.05, g: 0.91, b: 0.05};
+    /// let blue1 = RGBColor{r: 0.05, g: 0.05, b: 0.9};
+    /// let blue2 = RGBColor{r: 0.05, g: 0.05, b: 0.91};
+    /// // to remove the effect of lightness on color perception, equalize them
+    /// green1.set_lightness(blue1.lightness());
+    /// green2.set_lightness(blue2.lightness());
+    /// // In RGB these have the same difference. This formula accounts for the perceptual distance, however.
+    /// println!("{} {} {} {}", green1.to_string(), green2.to_string(), blue1.to_string(),
+    /// blue2.to_string());
+    /// // prints #0DE60D #0DEB0D #0D0DE6 #0D0DEB
+    /// //
+    /// // very small error, but nonetheless roughly 1% off
+    /// assert!(green1.distance(&green2) / blue1.distance(&blue2) < 0.992);
+    /// ```
     fn distance<T: Color>(&self, other: &T) -> f64 {
         // implementation reference found here:
         // https://pdfs.semanticscholar.org/969b/c38ea067dd22a47a44bcb59c23807037c8d8.pdf
@@ -723,8 +798,8 @@ pub trait Color: Sized {
     ///
     /// # Examples
     ///
-    /// ```rust
-    /// use scarlet::color::{RGBColor, Color};
+    /// ```
+    /// # use scarlet::color::{RGBColor, Color};
     ///
     /// let color1 = RGBColor::from_hex_code("#123456").unwrap();
     /// let color2 = RGBColor::from_hex_code("#123556").unwrap();
@@ -756,19 +831,30 @@ impl Color for XYZColor {
 /// or clamping errors when converting to and from RGB. Many conveniences are afforded so that working
 /// with RGB as if it were instead three integers from 0-255 is painless. Note that the integers
 /// generated from the underlying floating-point numbers round away from 0.
+/// Examples of this abound: this is used ubiquitously in Scarlet. Check the [`Color`] documentation
+/// for plenty.
 pub struct RGBColor {
-    // The red component. Ranges from 0 to 1 for numbers displayable by sRGB machines.
+    /// The red component. Ranges from 0 to 1 for numbers displayable by sRGB machines.
     pub r: f64,
-    // The green component. Ranges from 0 to 1 for numbers displayable by sRGB machines.
+    /// The green component. Ranges from 0 to 1 for numbers displayable by sRGB machines.
     pub g: f64,
-    // The blue component. Ranges from 0 to 1 for numbers displayable by sRGB machines.
+    /// The blue component. Ranges from 0 to 1 for numbers displayable by sRGB machines.
     pub b: f64,
-    // TODO: add exact unclamped versions of each of these
 }
 
 impl RGBColor {
     /// Gets an 8-byte version of the red component, as a `u8`. Clamps values outside of the range 0-1
     /// and discretizes, so this may not correspond to the exact values kept internally.
+    /// # Example
+    ///
+    /// ```
+    /// # use scarlet::prelude::*;
+    /// let super_red = RGBColor{r: 1.2, g: 0., b: 0.};
+    /// let non_integral_red = RGBColor{r: 0.999, g: 0., b: 0.};
+    /// // the first one will get clamped in range, the second one will be rounded
+    /// assert_eq!(super_red.int_r(), non_integral_red.int_r());
+    /// assert_eq!(super_red.int_r(), 255);
+    /// ```
     pub fn int_r(&self) -> u8 {
         // first clamp, then multiply by 255, round, and discretize
         if self.r < 0.0 {
@@ -817,7 +903,7 @@ impl RGBColor {
 
     /// Given a string, returns that string wrapped in codes that will color the foreground. Used for
     /// the trait implementation of write_colored_str, which should be used instead.
-    pub fn base_write_colored_str(&self, text: &str) -> String {
+    fn base_write_colored_str(&self, text: &str) -> String {
         format!(
             "{code}{text}{reset}",
             code = Fg(Rgb(self.int_r(), self.int_g(), self.int_b())),
@@ -825,7 +911,8 @@ impl RGBColor {
             reset = Fg(Reset)
         )
     }
-    pub fn base_write_color(&self) -> String {
+    /// Used for the Color `write_color()` method.
+    fn base_write_color(&self) -> String {
         format!(
             "{bg}{fg}{text}{reset_fg}{reset_bg}",
             bg = Bg(Rgb(self.int_r(), self.int_g(), self.int_b())),
