@@ -23,7 +23,6 @@ mod consts;
 mod matplotlib_cmaps;
 pub mod illuminants;
 pub mod color;
-pub mod mix;
 pub mod bound;
 mod visual_gamut;
 pub mod colors;

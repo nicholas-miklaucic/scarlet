@@ -9,4 +9,3 @@ pub use bound::Bound;
 pub use color::{Color, RGBColor, RGBParseError};
 pub use colorpoint::ColorPoint;
 pub use illuminants::Illuminant;
-pub use mix::Mix;
