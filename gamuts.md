@@ -65,6 +65,25 @@ println!("{} {} {}", color3.l, color3.a, color3.b);
 ```
 
 # How to Avoid Gamut Problems
-Scarlet provides plenty of tools to help you anticipate and correct for problems in gamuts.
+Scarlet allows you to avoid gamut problems by using inherent bounds on the color spaces. Note that
+XYZ is an exception to all of this: it is intended to be a complete master space and to represent
+anything, even colors that normally cannot be seen in nature.
+ 
+## Clamping
+The ['clamp_color()'](scarlet::prelude::Bound::clamp_color) method can be used to modify a color so
+that it falls in another color space. This is explicit, because it's not always the right thing to
+do. *Implicit* clamping can occur when converting to and from spaces. This is because it is rarely
+the right option to have an unusable Color object. When in doubt, favor explicit over implicit and
+clamp your colors.
 
-TODO: actually do this
+Let's see the example from above again, but this time with explicit clamping.
+
+```rust
+// this color doesn't exist in sRGB! (that's probably a good thing, this can't really be represented)
+let color1 = CIELABColor{l: 0.0, a: 100.0, b: 100.0};
+// let's clamp it explicity
+let clamped = RGBColor::clamp_color(color1);
+let color2: RGBColor = clamped.convert();
+let color3: CIELABColor = color2.convert();
+// now, color3 and clamped match up to floating-point error
+```
