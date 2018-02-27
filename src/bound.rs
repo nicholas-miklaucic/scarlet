@@ -13,13 +13,28 @@ use coord::Coord;
 /// any of its components, whereas the CIELAB space can feasibly describe even those colors that
 /// cannot be viewed by humans. This only applies to colors that can be embedded in 3D space, hence
 /// the use of the ColorPoint trait as a dependency.
+/// # Example
+/// Bound a clearly-problematic color within sRGB.
+///
+/// ```
+/// # use scarlet::prelude::*;
+/// # use scarlet::colors::CIELABColor;
+/// let out_of_bounds = CIELABColor{l: 1., a: 150., b: -150.};
+/// let in_bounds: RGBColor = RGBColor::clamp(out_of_bounds).convert();
+/// let still_in_bounds: RGBColor = RGBColor::clamp(in_bounds).convert();
+/// assert_eq!(in_bounds.to_string(), still_in_bounds.to_string());
+/// let in_bounds_lab: CIELABColor = in_bounds.convert();
+/// println!("{} {} {}", in_bounds_lab.l, in_bounds_lab.a, in_bounds_lab.b);
+/// // prints 27.024908432754984 64.48329922444846 -105.76675512389784
+/// // notice difference from before: also, note how every component changes to find the closest match
+/// ```
 pub trait Bound : Color + ColorPoint {
     /// Returns an array [(min1, max1), (min2, max2), (min3, max3)] that represents the bounds on each
     /// component of the color space, in the order that they appear in the Coord representation. If
     /// some parts of the bounds don't exist, using infinity or negative infinity works.
     fn bounds() -> [(f64, f64); 3];
     /// Given a Coord, returns a Coord such that each component has been clamped to the correct
-    /// bounds.
+    /// bounds. See trait documentation for example usage.
     fn clamp_coord(point: Coord) -> Coord {
         let ranges = Self::bounds();
         let mut point_vals = [0.; 3];
@@ -42,7 +57,8 @@ pub trait Bound : Color + ColorPoint {
     }
     /// Given a Color that can be embedded in 3D space, returns a new version of that color that is in
     /// the bounds of this color space, even if the coordinate systems of the two spaces differ. If
-    /// the color is already in the gamut, it simply returns a copy.
+    /// the color is already in the gamut, it simply returns a copy. See trait documentation for
+    /// example usage.
     fn clamp<T: ColorPoint>(color: T) -> T {
         let converted_color: Self = color.convert();
         let point: Coord = converted_color.into();
