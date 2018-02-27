@@ -146,7 +146,7 @@ impl Into<Coord> for CIELABColor {
 mod tests {
     #[allow(unused_imports)]
     use super::*;
-    use color::{RGBColor};
+    use color::RGBColor;
 
     #[test]
     fn test_cielab_xyz_conversion_d50() {

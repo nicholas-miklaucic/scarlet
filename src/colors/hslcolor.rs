@@ -96,7 +96,7 @@ impl Color for HSLColor {
         }
         while hue >= 360. {
             hue -= 360.;
-        }       
+        }
 
         // saturation, scientifically speaking, is chroma adjusted for lightness. For HSL, it's
         // defined relative to the maximum chroma, which varies depending on the place on the

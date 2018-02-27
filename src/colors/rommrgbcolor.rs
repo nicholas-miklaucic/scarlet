@@ -77,23 +77,19 @@ impl Color for ROMMRGBColor {
 
         // as the spec describes, some "flare" can occur: to fix this, we apply a small fix so that
         // black is just really small and not 0
-        let fix_flare = |x: f64| {
-            if x < 0.03125 {
-                0.003473 + 0.0622829 * x
-            } else {
-                0.003473 + 0.996527 * x.powf(1.8)
-            }
+        let fix_flare = |x: f64| if x < 0.03125 {
+            0.003473 + 0.0622829 * x
+        } else {
+            0.003473 + 0.996527 * x.powf(1.8)
         };
 
         // we also need to clamp between 0 and 1
-        let clamp = |x: f64| {
-            if x < 0.0 {
-                0.0
-            } else if x > 1.0 {
-                1.0
-            } else {
-                x
-            }
+        let clamp = |x: f64| if x < 0.0 {
+            0.0
+        } else if x > 1.0 {
+            1.0
+        } else {
+            x
         };
         // now just apply these in sequence
         ROMMRGBColor {
@@ -240,9 +236,13 @@ mod tests {
         println!("{} {} {}", rgb.r, rgb.g, rgb.b);
         println!(
             "{} {} {} {} {} {}",
-            xyz.x, xyz.y, xyz.z, xyz2.x, xyz2.y, xyz2.z
+            xyz.x,
+            xyz.y,
+            xyz.z,
+            xyz2.x,
+            xyz2.y,
+            xyz2.z
         );
         assert!(xyz.approx_visually_equal(&xyz2));
     }
 }
-

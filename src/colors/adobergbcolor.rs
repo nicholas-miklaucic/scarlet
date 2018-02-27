@@ -56,14 +56,12 @@ impl Color for AdobeRGBColor {
         let rgb = ADOBE_RGB() * Vector3::new(xyz_c.x, xyz_c.y, xyz_c.z);
 
         // clamp
-        let clamp = |x: f64| {
-            if x > 1.0 {
-                1.0
-            } else if x < 0.0 {
-                0.0
-            } else {
-                x
-            }
+        let clamp = |x: f64| if x > 1.0 {
+            1.0
+        } else if x < 0.0 {
+            0.0
+        } else {
+            x
         };
 
         // now we apply gamma transformation
@@ -81,8 +79,8 @@ impl Color for AdobeRGBColor {
         let ungamma = |x: f64| x.powf(563.0 / 256.0);
 
         // inverse matrix to the one in from_xyz
-        let xyz_vec = consts::inv(ADOBE_RGB())
-            * Vector3::new(ungamma(self.r), ungamma(self.g), ungamma(self.b));
+        let xyz_vec = consts::inv(ADOBE_RGB()) *
+            Vector3::new(ungamma(self.r), ungamma(self.g), ungamma(self.b));
 
         XYZColor {
             x: xyz_vec[0],
@@ -153,7 +151,12 @@ mod tests {
         let xyz2 = argb2prime.to_xyz(Illuminant::D50);
         println!(
             "{} {} {} {} {} {}",
-            xyz1.x, xyz2.x, xyz1.y, xyz2.y, xyz1.z, xyz2.z
+            xyz1.x,
+            xyz2.x,
+            xyz1.y,
+            xyz2.y,
+            xyz1.z,
+            xyz2.z
         );
         assert!(xyz1.approx_equal(&xyz2));
     }

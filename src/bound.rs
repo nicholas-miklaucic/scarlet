@@ -13,6 +13,8 @@ use coord::Coord;
 /// any of its components, whereas the CIELAB space can feasibly describe even those colors that
 /// cannot be viewed by humans. This only applies to colors that can be embedded in 3D space, hence
 /// the use of the ColorPoint trait as a dependency.
+/// For more, check out [this guide](../gamuts.html).
+///
 /// # Example
 /// Bound a clearly-problematic color within sRGB.
 ///
@@ -28,7 +30,7 @@ use coord::Coord;
 /// // prints 27.024908432754984 64.48329922444846 -105.76675512389784
 /// // notice difference from before: also, note how every component changes to find the closest match
 /// ```
-pub trait Bound : Color + ColorPoint {
+pub trait Bound: Color + ColorPoint {
     /// Returns an array [(min1, max1), (min2, max2), (min3, max3)] that represents the bounds on each
     /// component of the color space, in the order that they appear in the Coord representation. If
     /// some parts of the bounds don't exist, using infinity or negative infinity works.
@@ -85,25 +87,51 @@ mod tests {
 
     #[test]
     fn test_zero_one_bounds() {
-        let color1 = RGBColor{r: 0.1, g: -0.2, b: 1.2};
-        assert!(RGBColor::clamp(color1).visually_indistinguishable(&RGBColor{r: 0.1, g: 0., b: 1.}));
+        let color1 = RGBColor {
+            r: 0.1,
+            g: -0.2,
+            b: 1.2,
+        };
+        assert!(RGBColor::clamp(color1).visually_indistinguishable(
+            &RGBColor {
+                r: 0.1,
+                g: 0.,
+                b: 1.,
+            },
+        ));
     }
 
     #[test]
     fn test_hue_bounds() {
-        let color1 = HSLColor{h: -24.0, s: -0.2, l: 1.1};
-        let color2 = HSVColor{h: 375.0, s: 0.2, v: 0.5};
-        let color3 = HSVColor{h: 255.0, s: 0.6, v: 0.7};
-        assert!(color3.visually_indistinguishable(&HSVColor::clamp(color3)));
-        assert!(HSVColor::clamp(color2).visually_indistinguishable(&HSVColor {
-            h: 360.,
+        let color1 = HSLColor {
+            h: -24.0,
+            s: -0.2,
+            l: 1.1,
+        };
+        let color2 = HSVColor {
+            h: 375.0,
             s: 0.2,
             v: 0.5,
-        }));
-        assert!(HSLColor::clamp(color1).visually_indistinguishable(&HSLColor {
-            h: 0.,
-            s: 0.,
-            l: 1.
-        }));
+        };
+        let color3 = HSVColor {
+            h: 255.0,
+            s: 0.6,
+            v: 0.7,
+        };
+        assert!(color3.visually_indistinguishable(&HSVColor::clamp(color3)));
+        assert!(HSVColor::clamp(color2).visually_indistinguishable(
+            &HSVColor {
+                h: 360.,
+                s: 0.2,
+                v: 0.5,
+            },
+        ));
+        assert!(HSLColor::clamp(color1).visually_indistinguishable(
+            &HSLColor {
+                h: 0.,
+                s: 0.,
+                l: 1.,
+            },
+        ));
     }
 }

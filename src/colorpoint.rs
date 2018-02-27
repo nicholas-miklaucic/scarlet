@@ -21,10 +21,12 @@ pub enum ColorCalcError {
 /// `Clone` and `Copy`: there shouldn't be any necessary information outside of the coordinate data.
 pub trait ColorPoint: Color + Into<Coord> + From<Coord> + Clone + Copy {
     /// Gets the Euclidean distance between these two points when embedded in 3D space. This should
-    /// **not** be used as an analog of color similarity: use the `distance()` function for
+    /// **not** be used as an analog of color similarity: use the [`distance()`] function for
     /// that. Formally speaking, this is a *metric*: it is 0 if and only if self and other are the
     /// same, the distance between two points A and B is never larger than the distance from A to C
     /// and the distance from B to C summed, and it is never negative.
+    ///
+    /// [`distance()`]: ../color/trait.Color.html#method.distance
     fn euclidean_distance(self, other: Self) -> f64 {
         let c1: Coord = self.into();
         let c2: Coord = other.into();
@@ -223,12 +225,19 @@ pub trait ColorPoint: Color + Into<Coord> + From<Coord> + Clone + Copy {
     /// // 0.25 is 1/4 of the way between 1/6 and 5/6, so it's equivalent to a 2/6 call
     /// assert_eq!(padded_grad(0.25).to_string(), normal_grad(1./3.).to_string());
     /// ```
-    fn padded_gradient(&self, other: &Self, lower_pad: f64, upper_pad: f64) -> Box<Fn(f64) -> Self> {
+    fn padded_gradient(
+        &self,
+        other: &Self,
+        lower_pad: f64,
+        upper_pad: f64,
+    ) -> Box<Fn(f64) -> Self> {
         let c1: Coord = (*self).into();
         let c2: Coord = (*other).into();
         println!("{:?}, {:?}", c1, c2);
         let length = upper_pad - lower_pad;
-        Box::new(move |x| Self::from(c2.weighted_midpoint(&c1, length*x+lower_pad)))
+        Box::new(move |x| {
+            Self::from(c2.weighted_midpoint(&c1, length * x + lower_pad))
+        })
     }
 }
 
@@ -271,7 +280,13 @@ mod tests {
         assert_eq!(
             grad_hexes,
             vec![
-                "#11457C", "#22468C", "#33479C", "#4448AC", "#5549BC", "#664ACC", "#774BDC"
+                "#11457C",
+                "#22468C",
+                "#33479C",
+                "#4448AC",
+                "#5549BC",
+                "#664ACC",
+                "#774BDC",
             ]
         );
     }

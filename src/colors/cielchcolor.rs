@@ -48,10 +48,10 @@ impl Color for CIELCHColor {
         // first get LAB coordinates
         let lab = CIELABColor::from_xyz(xyz);
         let l = lab.l; // the same in both spaces
-                       // now we have to do some math
-                       // radius is sqrt(a^2 + b^2)
-                       // angle is atan2(a, b)
-                       // Rust does this ez
+        // now we have to do some math
+        // radius is sqrt(a^2 + b^2)
+        // angle is atan2(a, b)
+        // Rust does this ez
         let c = lab.b.hypot(lab.a);
         // don't forget to convert to degrees
         let unbounded_h = lab.b.atan2(lab.a).to_degrees();
@@ -118,7 +118,12 @@ mod tests {
         let xyz2: XYZColor = lch.convert();
         println!(
             "{} {} {} {} {} {}",
-            xyz.x, xyz.y, xyz.z, xyz2.x, xyz2.y, xyz2.z
+            xyz.x,
+            xyz.y,
+            xyz.z,
+            xyz2.x,
+            xyz2.y,
+            xyz2.z
         );
         assert!(xyz2.approx_equal(&xyz));
     }
@@ -134,7 +139,12 @@ mod tests {
         let xyz2: XYZColor = lch.convert();
         println!(
             "{} {} {} {} {} {}",
-            xyz.x, xyz.y, xyz.z, xyz2.x, xyz2.y, xyz2.z
+            xyz.x,
+            xyz.y,
+            xyz.z,
+            xyz2.x,
+            xyz2.y,
+            xyz2.z
         );
         assert!(xyz2.approx_visually_equal(&xyz));
     }

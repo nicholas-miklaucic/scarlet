@@ -169,7 +169,7 @@ impl Coord {
     pub fn euclidean_distance(&self, other: &Coord) -> f64 {
         ((self.x - other.x).powi(2) + (self.y - other.y).powi(2) + (self.z - other.z).powi(2))
             .sqrt()
-    }    
+    }
     /// Gets the arithmetic mean of `self`, alongside other coordinates.
     /// # Example
     /// ```

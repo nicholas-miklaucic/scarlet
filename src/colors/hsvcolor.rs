@@ -93,7 +93,7 @@ impl Color for HSVColor {
     }
     /// Converts from HSV back to XYZ. Any illuminant other than D65 is computed using chromatic adaptation.
     fn to_xyz(&self, illuminant: Illuminant) -> XYZColor {
-           // first get back chroma
+        // first get back chroma
 
         let chroma = self.s * self.v;
         // find the point with 0 lightness that matches ours in the other two components
@@ -178,5 +178,3 @@ mod tests {
         assert_eq!(lavender_rgb.to_string(), "#6E66EC");
     }
 }
-
-
