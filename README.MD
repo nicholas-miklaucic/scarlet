@@ -1,7 +1,9 @@
 # Scarlet
 ## Colors and color spaces made simple, for Rustaceans.
 
-[![Build Status](https://travis-ci.org/nicholas-miklaucic/scarlet.svg?branch=master)](https://travis-ci.org/nicholas-miklaucic/scarlet)
+[![Build
+Status](https://travis-ci.org/nicholas-miklaucic/scarlet.svg?branch=master)](https://travis-ci.org/nicholas-miklaucic/scarlet)
+
 
 **Note: This is in beta stage. Breaking changes can and will be made without warning on new
 versions, up until 1.0, expected before June 2018. This is not mature software.**
@@ -37,7 +39,7 @@ extern crate scarlet;
 ```
 
 ## Documentation
-
+Consult the documentation at [docs.rs](https://docs.rs/scarlet/).
  
 ## Contributing Guidelines
 Before making a pull request, please consult the [contributing guidelines](CONTRIBUTING.md).
