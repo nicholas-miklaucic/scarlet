@@ -7,7 +7,7 @@
 //! anything else.
 
 // we don't mess around with documentation
-#![warn(missing_docs)]
+#![deny(missing_docs)]
 
 extern crate csv;
 extern crate geo;

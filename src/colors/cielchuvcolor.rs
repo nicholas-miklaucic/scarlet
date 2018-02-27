@@ -10,6 +10,22 @@ use illuminants::Illuminant;
 /// referred to as CIEHCL, but Scarlet uses CIELCHuv to be explicit and avoid any confusion, as well
 /// as keep consistency: in every hue-saturation-value color space or any variation of it, the
 /// coordinates are listed in the exact same order.
+/// # Example
+///
+/// ```
+/// # use scarlet::prelude::*;
+/// # use scarlet::colors::CIELCHuvColor;
+/// // hue-shift red to yellow, keeping same brightness: really ends up to be brown
+/// let red = RGBColor{r: 0.7, g: 0.1, b: 0.1};
+/// let red_lch: CIELCHuvColor = red.convert();
+/// let mut yellow = red_lch;
+/// yellow.h = yellow.h + 60.;
+/// println!("{}", red.to_string());
+/// println!("{}", yellow.convert::<RGBColor>().to_string());
+/// println!("{:?}", yellow);
+/// // prints #B31A1A
+/// //        #7B5A00
+/// ```
 #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub struct CIELCHuvColor {
     /// The luminance component. Exactly the same as CIELAB, CIELUV, and CIELCH. Varies between 0 and
@@ -35,15 +51,25 @@ impl Color for CIELCHuvColor {
         let luv = CIELUVColor::from_xyz(xyz);
 
         // compute c and h using f64 methods
-        let h = luv.v.atan2(luv.u);
+        let unbounded_h = luv.v.atan2(luv.u).to_degrees();
+        // fix h within 0-360
+        let h = if unbounded_h < 0.0 {
+            unbounded_h + 360.0
+        } else if unbounded_h > 360.0 {
+            unbounded_h - 360.0
+        } else {
+            unbounded_h
+        };
+
         let c = luv.v.hypot(luv.u);
         CIELCHuvColor { l: luv.l, c, h }
     }
     /// Gets the XYZ color that corresponds to this one, through CIELUV.
     fn to_xyz(&self, illuminant: Illuminant) -> XYZColor {
         // go through CIELUV
-        let u = self.c * self.h.cos();
-        let v = self.c * self.h.sin();
+        let rad_h = self.h.to_radians();
+        let u = self.c * rad_h.cos();
+        let v = self.c * rad_h.sin();
         CIELUVColor { l: self.l, u, v }.to_xyz(illuminant)
     }
 }

@@ -11,6 +11,34 @@ use coord::Coord;
 use illuminants::Illuminant;
 
 /// A color in the CIELAB color space.
+/// # Example
+/// Unlike spaces such as HSV and RGB, moving a and b linearly will create roughly smooth change in
+/// color.
+///
+/// ```
+/// # use scarlet::prelude::*;
+/// # use scarlet::colors::CIELABColor;
+/// // roughly blue-green
+/// let mut color = CIELABColor{l: 50., a: -100., b: -100.};
+/// for _i in 0..10 {
+///     // make warmer: positive a and b direction
+///     color.a = color.a + 20.;
+///     color.b = color.b + 20.;
+///     println!("{}", color.convert::<RGBColor>().to_string());
+/// }
+/// // prints the following:
+/// // #0098FF
+/// // #0092DD
+/// // #008ABA
+/// // #2F8298
+/// // #777777
+/// // #9E6956
+/// // #BD5735
+/// // #D73C0A
+/// // #F00000
+/// // #FF0000
+/// // note that the end might have been truncated to fit in sRGB's gamut on either side
+/// ```
 #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub struct CIELABColor {
     /// The luminance (loosely, brightness) of a given color. 0 is the lowest visible value and gives

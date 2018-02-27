@@ -8,6 +8,21 @@ use illuminants::Illuminant;
 use super::cielabcolor::CIELABColor;
 
 /// A cylindrical form of CIELAB, analogous to the relationship between HSL and RGB.
+/// # Example
+///
+/// ```
+/// # use scarlet::prelude::*;
+/// # use scarlet::colors::CIELCHColor;
+/// // hue-shift red to yellow, keeping same brightness: really ends up to be brown
+/// let red = RGBColor{r: 0.7, g: 0.1, b: 0.1};
+/// let red_lch: CIELCHColor = red.convert();
+/// let mut yellow = red_lch;
+/// yellow.h = yellow.h + 40.;
+/// println!("{}", red.to_string());
+/// println!("{}", yellow.convert::<RGBColor>().to_string());
+/// // prints #B31A1A
+/// //        #835000
+/// ```
 #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub struct CIELCHColor {
     /// The luminance component, identical to CIELAB's and CIELUV's. Ranges between 0 and 100.

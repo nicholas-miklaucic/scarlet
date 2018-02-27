@@ -27,6 +27,19 @@ use illuminants::Illuminant;
 /// A color in the HSL color space, a direct transformation of the sRGB space. sHSL is used to
 /// distinguish this space from a similar transformation of a different RGB space, which can cause
 /// some confusion as other implementations of HSL (such as on the web) omit this distinction.
+/// # Example
+/// Shifting from red to yellow creates two colors of clearly different brightnesses. This is because
+/// HSL doesn't account for the perceptual difference in brightness of light and dark colors.
+///
+/// ```
+/// # use scarlet::prelude::*;
+/// # use scarlet::colors::HSLColor;
+/// let red = HSLColor{h: 20., s: 0.5, l: 0.5};
+/// let yellow = HSLColor{h: 60., s: 0.5, l: 0.5};
+/// println!("{} {}", red.convert::<RGBColor>().to_string(), yellow.convert::<RGBColor>().to_string());
+/// // prints #BF6A40 #BFBF40
+/// // note how the second one is strictly more light
+/// ```
 #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub struct HSLColor {
     /// The hue component. Ranges from 0 to 360, as the angle in a cylindrical space. Exactly the same

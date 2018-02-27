@@ -234,8 +234,7 @@ pub trait Color: Sized {
     /// # use std::error::Error;
     /// # fn try_main() -> Result<(), Box<Error>> {
     /// let rgb1 = RGBColor::from_hex_code("#ffffff")?;
-    /// // note that D65 is used because that's the space of RGB: if a different illuminant was given,
-    /// // it would be a different white and may not be the same
+    /// // any illuminant would work: Scarlet takes care of that automatically
     /// let rgb2 = RGBColor::from_xyz(XYZColor::white_point(Illuminant::D65));
     /// assert_eq!(rgb1.to_string(), rgb2.to_string());
     /// # Ok(())
@@ -867,6 +866,16 @@ impl RGBColor {
     }
     /// Gets an 8-byte version of the green component, as a `u8`. Clamps values outside of the range 0-1
     /// and discretizes, so this may not correspond to the exact values kept internally.
+    /// # Example
+    ///
+    /// ```
+    /// # use scarlet::prelude::*;
+    /// let super_green = RGBColor{r: 0., g: 1.2, b: 0.};
+    /// let non_integral_green = RGBColor{r: 0., g: 0.999, b: 0.};
+    /// // the first one will get clamped in range, the second one will be rounded
+    /// assert_eq!(super_green.int_g(), non_integral_green.int_g());
+    /// assert_eq!(super_green.int_g(), 255);
+    /// ```
     pub fn int_g(&self) -> u8 {
         // first clamp, then multiply by 255, round, and discretize
         if self.g < 0.0 {
@@ -879,6 +888,16 @@ impl RGBColor {
     }
     /// Gets an 8-byte version of the blue component, as a `u8`. Clamps values outside of the range 0-1
     /// and discretizes, so this may not correspond to the exact values kept internally.
+    /// # Example
+    ///
+    /// ```
+    /// # use scarlet::prelude::*;
+    /// let super_blue = RGBColor{r: 0., g: 0., b: 1.2};
+    /// let non_integral_blue = RGBColor{r: 0., g: 0., b: 0.999};
+    /// // the first one will get clamped in range, the second one will be rounded
+    /// assert_eq!(super_blue.int_b(), non_integral_blue.int_b());
+    /// assert_eq!(super_blue.int_b(), 255);
+    /// ```
     pub fn int_b(&self) -> u8 {
         // first clamp, then multiply by 255, round, and discretize
         if self.b < 0.0 {
@@ -891,16 +910,16 @@ impl RGBColor {
     }
     /// Purely for convenience: gives a tuple with the three integer versions of the components. Used
     /// over standard conversion traits to avoid ambiguous operations.
+    /// # Example
+    ///
+    /// ```
+    /// # use scarlet::prelude::*;
+    /// let color = RGBColor{r: 0.3, g: 0.6, b: 0.7};
+    /// assert_eq!(color.int_rgb_tup(), (color.int_r(), color.int_g(), color.int_b()));
+    /// ```
     pub fn int_rgb_tup(&self) -> (u8, u8, u8) {
         (self.int_r(), self.int_g(), self.int_b())
     }
-
-    /// Purely for convenience: gives a slice with the three integer versions of the components. Used
-    /// over standard conversion traits to avoid ambiguous operations.
-    pub fn int_rgb(&self) -> [u8; 3] {
-        [self.int_r(), self.int_g(), self.int_b()]
-    }
-
     /// Given a string, returns that string wrapped in codes that will color the foreground. Used for
     /// the trait implementation of write_colored_str, which should be used instead.
     fn base_write_colored_str(&self, text: &str) -> String {
@@ -1001,7 +1020,6 @@ impl Color for RGBColor {
             b: float_vec[2],
         }
     }
-
     fn to_xyz(&self, illuminant: Illuminant) -> XYZColor {
         let uncorrect_gamma = |x: &f64| {
             if x <= &0.04045 {
@@ -1069,6 +1087,25 @@ impl RGBColor {
     /// represents. Four formats are accepted: `"#rgb"` as a shorthand for `"#rrggbb"`, `#rrggbb` by
     /// itself, and either of those formats without `#`: `"rgb"` or `"rrggbb"` are acceptable. Returns
     /// a ColorParseError if the given string does not follow one of these formats.
+    /// # Example
+    ///
+    /// ```
+    /// # use scarlet::prelude::*;
+    /// # fn try_main() -> Result<(), RGBParseError> {
+    /// let fuchsia = RGBColor::from_hex_code("#ff00ff")?;
+    /// // if 3 digits, interprets as doubled
+    /// let fuchsia2 = RGBColor::from_hex_code("f0f")?;
+    /// assert_eq!(fuchsia.int_rgb_tup(), fuchsia2.int_rgb_tup());
+    /// assert_eq!(fuchsia.int_rgb_tup(), (255, 0, 255));
+    /// let err = RGBColor::from_hex_code("#afafa");
+    /// let err2 = RGBColor::from_hex_code("#gafd22");
+    /// assert_eq!(err, err2);
+    /// # Ok(())
+    /// # }
+    /// # fn main() {
+    /// #   try_main().unwrap();
+    /// # }
+    /// ```    
     pub fn from_hex_code(hex: &str) -> Result<RGBColor, RGBParseError> {
         let mut chars: Vec<char> = hex.chars().collect();
         // check if leading hex, remove if so
@@ -1113,6 +1150,24 @@ impl RGBColor {
         }
     }
     /// Gets the RGB color corresponding to an X11 color name. Case is ignored.
+    /// # Example
+    ///
+    /// ```
+    /// # use scarlet::prelude::*;
+    /// # fn try_main() -> Result<(), RGBParseError> {
+    /// let fuchsia = RGBColor::from_color_name("fuchsia")?;
+    /// let fuchsia2 = RGBColor::from_color_name("FuCHSiA")?;
+    /// assert_eq!(fuchsia.int_rgb_tup(), fuchsia2.int_rgb_tup());
+    /// assert_eq!(fuchsia.int_rgb_tup(), (255, 0, 255));
+    /// let err = RGBColor::from_color_name("fuccshai");
+    /// let err2 = RGBColor::from_color_name("foobar");
+    /// assert_eq!(err, err2);
+    /// # Ok(())
+    /// # }
+    /// # fn main() {
+    /// #   try_main().unwrap();
+    /// # }
+    /// ```    
     pub fn from_color_name(name: &str) -> Result<RGBColor, RGBParseError> {
         // this is the full list of X11 color names
         // I used a Python script to process it from this site:

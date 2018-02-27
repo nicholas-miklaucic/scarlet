@@ -14,6 +14,18 @@ use illuminants::Illuminant;
 /// An HSV color, defining parameters for hue, saturation, and value from the RGB space. This is sHSV
 /// to be exact, but the derivation from the sRGB space is assumed as it matches the vast majority of
 /// colors called RGB.
+/// # Example
+/// As with HSL, changing a red to a yellow results in a lightness increase as well.
+///
+/// ```
+/// # use scarlet::prelude::*;
+/// # use scarlet::colors::HSVColor;
+/// let red = HSVColor{h: 0., s: 0.5, v: 0.8};
+/// let yellow = HSVColor{h: 50., s: 0.5, v: 0.8};
+/// println!("{} {}", red.convert::<RGBColor>().to_string(), yellow.convert::<RGBColor>().to_string());
+/// // prints #CC6666 #CCBB66
+/// // note how the second one is strictly more light
+/// ```
 #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub struct HSVColor {
     /// The hue, described as an angle that ranges between 0 and 360 in degrees. While values outside
