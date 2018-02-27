@@ -3,8 +3,8 @@
 
 [![Build Status](https://travis-ci.org/nicholas-miklaucic/scarlet.svg?branch=master)](https://travis-ci.org/nicholas-miklaucic/scarlet)
 
-**Note: This is still in development and is not ready for use. Stay tuned for version 1.0 before
-June 2018. This README, in its current state, describes what Scarlet will be, not what it is.**
+**Note: This is in beta stage. Breaking changes can and will be made without warning on new
+versions, up until 1.0, expected before June 2018. This is not mature software.**
 
 Humans and computers don't view color the same way, and so color descriptions like RGB don't
 effectively describe colors in the way that humans perceive them and vice versa. Image processing
@@ -22,8 +22,25 @@ this not only possible, but simple and convenient. With Scarlet, you can:
  * Accurately determine how far apart colors are perceptually.
  * And more!
  
+## Installation
+Add this to your `Cargo.toml`:
+
+```toml
+[dependencies]
+scarlet = "0.1"
+```
+
+and this to your crate root:
+
+```rust
+extern crate scarlet;
+```
+
+## Documentation
+
+ 
 ## Contributing Guidelines
-Before making a pull request, please consult the contributing guidelines.
+Before making a pull request, please consult the [contributing guidelines](CONTRIBUTING.md).
 
 The gist of it is:
  * Running `cargo test` should result in all tests passing. If tests themselves are wrong, change
@@ -38,4 +55,5 @@ The gist of it is:
    functionality.
 
 ## General Philosophy
-To look at the general philosophy and API design of Scarlet, please look at `api.org`.
+To look at the general philosophy and API design of Scarlet, please look at `api.org`. This is more
+intended for developers.

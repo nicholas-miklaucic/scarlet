@@ -37,3 +37,6 @@
  - Added HSV
 ** February 20, 2018
  - Added Material Design color palette
+** February 21-26, 2018
+ - Finalized functionality (colormaps, etc.)
+ - Got ready for v0.1 to be published!

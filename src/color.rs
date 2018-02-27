@@ -189,6 +189,7 @@ impl XYZColor {
     /// assert!(xyz1.x != xyz2.x);
     /// // using approx_equal, we can avoid these sorts of errors
     /// assert!(xyz1.approx_equal(&xyz2));
+    /// ```
     ///
     /// [`Color::visually_indistinguishable`]: ../color/trait.Color.html#method.visually_indistinguishable
     pub fn approx_equal(&self, other: &XYZColor) -> bool {
