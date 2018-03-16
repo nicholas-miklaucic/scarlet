@@ -3,6 +3,7 @@
 
 [![Build
 Status](https://travis-ci.org/nicholas-miklaucic/scarlet.svg?branch=master)](https://travis-ci.org/nicholas-miklaucic/scarlet)
+[![dependency status](https://deps.rs/repo/github/nicholas-miklaucic/scarlet/status.svg)](https://deps.rs/repo/github/nicholas-miklaucic/scarlet)
 
 
 **Note: This is in beta stage. Breaking changes can and will be made without warning on new
