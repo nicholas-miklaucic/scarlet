@@ -40,8 +40,10 @@ use super::coord::Coord;
 use illuminants::Illuminant;
 use colors::cielabcolor::CIELABColor;
 use colors::cielchcolor::CIELCHColor;
-use consts::BRADFORD_TRANSFORM_MAT as BRADFORD;
-use consts::STANDARD_RGB_TRANSFORM_MAT as SRGB;
+use consts::BRADFORD_TRANSFORM as BRADFORD;
+use consts::BRADFORD_TRANSFORM_INV as BRADFORD_INV;
+use consts::STANDARD_RGB_TRANSFORM as SRGB;
+use consts::STANDARD_RGB_TRANSFORM_INV as SRGB_INV;
 use consts;
 
 use termion::color::{Bg, Fg, Reset, Rgb};
@@ -141,13 +143,13 @@ impl XYZColor {
             *self
         } else {
             // convert to Bradford RGB space
-            let rgb = BRADFORD() * Vector3::new(self.x, self.y, self.z);
+            let rgb = *BRADFORD * Vector3::new(self.x, self.y, self.z);
 
             // get the RGB values for the white point of the illuminant we are currently using and
             // the one we want: wr here stands for "white reference", i.e., the one we're converting
             // to
-            let rgb_w = BRADFORD() * Vector3::from_column_slice(&self.illuminant.white_point());
-            let rgb_wr = BRADFORD() * Vector3::from_column_slice(&other_illuminant.white_point());
+            let rgb_w = *BRADFORD * Vector3::from_column_slice(&self.illuminant.white_point());
+            let rgb_wr = *BRADFORD * Vector3::from_column_slice(&other_illuminant.white_point());
 
             // perform the transform
             // this usually includes a parameter indicating how much you want to adapt, but it's
@@ -164,7 +166,7 @@ impl XYZColor {
             let b_c = rgb[2] * rgb_wr[2] / rgb_w[2];
             // convert back to XYZ using inverse of previous matrix
 
-            let xyz_c = consts::inv(BRADFORD()) * Vector3::new(r_c, g_c, b_c);
+            let xyz_c = *BRADFORD_INV * Vector3::new(r_c, g_c, b_c);
             XYZColor {
                 x: xyz_c[0],
                 y: xyz_c[1],
@@ -1011,7 +1013,7 @@ impl Color for RGBColor {
         // first, get linear RGB values (i.e., without gamma correction)
         // https://en.wikipedia.org/wiki/SRGB#Specification_of_the_transformation
 
-        let lin_rgb_vec = SRGB() * Vector3::new(xyz_d65.x, xyz_d65.y, xyz_d65.z);
+        let lin_rgb_vec = *SRGB * Vector3::new(xyz_d65.x, xyz_d65.y, xyz_d65.z);
         // now we scale for gamma correction
         let gamma_correct = |x: &f64| if x <= &0.0031308 {
             &12.92 * x
@@ -1034,7 +1036,7 @@ impl Color for RGBColor {
         let rgb_vec = Vector3::from_iterator([self.r, self.g, self.b].iter().map(uncorrect_gamma));
 
         // invert the matrix multiplication used in from_xyz()
-        let xyz_vec = consts::inv(SRGB()) * rgb_vec;
+        let xyz_vec = *SRGB_INV * rgb_vec;
 
         // sRGB, which this is based on, uses D65 as white, but you can convert to whatever
         // illuminant is specified

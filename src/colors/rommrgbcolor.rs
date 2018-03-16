@@ -11,8 +11,8 @@
 use bound::Bound;
 use color::{Color, XYZColor};
 use coord::Coord;
-use consts::ROMM_RGB_TRANSFORM_MAT as ROMM;
-use consts;
+use consts::ROMM_RGB_TRANSFORM as ROMM;
+use consts::ROMM_RGB_TRANSFORM_INV as ROMM_INV;
 use na::Vector3;
 use illuminants::Illuminant;
 
@@ -62,7 +62,7 @@ impl Color for ROMMRGBColor {
         let xyz_c = xyz.color_adapt(Illuminant::D50);
 
         // matrix multiplication, using spec's variable names
-        let rr_gg_bb = ROMM() * Vector3::new(xyz_c.x, xyz_c.y, xyz_c.z);
+        let rr_gg_bb = *ROMM * Vector3::new(xyz_c.x, xyz_c.y, xyz_c.z);
 
         // like sRGB, there's a linear part and an exponential part to the gamma conversion
         let gamma = |x: f64| {
@@ -137,7 +137,7 @@ impl Color for ROMMRGBColor {
         let b_c = gamma_inv(fix_flare_inv(self.b));
         // the standard brilliantly decided to not even bother adding an inverse matrix, but it's
         // best to calculate anyway: it makes it more precise
-        let xyz = consts::inv(ROMM()) * Vector3::new(r_c, g_c, b_c);
+        let xyz = *ROMM_INV * Vector3::new(r_c, g_c, b_c);
         // now we convert from D50 to whatever space we need and we're done!
         XYZColor {
             x: xyz[0],

@@ -5,8 +5,8 @@
 use bound::Bound;
 use coord::Coord;
 use color::{Color, XYZColor};
-use consts::ADOBE_RGB_TRANSFORM_MAT as ADOBE_RGB;
-use consts;
+use consts::ADOBE_RGB_TRANSFORM as ADOBE_RGB;
+use consts::ADOBE_RGB_TRANSFORM_INV as ADOBE_RGB_INV;
 use na::Vector3;
 use illuminants::Illuminant;
 
@@ -53,7 +53,7 @@ impl Color for AdobeRGBColor {
         let xyz_c = xyz.color_adapt(Illuminant::D65);
         // matrix multiplication
         // https://en.wikipedia.org/wiki/Adobe_RGB_color_space
-        let rgb = ADOBE_RGB() * Vector3::new(xyz_c.x, xyz_c.y, xyz_c.z);
+        let rgb = *ADOBE_RGB * Vector3::new(xyz_c.x, xyz_c.y, xyz_c.z);
 
         // clamp
         let clamp = |x: f64| if x > 1.0 {
@@ -79,7 +79,7 @@ impl Color for AdobeRGBColor {
         let ungamma = |x: f64| x.powf(563.0 / 256.0);
 
         // inverse matrix to the one in from_xyz
-        let xyz_vec = consts::inv(ADOBE_RGB()) *
+        let xyz_vec = *ADOBE_RGB_INV *
             Vector3::new(ungamma(self.r), ungamma(self.g), ungamma(self.b));
 
         XYZColor {
