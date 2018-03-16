@@ -448,6 +448,7 @@ impl RGBColor {
 mod tests {
     #[allow(unused_imports)]
     use super::*;
+    use color::Color;
 
     #[test]
     fn test_sample_colors() {
@@ -479,4 +480,25 @@ mod tests {
             "#4CAF50"
         );
     }
+    
+    #[test]
+    #[ignore]
+    fn test_equalized_scheme() {
+        let red = MaterialPrimary::Red(MaterialTone::Neutral(NeutralTone::W400));
+        let orange = MaterialPrimary::DeepOrange(MaterialTone::Neutral(NeutralTone::W400));
+        let orange_d = MaterialPrimary::Orange(MaterialTone::Neutral(NeutralTone::W400));
+        let yellow = MaterialPrimary::Yellow(MaterialTone::Neutral(NeutralTone::W400));
+        let green = MaterialPrimary::Green(MaterialTone::Neutral(NeutralTone::W400));
+        let blue_l = MaterialPrimary::LightBlue(MaterialTone::Neutral(NeutralTone::W400));
+        let blue = MaterialPrimary::Blue(MaterialTone::Neutral(NeutralTone::W400));
+        let purple_d = MaterialPrimary::DeepPurple(MaterialTone::Neutral(NeutralTone::W400));
+        let prims = vec![red, orange, orange_d, yellow, green, blue_l, blue, purple_d];
+        let cols: Vec<RGBColor> = prims.iter().map(|x| RGBColor::from_material_palette(*x)).collect();
+        let mean_l = cols.iter().map(|x| x.lightness()).sum::<f64>() / 8.;
+        for mut col in cols {
+            col.set_lightness(mean_l);
+            println!("{}", col.to_string());
+        }
+    }
 }
+

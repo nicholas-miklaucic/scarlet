@@ -1867,4 +1867,19 @@ mod tests {
             assert_eq!(rgb2.to_string(), String::from(*code));
         }
     }
+    #[test]
+    #[ignore]
+    fn color_scheme() {
+        let mut colors: Vec<RGBColor> = vec![];
+        for i in 0..8 {
+            colors.push(CIELCHColor{l: i as f64 / 7. * 100., c: 0., h: 0.}.convert());
+        }
+        for j in 0..8 {
+            colors.push(CIELCHColor{l: 50., c: 70., h: j as f64 / 8. * 360. + 10.}.convert());
+        }
+        println!("");
+        for color in colors {
+            println!("{}", color.to_string());
+        }
+    }
 }
