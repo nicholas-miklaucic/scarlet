@@ -22,3 +22,6 @@ geo = "0.7.1"
 nalgebra = "0.14"
 maplit = "1.0.1"
 lazy_static = "1.0"
+
+[package.metadata.docs.rs]
+rustdoc-args = ["--html-after-content colorize.html"]
