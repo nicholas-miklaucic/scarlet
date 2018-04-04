@@ -16,15 +16,12 @@
 //! don't do this properly or implement it differently. Scarlet generally follows best practices and
 //! industry standards, but file an issue if you feel this is not true.)  The essential workflow of
 //! [`Color`], and therefore Scarlet, is generally like this: convert between different color spaces
-//! using the generic [`convert<T: Color>()`] method, which allows any [`Color`] to be
-//! interconverted to any other representation. Leverage the specific attributes of each color space
-//! if need be (for example, using the hue or luminance attributes), and then convert back to a
-//! suitable display space. The many other methods of [`Color`] make some of the more common such
-//! patterns simple to do.
+//! using the generic [`convert<T: Color>()`](trait.Color.html#method.convert) method, which allows
+//! any [`Color`] to be interconverted to any other representation. Leverage the specific attributes
+//! of each color space if need be (for example, using the hue or luminance attributes), and then
+//! convert back to a suitable display space. The many other methods of [`Color`] make some of the
+//! more common such patterns simple to do.
 //!
-//! [`XYZColor`]: struct.XYZColor.html
-//! [`Color`]: trait.Color.html
-//! [`convert<T: Color>()`]: trait.Color.html#method.convert
 
 use std::collections::HashMap;
 use std::convert::From;
@@ -344,8 +341,8 @@ pub trait Color: Sized {
         let rgb: RGBColor = self.convert();
         rgb.base_write_colored_str(text)
     }
-    /// Returns a string which, when printed in a truecolor-supporting terminal, will hopefully have
-    /// both the foreground and background of the desired color, appearing as a complete square.
+    /// Returns a string which, when printed in a truecolor-supporting terminal, will have both the
+    /// foreground and background of the desired color, appearing as a complete square.
     ///
     /// # Example
     /// This is the same one as above, but with a complete block of color instead of the # mark.
@@ -383,7 +380,7 @@ pub trait Color: Sized {
     /// decomposable into other hues (when mixing additively): these are red, yellow, green, and
     /// blue. These unique hues have values of 0, 90, 180, and 270 degrees respectively, with other
     /// colors interpolated between them. This returned value will never be outside the range 0 to
-    /// 360. For more information, you can start at [the Wikpedia page](https://en.wikipedia.org/wiki/Hue).
+    /// 360\. For more information, you can start at [the Wikpedia page](https://en.wikipedia.org/wiki/Hue).
     ///
     /// This generally shouldn't differ all that much from HSL or HSV, but it is slightly more
     /// accurate to human perception and so is generally superior. This should be preferred over
@@ -451,7 +448,8 @@ pub trait Color: Sized {
     /// HSL uses the average of the largest and smallest RGB components. This doesn't account for the
     /// fact that some colors have inherently more or less brightness (for instance, yellow looks much
     /// brighter than purple). This is sometimes called *chroma*: we would say that purple has high
-    /// chroma. (In Scarlet, chroma usually means something else: check the [`chroma`] method for more info.
+    /// chroma. (In Scarlet, chroma usually means something else: check the [`chroma`](#method.chroma) method for more
+    /// info.
     ///
     /// ```
     /// # use scarlet::prelude::*;
@@ -487,7 +485,7 @@ pub trait Color: Sized {
     /// Sets a perceptually-accurate version of lightness, which ranges between 0 and 100 for visible
     /// colors. Any values outside of this range will be clamped within it.
     /// # Example
-    /// As we saw in the ['lightness'] method, purple and yellow tend to trip up HSV and HSL: the
+    /// As we saw in the [`lightness`](#method.lightness) method, purple and yellow tend to trip up HSV and HSL: the
     /// color system doesn't account for how much brighter the color yellow is compared to the color
     /// purple. What would equiluminant purple and yellow look like? We can find out.
     ///
@@ -607,7 +605,7 @@ pub trait Color: Sized {
         lch.c = if new_sat < 0.0 { 0.0 } else { new_sat * lch.l };
         *self = lch.convert();
     }
-    /// Returns a new Color of the same type as before, but with chromaticity removed: effectively,
+    /// Returns a new [`Color`] of the same type as before, but with chromaticity removed: effectively,
     /// a color created solely using a mix of black and white that has the same lightness as
     /// before. This uses the CIELAB luminance definition, which is considered a good standard and is
     /// perceptually accurate for the most part.
@@ -656,15 +654,20 @@ pub trait Color: Sized {
     /// For more, check out the [associated guide](../color_distance.html).
     ///
     /// # Examples
-    /// Using the distance between points in RGB space, or really any color space, as a way
-    /// of measuring difference runs into some problems, which we can examine using a more accurate
-    /// function. The main problem, as the below image shows, is that our sensitivity to color
-    /// variance shifts a lot depending on what hue the colors being compared are. Perceptual
-    /// uniformity is the goal for color spaces like CIELAB, but this is a failure point.
+    ///
+    /// Using the distance between points in RGB space, or really any color space, as a way of
+    /// measuring difference runs into some problems, which we can examine using a more accurate
+    /// function. The main problem, as the below image shows
+    /// [(source)](https://commons.wikimedia.org/wiki/File:CIExy1931_MacAdam.png), is that our
+    /// sensitivity to color variance shifts a lot depending on what hue the colors being compared
+    /// are. (In the image, the ellipses are drawn ten times as large as the smallest perceptible
+    /// difference: the larger the ellipse, the less sensitive the human eye is to changes in that
+    /// region.) Perceptual uniformity is the goal for color spaces like CIELAB, but this is a
+    /// failure point.
     ///
     /// ![MacAdam ellipses showing areas of indistinguishability scaled by a factor of 10. The green
-    /// ellipses are much wider than the blue.][macadam]
-    /// [macadam]: https://en.wikipedia.org/wiki/MacAdam_ellipse#/media/File:CIExy1931_MacAdam.png
+    /// ellipses are much wider than the
+    /// blue.](https://upload.wikimedia.org/wikipedia/commons/thumb/f/f4/CIExy1931_MacAdam.png/800px-CIExy1931_MacAdam.png)
     ///
     /// The other problem is that our sensitivity to lightness also shifts a lot depending on the
     /// conditions: we're not as at distinguishing dark grey from black, but better at

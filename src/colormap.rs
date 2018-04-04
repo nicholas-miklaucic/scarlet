@@ -1,4 +1,4 @@
-//! This module defines a generalized trait for a colormap—a mapping of the numbers between 0 and 1
+//! This module defines a generalized trait, [`ColorMap`], for a colormap—a mapping of the numbers between 0 and 1
 //! to colors in a continuous way—and provides some common ones used in programs like MATLAB and in
 //! data visualization everywhere.
 
@@ -13,10 +13,10 @@ use matplotlib_cmaps;
 /// A trait that models a colormap, a continuous mapping of the numbers between 0 and 1 to
 /// colors. Any color output format is supported, but it must be consistent.
 pub trait ColorMap<T: Color + Sized> {
-    /// Maps a given number between 0 and 1 to a given output Color. This should never fail or panic
+    /// Maps a given number between 0 and 1 to a given output `Color`. This should never fail or panic
     /// except for NaN and similar: there should be some Color that marks out-of-range data.
     fn transform_single(&self, f64) -> T;
-    /// Maps a given collection of numbers between 0 and 1 to an iterator of Colors. Does not evaluate
+    /// Maps a given collection of numbers between 0 and 1 to an iterator of `Color`s. Does not evaluate
     /// lazily, because the colormap could have some sort of state that changes between iterations otherwise.
     fn transform<U: IntoIterator<Item = f64>>(&self, inputs: U) -> Vec<T> {
         // TODO: make to work on references?
@@ -58,7 +58,7 @@ impl NormalizeMapping {
 
 /// A gradient colormap: a continuous, evenly-spaced shift between two colors A and B such that 0 maps
 /// to A, 1 maps to B, and any number in between maps to a weighted mix of them in a given
-/// coordinate space. Uses the gradient functions in the ColorPoint trait to complete this.
+/// coordinate space. Uses the gradient functions in the [`ColorPoint`] trait to complete this.
 /// Out-of-range values are simply clamped to the correct range: calling this on negative numbers
 /// will return A, and calling this on numbers larger than 1 will return B.
 #[derive(Debug, Clone)]
@@ -71,15 +71,15 @@ pub struct GradientColorMap<T: ColorPoint> {
     /// emphasizes differences in the low end of the range.
     pub normalization: NormalizeMapping,
     /// Any desired padding: offsets introduced that artificially shift the limits of the
-    /// range. Expressed as (new_min, new_max), where both are floats and new_min < new_max. For
-    /// example, having padding of (1/8, 1) would remove the lower eighth of the color map while
-    /// keeping the overall map smooth and continuous. Padding of (0., 1.) is the default and normal
+    /// range. Expressed as `(new_min, new_max)`, where both are floats and `new_min < new_max`. For
+    /// example, having padding of `(1/8, 1)` would remove the lower eighth of the color map while
+    /// keeping the overall map smooth and continuous. Padding of `(0., 1.)` is the default and normal
     /// behavior.
     pub padding: (f64, f64),
 }
 
 impl<T: ColorPoint> GradientColorMap<T> {
-    /// Constructs a new linear GradientColorMap, without padding, from two colors.
+    /// Constructs a new linear [`GradientColorMap`], without padding, from two colors.
     pub fn new_linear(start: T, end: T) -> GradientColorMap<T> {
         GradientColorMap {
             start,
@@ -88,7 +88,7 @@ impl<T: ColorPoint> GradientColorMap<T> {
             padding: (0., 1.),
         }
     }
-    /// Constructs a new cube root GradientColorMap, without padding, from two colors.
+    /// Constructs a new cube root [`GradientColorMap`], without padding, from two colors.
     pub fn new_cbrt(start: T, end: T) -> GradientColorMap<T> {
         GradientColorMap {
             start,

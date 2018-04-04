@@ -1,5 +1,5 @@
-//! This file provides some basic facilities for creating a Color object, specifically an RGBColor,
-//! from the Google Material design spec.
+//! This file provides some basic facilities for creating a [`Color`](color/trait.Color.html) object,
+//! specifically an [`RGBColor`](color/struct.RGBColor.html), from the Google Material design spec.
 
 use color::RGBColor;
 

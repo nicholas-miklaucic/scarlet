@@ -27,9 +27,10 @@ pub enum Illuminant {
     /// The CIE D75 illuminant. Rarer than the others, this is nontheless included for the occasional
     /// place where it might be used.
     D75,
-    /// Represents a light of any given hue, as an array [X, Y, Z] in CIE 1931 space. This does not
+    /// Represents a light of any given hue, as an array `[X, Y, Z]` in CIE 1931 space. This does not
     /// allow one to replicate any illuminant, but it does allow for custom illuminants and the
-    /// ability to chromatically adapt to unique lighting conditions, like dark shade or colored light.
+    /// ability to chromatically adapt to unique lighting conditions, like dark shade or colored
+    /// light.
     Custom([f64; 3]),
 }
 
@@ -47,11 +48,14 @@ pub(crate) static ILLUMINANT_WHITE_POINTS: [[f64; 3]; 4] = [
 impl Illuminant {
     /// Gets the XYZ coordinates of the white point value of the illuminant, normalized so Y = 1.
     /// # Example
-    /// # use scarlet::Illuminant;
+    ///
+    /// ```
+    /// # use scarlet::prelude::Illuminant;
     /// let wp = Illuminant::D65.white_point(); // [0.95047, 1.00000, 1.08884]
     /// assert!((wp[0] - 0.95047).abs() <= 1e-10);
     /// assert!((wp[1] - 1.00000).abs() <= 1e-10);
     /// assert!((wp[2] - 1.08884).abs() <= 1e-10);
+    /// ```
     pub fn white_point(&self) -> [f64; 3] {
         match *self {
             Illuminant::D50 => ILLUMINANT_WHITE_POINTS[0],

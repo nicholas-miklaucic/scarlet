@@ -1,8 +1,8 @@
 //! This module simply brings the most common Scarlet functionality under a single namespace, to
 //! prevent excessive imports. As of now, this prelude includes every trait in Scarlet, the
-//! ubiquitous [`RGBColor`], the associated parse error [`RGBParseError`], the important
-//! [`Illuminant`], and nothing else. Of particular note is that any alternative color space found
-//! in the [`colors`] module is not included. Additionally, the Material color enums and structs are
+//! ubiquitous [`RGBColor`](color/struct.RGBColor.html), the associated parse error [`RGBParseError`](color/enum.RGBParseError.html), the important
+//! [`Illuminant`](illuminants/enum.Illuminant.html), and nothing else. Of particular note is that any alternative color space found
+//! in the [`colors`](colors/index.html) module is not included. Additionally, the Material color enums and structs are
 //! not present.
 
 pub use bound::Bound;

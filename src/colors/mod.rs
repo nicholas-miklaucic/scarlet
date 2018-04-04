@@ -1,5 +1,7 @@
-//! This module contains various modules that implement types that implement Color. For convenience,
+//! This module contains various modules that implement types that implement [`Color`]. For convenience,
 //! each main type is imported into this module's namespace directly.
+//!
+//! [`Color`]: ../color/trait.Color.html
 pub mod adobergbcolor;
 pub mod cielabcolor;
 pub mod cielchcolor;

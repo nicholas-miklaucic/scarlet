@@ -1,7 +1,8 @@
 //! This file implements most of the standard color functions that essentially work on 3D space,
-//! including Euclidean distance, midpoints, and more. All of these methods work on `Color` types
-//! that implement `Into<Coord>` and `From<Coord>`, and some don't require `From<Coord>`. This makes
-//! it easy to provide these for custom `Color` types.
+//! including Euclidean distance, midpoints, and more. All of these methods work on
+//! [`Color`](color/trait.Color.html) types that implement `Into<Coord>` and `From<Coord>`, and some
+//! don't require `From<Coord>`. This makes it easy to provide these for custom
+//! [`Color`](color/trait.Color.html) types.
 
 use coord::Coord;
 use color::{Color, XYZColor};
@@ -22,9 +23,7 @@ pub enum ColorCalcError {
 pub trait ColorPoint: Color + Into<Coord> + From<Coord> + Clone + Copy {
     /// Gets the Euclidean distance between these two points when embedded in 3D space. This should
     /// **not** be used as an analog of color similarity: use the [`distance()`] function for
-    /// that. Formally speaking, this is a *metric*: it is 0 if and only if self and other are the
-    /// same, the distance between two points A and B is never larger than the distance from A to C
-    /// and the distance from B to C summed, and it is never negative.
+    /// that.
     ///
     /// [`distance()`]: ../color/trait.Color.html#method.distance
     fn euclidean_distance(self, other: Self) -> f64 {
@@ -33,19 +32,20 @@ pub trait ColorPoint: Color + Into<Coord> + From<Coord> + Clone + Copy {
         c1.euclidean_distance(&c2)
     }
 
-    /// Gets the *weighted midpoint* of two colors in a space as a new `Color`. This is defined as the
-    /// color corresponding to the point along the line segment connecting the two points such that
-    /// the distance to the second point is the weight, which for most applications needs to be
-    /// between 0 and 1. For example, a weight of 0.9 would make the midpoint one-tenth as much
-    /// affected by the second points as the first.
+    /// Gets the *weighted midpoint* of two colors in a space as a new
+    /// [`Color`](../color/trait.Color.html). This is defined as the color corresponding to the point
+    /// along the line segment connecting the two points such that the distance to the second point
+    /// is the weight, which for most applications needs to be between 0 and 1. For example, a
+    /// weight of 0.9 would make the midpoint one-tenth as much affected by the second points as the
+    /// first.
     fn weighted_midpoint(self, other: Self, weight: f64) -> Self {
         let c1: Coord = self.into();
         let c2: Coord = other.into();
         Self::from(c1.weighted_midpoint(&c2, weight))
     }
 
-    /// Like `weighted_midpoint`, but with `weight = 0.5`: essentially, the `Color` representing the
-    /// midpoint of the two inputs in 3D space.
+    /// Like [`weighted_midpoint`], but with `weight = 0.5`: essentially, the
+    /// [`Color`](../color/trait.Color.html) representing the midpoint of the two inputs in 3D space.
     fn midpoint(self, other: Self) -> Self {
         let c1: Coord = self.into();
         let c2: Coord = other.into();
@@ -162,7 +162,7 @@ pub trait ColorPoint: Color + Into<Coord> + From<Coord> + Clone + Copy {
     /// that 0 returns `self`, 1 returns `other`, and anything in between returns a mix (calculated
     /// linearly). Although it is possible to extrapolate outside of the range [0, 1], this is not
     /// a guarantee and may change without warning. For more fine-grained control of gradients, see
-    /// the GradientColorMap struct.
+    /// the [`GradientColorMap`](../colormap/struct.GradientColorMap.html) struct.
     ///
     /// # Examples
     /// ```rust
@@ -185,7 +185,7 @@ pub trait ColorPoint: Color + Into<Coord> + From<Coord> + Clone + Copy {
     /// that 0 returns `self`, 1 returns `other`, and anything in between returns a mix (calculated
     /// by the cube root of the given value). Although it is possible to extrapolate outside of the
     /// range [0, 1], this is not a guarantee and may change without warning. For more fine-grained
-    /// control of gradients, see the GradientColorMap struct.
+    /// control of gradients, see the [`GradientColorMap`](../colormap/struct.GradientColorMap.html) struct.
     ///
     /// # Examples
     /// ```rust
@@ -206,9 +206,9 @@ pub trait ColorPoint: Color + Into<Coord> + From<Coord> + Clone + Copy {
 
     /// Returns a pointer to a function that maps floating-point values from 0 to 1 to colors with
     /// padding `lower_pad` and `upper_pad` such that an input of 0 returns the gradient at
-    /// `lower_pad`, an input of 1 returns the gradient at `upper_pad`, and values in-between
-    /// are mapped linearly inside that range. For more fine-grained control over gradients, see the
-    /// GradientColorMap struct.
+    /// `lower_pad`, an input of 1 returns the gradient at `upper_pad`, and values in-between are
+    /// mapped linearly inside that range. For more fine-grained control over gradients, see the
+    /// [`GradientColorMap`](../colormap/struct.GradientColorMap.html) struct.
     ///
     /// # Examples
     /// ```rust

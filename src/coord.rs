@@ -7,18 +7,21 @@ use num;
 use num::{Num, NumCast};
 
 /// Represents a scalar value that can be easily converted, described using the common numeric traits
-/// in [`num`]. Anything that falls under this category can be multiplied by a `Coord` to scale
+/// in [`num`]. Anything that falls under this category can be multiplied by a [`Coord`] to scale
 /// it. This has no added functionality: it's just for convenience.
 pub trait Scalar: NumCast + Num {}
 
 impl<T: NumCast + Num> Scalar for T {}
 
 /// A point in 3D space. Supports many common arithmetic operations on points.
-/// Coord has three axes, denoted `x`, `y`, and `z`. These are not any different in any method of
+/// `Coord` has three axes, denoted `x`, `y`, and `z`. These are not any different in any method of
 /// `Coord`, so the distinction between them is completely conventional. In Scarlet, any [`Color`]
 /// that converts to and from a `Coord` will match its components with these axes in the order of the
 /// letters in its name: for example, [`CIELABColor`] maps to a coordinate such that `l` is on the
 /// x-axis, `a` is on the y-axis, and `b` is on the z-axis.
+///
+/// [`Color`]: ../color/trait.Color.html
+/// [`CIELABColor`]: ../colors/cielabcolor/struct.CIELABColor.html
 /// # Examples
 /// ## Basic Operations
 /// ```
@@ -150,14 +153,17 @@ impl Coord {
     /// It's very tempting to use this is as an analogue for perceptual difference between two colors,
     /// but this should generally be avoided. The reason is that projection into 3D space does not
     /// necessarily make distance a good analogue of perceptual difference. A very clear example would
-    /// be the two `HSVColor` points (360., 1., 1.) and (0., 1., 1.), which are the same point even
+    /// be the two [`HSVColor`] points (360., 1., 1.) and (0., 1., 1.), which are the same point even
     /// though their difference is 360, or examples with very low luminance: (275., 0., 0.,) and
     /// (300., 0.4, 0.) represent the exact same color as well. Even in additive primary spaces like
     /// RGB, this is usually a bad way of getting color distance: for example, humans are very good at
     /// distinguishing between blues compared to greens, so two greens with the same Euclidean
     /// distance as two blues will look much closer. If you want a method of determining how different
-    /// two colors look, use the [`color::ciede2000`] method, which provides the current industry and
+    /// two colors look, use the [`color::distance`] method, which provides the current industry and
     /// scientific standard for doing so.
+    ///
+    /// [`HSVColor`]: ../colors/hsvcolor/struct.HSVColor.html
+    /// [`color::distance`]: ../color/trait.Color.html#method.distance
     /// # Example
     /// ```
     /// # use scarlet::coord::Coord;
