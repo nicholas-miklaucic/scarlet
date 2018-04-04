@@ -215,7 +215,6 @@ mod tests {
         let mut rgb2 = ROMMRGBColor::from_xyz(xyz);
         for _i in 0..20 {
             rgb2 = ROMMRGBColor::from_xyz(rgb2.to_xyz(Illuminant::D50));
-            println!("{} {} {}", rgb2.r, rgb2.g, rgb2.b);
             assert!((rgb.r - rgb2.r).abs() <= 1e-4);
             assert!((rgb.g - rgb2.g).abs() <= 1e-4);
             assert!((rgb.b - rgb2.b).abs() <= 1e-4);
@@ -233,16 +232,6 @@ mod tests {
         };
         let rgb: ROMMRGBColor = ROMMRGBColor::from_xyz(xyz);
         let xyz2 = rgb.to_xyz(Illuminant::D65);
-        println!("{} {} {}", rgb.r, rgb.g, rgb.b);
-        println!(
-            "{} {} {} {} {} {}",
-            xyz.x,
-            xyz.y,
-            xyz.z,
-            xyz2.x,
-            xyz2.y,
-            xyz2.z
-        );
         assert!(xyz.approx_visually_equal(&xyz2));
     }
 }

@@ -165,7 +165,6 @@ mod tests {
             b: 0.,
         };
         let red_hsv: HSVColor = red_rgb.convert();
-        println!("{}", red_hsv.s);
         assert!(red_hsv.h.abs() <= 0.0001);
         assert!((red_hsv.s - 1.0) <= 0.0001);
         assert!((red_hsv.v - 1.0) <= 0.0001);

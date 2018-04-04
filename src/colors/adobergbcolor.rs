@@ -149,15 +149,6 @@ mod tests {
         let argb2prime = argb2.convert::<XYZColor>().convert::<AdobeRGBColor>();
         let xyz1 = argbprime.to_xyz(Illuminant::D50);
         let xyz2 = argb2prime.to_xyz(Illuminant::D50);
-        println!(
-            "{} {} {} {} {} {}",
-            xyz1.x,
-            xyz2.x,
-            xyz1.y,
-            xyz2.y,
-            xyz1.z,
-            xyz2.z
-        );
         assert!(xyz1.approx_equal(&xyz2));
     }
 }

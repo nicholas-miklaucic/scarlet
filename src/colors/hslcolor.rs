@@ -193,7 +193,6 @@ mod tests {
             b: 0.,
         };
         let red_hsl: HSLColor = red_rgb.convert();
-        println!("{}", red_hsl.s);
         assert!(red_hsl.h.abs() <= 0.0001);
         assert!((red_hsl.s - 1.0) <= 0.0001);
         assert!((red_hsl.l - 0.5) <= 0.0001);

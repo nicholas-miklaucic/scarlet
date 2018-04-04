@@ -116,15 +116,6 @@ mod tests {
         };
         let lch: CIELCHColor = xyz.convert();
         let xyz2: XYZColor = lch.convert();
-        println!(
-            "{} {} {} {} {} {}",
-            xyz.x,
-            xyz.y,
-            xyz.z,
-            xyz2.x,
-            xyz2.y,
-            xyz2.z
-        );
         assert!(xyz2.approx_equal(&xyz));
     }
     #[test]
@@ -137,15 +128,6 @@ mod tests {
         };
         let lch: CIELCHColor = xyz.convert();
         let xyz2: XYZColor = lch.convert();
-        println!(
-            "{} {} {} {} {} {}",
-            xyz.x,
-            xyz.y,
-            xyz.z,
-            xyz2.x,
-            xyz2.y,
-            xyz2.z
-        );
         assert!(xyz2.approx_visually_equal(&xyz));
     }
 }

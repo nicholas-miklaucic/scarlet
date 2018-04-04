@@ -261,7 +261,6 @@ mod tests {
             "#0000CC",
         ];
         for (i, col) in cols.into_iter().enumerate() {
-            println!("{} {} {}", col.r, col.g, col.b);
             assert_eq!(col.to_string(), strs[i]);
         }
     }
@@ -284,7 +283,6 @@ mod tests {
             "#330099",
         ];
         for (i, col) in cols.into_iter().enumerate() {
-            println!("{} {} {}", col.r, col.g, col.b);
             assert_eq!(col.to_string(), strs[i]);
         }
     }

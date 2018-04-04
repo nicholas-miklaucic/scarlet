@@ -182,8 +182,6 @@ mod tests {
             b: 100.0,
         };
         let color2: RGBColor = color1.convert();
-        println!("{}", color2.to_string());
         let color3: CIELABColor = color2.convert();
-        println!("{} {} {}", color3.l, color3.a, color3.b);
     }
 }

@@ -1222,6 +1222,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn can_display_colors() {
         let range = 120;
         let mut col;
@@ -1291,9 +1292,6 @@ mod tests {
         };
         let c2 = c1.color_adapt(Illuminant::D50).color_adapt(Illuminant::D55);
         let c3 = c1.color_adapt(Illuminant::D75).color_adapt(Illuminant::D55);
-        println!("{} {} {}", c1.x, c1.y, c1.z);
-        println!("{} {} {}", c2.x, c2.y, c2.z);
-        println!("{} {} {}", c3.x, c3.y, c3.z);
         assert!((c3.x - c2.x).abs() <= 0.01);
         assert!((c3.y - c2.y).abs() <= 0.01);
         assert!((c3.z - c2.z).abs() <= 0.01);
@@ -1334,6 +1332,7 @@ mod tests {
         assert_eq!(xyz, xyz2);
     }
     #[test]
+    #[ignore]
     fn fun_dress_color_adaptation_demo() {
         // the famous dress colors, taken completely out of the lighting conditions using GIMP
         let dress_bg = RGBColor::from_hex_code("#7d6e47").unwrap().to_xyz(
@@ -1346,7 +1345,7 @@ mod tests {
         // helper closure to print block of color
         let block_size = 50;
         let print_col = |c: XYZColor| {
-            println!();
+            println!();        
             for _i in 0..block_size {
                 println!("{}", c.write_color().repeat(block_size));
             }

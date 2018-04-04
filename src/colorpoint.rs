@@ -201,7 +201,6 @@ pub trait ColorPoint: Color + Into<Coord> + From<Coord> + Clone + Copy {
     fn cbrt_gradient(&self, other: &Self) -> Box<Fn(f64) -> Self> {
         let c1: Coord = (*self).into();
         let c2: Coord = (*other).into();
-        println!("{:?}, {:?}", c1, c2);
         Box::new(move |x| Self::from(c2.weighted_midpoint(&c1, x.cbrt())))
     }
 
@@ -233,7 +232,6 @@ pub trait ColorPoint: Color + Into<Coord> + From<Coord> + Clone + Copy {
     ) -> Box<Fn(f64) -> Self> {
         let c1: Coord = (*self).into();
         let c2: Coord = (*other).into();
-        println!("{:?}, {:?}", c1, c2);
         let length = upper_pad - lower_pad;
         Box::new(move |x| {
             Self::from(c2.weighted_midpoint(&c1, length * x + lower_pad))
@@ -265,7 +263,6 @@ mod tests {
             a: 65.0,
             b: 100.0,
         };
-        println!("{}", lab1.euclidean_distance(lab2));
         assert!((lab1.euclidean_distance(lab2) - 132.70150715).abs() <= 1e-7);
     }
     #[test]
