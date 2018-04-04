@@ -30,7 +30,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-scarlet = "0.1"
+scarlet = "0.2"
 ```
 
 and this to your crate root:
