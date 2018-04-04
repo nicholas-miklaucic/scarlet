@@ -1,7 +1,7 @@
 [package]
 name = "scarlet"
 description = "Colors and color spaces made simple"
-version = "0.1.1"
+version = "0.2.0"
 authors = ["Nicholas Miklaucic <nicholas.miklaucic@gmail.com>"]
 license = "Apache-2.0"
 readme = "README.MD"
