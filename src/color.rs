@@ -449,7 +449,7 @@ pub trait Color: Sized {
     /// fact that some colors have inherently more or less brightness (for instance, yellow looks much
     /// brighter than purple). This is sometimes called *chroma*: we would say that purple has high
     /// chroma. (In Scarlet, chroma usually means something else: check the [`chroma`](#method.chroma) method for more
-    /// info.
+    /// info.)
     ///
     /// ```
     /// # use scarlet::prelude::*;
@@ -586,10 +586,11 @@ pub trait Color: Sized {
     }
 
     /// Sets a perceptually-accurate version of *saturation*, defined as chroma relative to
-    /// lightness. Any negative value will be clamped to 0, but because the maximum saturation is not
-    /// well-defined any positive value will be used as is: this means that this method is more likely
-    /// than others to produce imaginary colors. Uses the CIELCH color space. Generally, saturation
-    /// ranges from 0 to about 1.
+    /// lightness. Does this without modifying lightness or hue. Any negative value will be clamped
+    /// to 0, but because the maximum saturation is not well-defined any positive value will be used
+    /// as is: this means that this method is more likely than others to produce imaginary
+    /// colors. Uses the CIELCH color space. Generally, saturation ranges from 0 to about 1, but it
+    /// can go higher.
     /// # Example
     ///
     /// ```
