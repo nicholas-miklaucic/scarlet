@@ -26,6 +26,7 @@ extern crate lazy_static;
 pub mod coord;
 mod consts;
 mod matplotlib_cmaps;
+mod color_parsing;
 pub mod illuminants;
 pub mod color;
 pub mod bound;

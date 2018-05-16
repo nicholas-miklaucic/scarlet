@@ -1,442 +1,238 @@
-// This is still a preliminary file and won't make it into an actual version of Scarlet. It
-// implements basic convenience functions that process valid HTML colors into vectors of either RGB,
-// RGBA, HSL, or HSLA components.
+//! This file separates out the more difficult aspects of string parsing, in this case dealing with
+//! CSS functional notation and all of its warts. Its goal is to, at the end, provide a function to
+//! encode arbitrary CSS color descriptions into Scarlet structs. (Source for CSS syntax:
+//! [https://www.w3.org/TR/css-color-3/](https://www.w3.org/TR/css-color-3/).)
 
-// Takes in a hex string, such as "#23334412" or "#aabbcc", and returns an array of four color
-// components R, G, B, and A as 0-255 integers. If the hex does not have an alpha value, it is
-// assumed to be 255.
-// This is not properly formatted for rustdoc because it doesn't fit within a larger framework yet.
+use std::fmt;
+use std::error::Error;
 
-use std::result::Result::Err;
-use std::collections::HashMap;
-extern crate regex;
-use self::regex::Regex;
-
-#[derive(Debug)]
-enum ColorParseError {
-    InvalidHTMLHex,
-    InvalidRGBAFunction,
-    OutOfRangeRGBA,
-    OutOfRangeHSLA,
-    InvalidHSLAFunction,
-    InvalidX11Name,
+/// A CSS numeric value. Either an integer, like 255, a float, like 0.8, or a percentage, like
+/// 104%.
+#[derive(Debug, PartialEq, Copy, Clone)]
+enum CSSNumeric {
+    /// Represents a string of numeric tokens, such as "124", with an optional leading '+' or '-'. 
+    Integer(isize),
+    /// Represents two integers separated by a '.', such that the second integer has no leading sign.
+    Float(f64),
+    /// Represents an integer followed by '%', to denote one one-hundredth of that integer.
+    Percentage(isize),
 }
 
-fn hex_to_rgba(hex: &str) -> Result<Vec<u8>, ColorParseError> {
-    // Parse for valid hex: has to be of the form #rrggbb or #rrggbbaa, where the values after the
-    // # have to be valid hex (0-9, a-f, or A-F)
-    if hex.chars().nth(0) != Some('#') {
-        return Err(ColorParseError::InvalidHTMLHex);
-    };
-    let count = hex.chars().count();
-    if ![7, 9].contains(&count) {
-        Err(ColorParseError::InvalidHTMLHex)
-    } else if hex.chars()
-        .skip(1)
-        .any(|x| !("abcdefABCDEF0123456789".contains(x)))
-    {
-        Err(ColorParseError::InvalidHTMLHex)
-    } else {
-        // valid hex: return useful value
-        // it's easier to do math on the hex value than it is to slice strings
-        let mut full_num: u32 =
-            u32::from_str_radix(hex.chars().skip(1).collect::<String>().as_str(), 16).unwrap();
-        let mut a: u8 = 255;
-        if count == 7 {
-            // no need to do anything, alpha is already set
-        } else {
-            // alpha is the number modulo 16^2, divide the number by 16^2 to remove the alpha
-            // component afterwards
-            // this should become bit operations that are really fast, but I haven't checked it to
-            // see if this actually happens, I'm just assuming for now that the compiler's good
-            a = (full_num % 256) as u8;
-            full_num = full_num / 256;
-        }
-        // now we just modulo and divide three more times, as we've guaranteed it's now rrggbb
-        let b = (full_num % 256) as u8;
-        full_num = full_num / 256;
-        let g = (full_num % 256) as u8;
-        full_num = full_num / 256;
-        // the only thing left is now r
-        let r = full_num as u8;
-        Ok(vec![r, g, b, a])
+/// An error in parsing a CSS string. Covers many different kinds of errors.
+#[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
+pub enum CSSParseError {
+    /// This indicates that non-numeric characters were used in a string on which a parse into a
+    /// number was attempted.
+    InvalidNumericCharacters,
+    /// This indicates that invalid numeric syntax was used, such as multiple periods or plus or minus
+    /// in invalid places.
+    InvalidNumericSyntax,
+}
+
+impl fmt::Display for CSSParseError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", "CSS parsing error")
     }
 }
 
-// Given a string like "rgb(24, 33, 235)" or "rgba(23, 34, 11)", returns a Vector [r, g, b, a].
-// Returns a ColorParseError if the RGB is out of range or there is incorrect syntax.
-fn func_to_rgba(input: &str) -> Result<Vec<u8>, ColorParseError> {
-    // test for any characters that are not spaces, parentheses, commas,  the letters rgba, or digits
-    if !(input.chars().all(|c| " ()rgba0123456789,".contains(c))) {
-        return Err(ColorParseError::InvalidRGBAFunction);
-    };
-    // now we don't have to worry about indexing issues, as everything is ASCII
-    // to simplify the string processing from here on out, we'll use regexes
-    // this gives us the added benefit of parsing the numbers as well and runs in linear time
-    // the tradeoff is that we won't know why the syntax is wrong, but it's not worth the 50 lines of
-    // code it would take to accomplish that and the increased error likelihood
-    // it's also a bit on the read-only side! testing is crucial here
-    // note that this does not verify that the numbers are in bounds, just that they're between 0 and 999
-    let rgba_re = Regex::new(
-        r"rgba\((?: *(\d{1,3}),)(?: *(\d{1,3}),)(?: *(\d{1,3}),)(?: *(\d{1,3}))\)",
-    ).unwrap();
-    let rgb_re = Regex::new(r"rgb\((?: *(\d{1,3}),)(?: *(\d{1,3}),)(?: *(\d{1,3}))\)").unwrap();
+impl Error for CSSParseError {
+    fn description(&self) -> &str {
+        match self {
+            &CSSParseError::InvalidNumericCharacters => "Unexpected non-numeric characters",
+            &CSSParseError::InvalidNumericSyntax => "Invalid numeric syntax",
+        }
+    }
+}
 
-    // try matching each one, falling back to rgb if rgba fails
-    let grps = match rgba_re.captures(input) {
-        None => rgb_re.captures(input),
-        x @ Some(_) => x,
+
+
+/// Parses a prechecked integer without a sign, such as "023" or "142". Panics on invalid input.
+fn parse_css_integer(num: &str) -> u64 {
+    num.parse().unwrap()
+}
+
+/// Parses a CSS float, such as "123.42" or ".34". Panics on invalid input.
+fn parse_css_float(num: &str) -> f64 {
+    num.parse().unwrap()
+}
+
+/// Parses a given CSS float (two integers separated by '.'), CSS integer (a string of characters
+/// '0'-'9') or a CSS percentage (an integer followed by '%'). Returns a struct that represents these
+/// various possibilities.
+fn parse_css_number(num: &str) -> Result<CSSNumeric, CSSParseError> {
+    let mut chars: Vec<char> = num.chars().collect();
+    // if invalid characters, return appropriate error
+    if !chars.iter().all(|&c| "0123456789-+.%".contains(c)) {
+        return Err(CSSParseError::InvalidNumericCharacters)
+    }
+    // test if initial character is '-' or '+'. Remove and set sign flag accordingly.
+    let is_positive = match chars[0] {
+        '-' => false,
+        '+' => true,
+        _ => true,
     };
-    // now either return an error, process an RGBA string list, or an RGB string list
-    match grps {
-        None => Err(ColorParseError::InvalidRGBAFunction),
-        Some(ref x) if x.len() == 4 => {
-            let (rstr, gstr, bstr) = (&x[1], &x[2], &x[3]);
-            let a: u8 = 255;
-            // use u16s so that values > 255 will be detected
-            let r = u16::from_str_radix(rstr, 10).unwrap();
-            let g = u16::from_str_radix(gstr, 10).unwrap();
-            let b = u16::from_str_radix(bstr, 10).unwrap();
-            if (r > 255) | (g > 255) | (b > 255) {
-                Err(ColorParseError::OutOfRangeRGBA)
-            } else {
-                Ok(vec![r as u8, g as u8, b as u8, a])
+    if "-+".contains(chars[0]) {
+        chars.remove(0);
+    }
+    // if no longer any characters, throw error
+    if chars.len() == 0 {
+        return Err(CSSParseError::InvalidNumericSyntax)
+    }
+    // if any other pluses or minuses, throw error
+    if chars.iter().any(|&c| "-=".contains(c)) {
+        return Err(CSSParseError::InvalidNumericSyntax)
+    }
+    // Test if number contains exactly one period. If more than one, throw error: otherwise, split to
+    // cases.
+    match chars.iter().filter(|&c| c == &'.').count() {
+        0 => {
+            // number or percentage: check, throw error if more than one %
+            match chars.iter().filter(|&c| c == &'%').count() {
+                0 => {
+                    // well-formed integer
+                    let uint = parse_css_integer(&(chars.iter().collect::<String>()));
+                    // adjust for sign
+                    let int = if is_positive {
+                        uint as isize
+                    } else {
+                        -(uint as isize)
+                    };
+                    Ok(CSSNumeric::Integer(int))
+                }
+                1 => {
+                    // check if % is at end
+                    if chars.iter().last().unwrap() == &'%' {
+                        // parse the rest as integer and return                        
+                        chars.pop();
+                        let uint = parse_css_integer(&(chars.iter().collect::<String>()));
+                        // adjust for sign
+                        let int = if is_positive {
+                            uint as isize
+                        } else {
+                            -(uint as isize)
+                        };
+                        Ok(CSSNumeric::Percentage(int))
+                    } else {
+                        // invalid, throw error
+                        Err(CSSParseError::InvalidNumericSyntax)
+                    }
+                }
+                _ => {
+                    // invalid, throw eerror
+                    Err(CSSParseError::InvalidNumericSyntax)
+                }
             }
         }
-        Some(ref x) if x.len() == 5 => {
-            let (rstr, gstr, bstr, astr) = (&x[1], &x[2], &x[3], &x[4]);
-            let r = u16::from_str_radix(rstr, 10).unwrap();
-            let g = u16::from_str_radix(gstr, 10).unwrap();
-            let b = u16::from_str_radix(bstr, 10).unwrap();
-            let a = u16::from_str_radix(astr, 10).unwrap();
-            if (r > 255) | (g > 255) | (b > 255) | (a > 255) {
-                Err(ColorParseError::OutOfRangeRGBA)
+        1 => {
+            // parse as valid float and account for sign
+            let ufloat = parse_css_float(&(chars.iter().collect::<String>()));
+            let float = if is_positive {
+                ufloat
             } else {
-                Ok(vec![r as u8, g as u8, b as u8, a as u8])
-            }
+                -ufloat
+            };
+            Ok(CSSNumeric::Float(float))
         }
-        Some(_) => Err(ColorParseError::InvalidRGBAFunction),
+        _ => {
+            // invalid, throw error
+            Err(CSSParseError::InvalidNumericSyntax)
+        }
     }
-}
+}       
 
-// Takes in an X11 color name, like "blue", and returns the corresponding
-// RGB values as a vector [r, g, b, a] where a is 255.
-fn name_to_rgba(name: &str) -> Result<Vec<u8>, ColorParseError> {
-    // this is the full list of X11 color names
-    // I used a Python script to process it from this site:
-    // https://github.com/bahamas10/css-color-names/blob/master/css-color-names.json let
-    // I added the special "transparent" referring to #00000000
-    let color_names: Vec<&str> = [
-        "aliceblue",
-        "antiquewhite",
-        "aqua",
-        "aquamarine",
-        "azure",
-        "beige",
-        "bisque",
-        "black",
-        "blanchedalmond",
-        "blue",
-        "blueviolet",
-        "brown",
-        "burlywood",
-        "cadetblue",
-        "chartreuse",
-        "chocolate",
-        "coral",
-        "cornflowerblue",
-        "cornsilk",
-        "crimson",
-        "cyan",
-        "darkblue",
-        "darkcyan",
-        "darkgoldenrod",
-        "darkgray",
-        "darkgreen",
-        "darkgrey",
-        "darkkhaki",
-        "darkmagenta",
-        "darkolivegreen",
-        "darkorange",
-        "darkorchid",
-        "darkred",
-        "darksalmon",
-        "darkseagreen",
-        "darkslateblue",
-        "darkslategray",
-        "darkslategrey",
-        "darkturquoise",
-        "darkviolet",
-        "deeppink",
-        "deepskyblue",
-        "dimgray",
-        "dimgrey",
-        "dodgerblue",
-        "firebrick",
-        "floralwhite",
-        "forestgreen",
-        "fuchsia",
-        "gainsboro",
-        "ghostwhite",
-        "gold",
-        "goldenrod",
-        "gray",
-        "green",
-        "greenyellow",
-        "grey",
-        "honeydew",
-        "hotpink",
-        "indianred",
-        "indigo",
-        "ivory",
-        "khaki",
-        "lavender",
-        "lavenderblush",
-        "lawngreen",
-        "lemonchiffon",
-        "lightblue",
-        "lightcoral",
-        "lightcyan",
-        "lightgoldenrodyellow",
-        "lightgray",
-        "lightgreen",
-        "lightgrey",
-        "lightpink",
-        "lightsalmon",
-        "lightseagreen",
-        "lightskyblue",
-        "lightslategray",
-        "lightslategrey",
-        "lightsteelblue",
-        "lightyellow",
-        "lime",
-        "limegreen",
-        "linen",
-        "magenta",
-        "maroon",
-        "mediumaquamarine",
-        "mediumblue",
-        "mediumorchid",
-        "mediumpurple",
-        "mediumseagreen",
-        "mediumslateblue",
-        "mediumspringgreen",
-        "mediumturquoise",
-        "mediumvioletred",
-        "midnightblue",
-        "mintcream",
-        "mistyrose",
-        "moccasin",
-        "navajowhite",
-        "navy",
-        "oldlace",
-        "olive",
-        "olivedrab",
-        "orange",
-        "orangered",
-        "orchid",
-        "palegoldenrod",
-        "palegreen",
-        "paleturquoise",
-        "palevioletred",
-        "papayawhip",
-        "peachpuff",
-        "peru",
-        "pink",
-        "plum",
-        "powderblue",
-        "purple",
-        "rebeccapurple",
-        "red",
-        "rosybrown",
-        "royalblue",
-        "saddlebrown",
-        "salmon",
-        "sandybrown",
-        "seagreen",
-        "seashell",
-        "sienna",
-        "silver",
-        "skyblue",
-        "slateblue",
-        "slategray",
-        "slategrey",
-        "snow",
-        "springgreen",
-        "steelblue",
-        "tan",
-        "teal",
-        "thistle",
-        "tomato",
-        "turquoise",
-        "violet",
-        "wheat",
-        "white",
-        "whitesmoke",
-        "yellow",
-        "yellowgreen",
-        "transparent",
-    ].to_vec();
-    let color_codes: Vec<&str> = [
-        "#f0f8ff",
-        "#faebd7",
-        "#00ffff",
-        "#7fffd4",
-        "#f0ffff",
-        "#f5f5dc",
-        "#ffe4c4",
-        "#000000",
-        "#ffebcd",
-        "#0000ff",
-        "#8a2be2",
-        "#a52a2a",
-        "#deb887",
-        "#5f9ea0",
-        "#7fff00",
-        "#d2691e",
-        "#ff7f50",
-        "#6495ed",
-        "#fff8dc",
-        "#dc143c",
-        "#00ffff",
-        "#00008b",
-        "#008b8b",
-        "#b8860b",
-        "#a9a9a9",
-        "#006400",
-        "#a9a9a9",
-        "#bdb76b",
-        "#8b008b",
-        "#556b2f",
-        "#ff8c00",
-        "#9932cc",
-        "#8b0000",
-        "#e9967a",
-        "#8fbc8f",
-        "#483d8b",
-        "#2f4f4f",
-        "#2f4f4f",
-        "#00ced1",
-        "#9400d3",
-        "#ff1493",
-        "#00bfff",
-        "#696969",
-        "#696969",
-        "#1e90ff",
-        "#b22222",
-        "#fffaf0",
-        "#228b22",
-        "#ff00ff",
-        "#dcdcdc",
-        "#f8f8ff",
-        "#ffd700",
-        "#daa520",
-        "#808080",
-        "#008000",
-        "#adff2f",
-        "#808080",
-        "#f0fff0",
-        "#ff69b4",
-        "#cd5c5c",
-        "#4b0082",
-        "#fffff0",
-        "#f0e68c",
-        "#e6e6fa",
-        "#fff0f5",
-        "#7cfc00",
-        "#fffacd",
-        "#add8e6",
-        "#f08080",
-        "#e0ffff",
-        "#fafad2",
-        "#d3d3d3",
-        "#90ee90",
-        "#d3d3d3",
-        "#ffb6c1",
-        "#ffa07a",
-        "#20b2aa",
-        "#87cefa",
-        "#778899",
-        "#778899",
-        "#b0c4de",
-        "#ffffe0",
-        "#00ff00",
-        "#32cd32",
-        "#faf0e6",
-        "#ff00ff",
-        "#800000",
-        "#66cdaa",
-        "#0000cd",
-        "#ba55d3",
-        "#9370db",
-        "#3cb371",
-        "#7b68ee",
-        "#00fa9a",
-        "#48d1cc",
-        "#c71585",
-        "#191970",
-        "#f5fffa",
-        "#ffe4e1",
-        "#ffe4b5",
-        "#ffdead",
-        "#000080",
-        "#fdf5e6",
-        "#808000",
-        "#6b8e23",
-        "#ffa500",
-        "#ff4500",
-        "#da70d6",
-        "#eee8aa",
-        "#98fb98",
-        "#afeeee",
-        "#db7093",
-        "#ffefd5",
-        "#ffdab9",
-        "#cd853f",
-        "#ffc0cb",
-        "#dda0dd",
-        "#b0e0e6",
-        "#800080",
-        "#663399",
-        "#ff0000",
-        "#bc8f8f",
-        "#4169e1",
-        "#8b4513",
-        "#fa8072",
-        "#f4a460",
-        "#2e8b57",
-        "#fff5ee",
-        "#a0522d",
-        "#c0c0c0",
-        "#87ceeb",
-        "#6a5acd",
-        "#708090",
-        "#708090",
-        "#fffafa",
-        "#00ff7f",
-        "#4682b4",
-        "#d2b48c",
-        "#008080",
-        "#d8bfd8",
-        "#ff6347",
-        "#40e0d0",
-        "#ee82ee",
-        "#f5deb3",
-        "#ffffff",
-        "#f5f5f5",
-        "#ffff00",
-        "#9acd32",
-        "#00000000",
-    ].to_vec();
-    let mut names_to_codes = HashMap::new();
 
-    for (i, color_name) in color_names.iter().enumerate() {
-        names_to_codes.insert(color_name, color_codes[i]);
+#[cfg(test)]
+mod tests {
+    #[allow(unused_imports)]
+    use super::*;
+
+    #[test]
+    fn test_css_parse_integer() {
+        let num1 = match parse_css_number("184").unwrap() {
+            CSSNumeric::Integer(val) => val,
+            _ => 0,
+        };
+        assert_eq!(num1, 184);
+        // test leading zeros
+        let num2 = match parse_css_number("00423").unwrap() {
+            CSSNumeric::Integer(val) => val,
+            _ => 0,
+        };
+        assert_eq!(num2, 423);
+        // test negative sign
+        let num3 = match parse_css_number("-00423").unwrap() {
+            CSSNumeric::Integer(val) => val,
+            _ => 0,
+        };
+        assert_eq!(num3, -423);
+        // test positive sign
+        let num4 = match parse_css_number("+00423").unwrap() {
+            CSSNumeric::Integer(val) => val,
+            _ => 0,
+        };
+        assert_eq!(num4, 423);
     }
-
-    // now just return the converted value or raise one if not in hashmap
-    match names_to_codes.get(&name) {
-        None => Err(ColorParseError::InvalidX11Name),
-        Some(x) => hex_to_rgba(x),
+    #[test]
+    fn test_css_parse_float() {
+        let num1 = match parse_css_number("0.37").unwrap() {
+            CSSNumeric::Float(val) => val,
+            _ => 0.,
+        };
+        assert_eq!(format!("{}", num1), "0.37");
+        // test no leading zeros
+        let num2 = match parse_css_number(".423").unwrap() {
+            CSSNumeric::Float(val) => val,
+            _ => 0.,
+        };
+        assert_eq!(format!("{}", num2), "0.423");
+        // test negative sign
+        let num3 = match parse_css_number("-00.423").unwrap() {
+            CSSNumeric::Float(val) => val,
+            _ => 0.,
+        };
+        assert_eq!(format!("{}", num3), "-0.423");
+        // test positive sign
+        let num4 = match parse_css_number("+00.423").unwrap() {
+            CSSNumeric::Float(val) => val,
+            _ => 0.,
+        };
+        assert_eq!(format!("{}", num4), "0.423");
+    }
+    #[test]
+    fn test_css_parse_percentages() {
+        // just repeating integer tests for this one
+        let num1 = match parse_css_number("184%").unwrap() {
+            CSSNumeric::Percentage(val) => val,
+            _ => 0,
+        };
+        assert_eq!(num1, 184);
+        // test leading zeros
+        let num2 = match parse_css_number("00423%").unwrap() {
+            CSSNumeric::Percentage(val) => val,
+            _ => 0,
+        };
+        assert_eq!(num2, 423);
+        // test negative sign
+        let num3 = match parse_css_number("-00423%").unwrap() {
+            CSSNumeric::Percentage(val) => val,
+            _ => 0,
+        };
+        assert_eq!(num3, -423);
+        // test positive sign
+        let num4 = match parse_css_number("+00423%").unwrap() {
+            CSSNumeric::Percentage(val) => val,
+            _ => 0,
+        };
+        assert_eq!(num4, 423);
+    }
+    #[test]
+    fn test_errors() {
+        // test non-numeric characters
+        assert_eq!(parse_css_number("abc"), Err(CSSParseError::InvalidNumericCharacters));
+        // test multiple periods
+        assert_eq!(parse_css_number("14.23.2"), Err(CSSParseError::InvalidNumericSyntax));
+        // test multiple percentages, percentages in wrong place
+        assert_eq!(parse_css_number("-24%%"), Err(CSSParseError::InvalidNumericSyntax));
+        assert_eq!(parse_css_number("1%2%"), Err(CSSParseError::InvalidNumericSyntax));        
     }
 }
