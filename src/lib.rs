@@ -36,7 +36,7 @@ pub mod colorpoint;
 pub mod colormap;
 pub mod material_colors;
 pub mod prelude;
-pub mod doc;
+// pub mod doc;
 
 
 
