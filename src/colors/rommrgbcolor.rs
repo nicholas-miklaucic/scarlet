@@ -12,8 +12,7 @@ use bound::Bound;
 use color::{Color, XYZColor};
 use coord::Coord;
 use consts::ROMM_RGB_TRANSFORM as ROMM;
-use consts::ROMM_RGB_TRANSFORM_INV as ROMM_INV;
-use na::Vector3;
+use consts::ROMM_RGB_TRANSFORM_LU as ROMM_LU;
 use illuminants::Illuminant;
 
 
@@ -62,7 +61,8 @@ impl Color for ROMMRGBColor {
         let xyz_c = xyz.color_adapt(Illuminant::D50);
 
         // matrix multiplication, using spec's variable names
-        let rr_gg_bb = *ROMM * Vector3::new(xyz_c.x, xyz_c.y, xyz_c.z);
+        // &* needed because lazy_static uses a different type which implements Deref
+        let rr_gg_bb = &*ROMM * vector![xyz_c.x, xyz_c.y, xyz_c.z];
 
         // like sRGB, there's a linear part and an exponential part to the gamma conversion
         let gamma = |x: f64| {
@@ -135,9 +135,12 @@ impl Color for ROMMRGBColor {
         let r_c = gamma_inv(fix_flare_inv(self.r));
         let g_c = gamma_inv(fix_flare_inv(self.g));
         let b_c = gamma_inv(fix_flare_inv(self.b));
-        // the standard brilliantly decided to not even bother adding an inverse matrix, but it's
-        // best to calculate anyway: it makes it more precise
-        let xyz = *ROMM_INV * Vector3::new(r_c, g_c, b_c);
+        // The standard brilliantly decided to not even bother adding an inverse matrix. Scarlet uses
+        // LU decomposition to avoid any precision loss when solving the equation for the right
+        // values. This might differ from other solutions elsewhere: trust this one, unless you have
+        // a good reason not to.        
+        let xyz = ROMM_LU.solve(vector![r_c, g_c, b_c])
+            .expect("Matrix is invertible.");
         // now we convert from D50 to whatever space we need and we're done!
         XYZColor {
             x: xyz[0],

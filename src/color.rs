@@ -38,15 +38,13 @@ use illuminants::Illuminant;
 use colors::cielabcolor::CIELABColor;
 use colors::cielchcolor::CIELCHColor;
 use consts::BRADFORD_TRANSFORM as BRADFORD;
-use consts::BRADFORD_TRANSFORM_INV as BRADFORD_INV;
+use consts::BRADFORD_TRANSFORM_LU as BRADFORD_LU;
 use consts::STANDARD_RGB_TRANSFORM as SRGB;
-use consts::STANDARD_RGB_TRANSFORM_INV as SRGB_INV;
+use consts::STANDARD_RGB_TRANSFORM_LU as SRGB_LU;
 use consts;
 
 use termion::color::{Bg, Fg, Reset, Rgb};
-use na::Vector3;
-
-//
+use rulinalg::vector::Vector;
 
 /// A point in the CIE 1931 XYZ color space. Although any point in XYZ coordinate space is technically
 /// valid, in this library XYZ colors are treated as normalized so that Y=1 is the white point of
@@ -140,13 +138,14 @@ impl XYZColor {
             *self
         } else {
             // convert to Bradford RGB space
-            let rgb = *BRADFORD * Vector3::new(self.x, self.y, self.z);
+            // &* needed because lazy_static uses a different type which implements Deref
+            let rgb = &*BRADFORD * vector![self.x, self.y, self.z];
 
             // get the RGB values for the white point of the illuminant we are currently using and
             // the one we want: wr here stands for "white reference", i.e., the one we're converting
             // to
-            let rgb_w = *BRADFORD * Vector3::from_column_slice(&self.illuminant.white_point());
-            let rgb_wr = *BRADFORD * Vector3::from_column_slice(&other_illuminant.white_point());
+            let rgb_w = &*BRADFORD * Vector::from(self.illuminant.white_point().to_vec());
+            let rgb_wr = &*BRADFORD * Vector::from(other_illuminant.white_point().to_vec());
 
             // perform the transform
             // this usually includes a parameter indicating how much you want to adapt, but it's
@@ -163,7 +162,9 @@ impl XYZColor {
             let b_c = rgb[2] * rgb_wr[2] / rgb_w[2];
             // convert back to XYZ using inverse of previous matrix
 
-            let xyz_c = *BRADFORD_INV * Vector3::new(r_c, g_c, b_c);
+            // using LU decomposition for accuracy
+            let xyz_c = BRADFORD_LU.solve(vector![r_c, g_c, b_c])
+                .expect("Matrix is invertible.");
             XYZColor {
                 x: xyz_c[0],
                 y: xyz_c[1],
@@ -1017,7 +1018,7 @@ impl Color for RGBColor {
         // first, get linear RGB values (i.e., without gamma correction)
         // https://en.wikipedia.org/wiki/SRGB#Specification_of_the_transformation
 
-        let lin_rgb_vec = *SRGB * Vector3::new(xyz_d65.x, xyz_d65.y, xyz_d65.z);
+        let lin_rgb_vec = &*SRGB * vector![xyz_d65.x, xyz_d65.y, xyz_d65.z];
         // now we scale for gamma correction
         let gamma_correct = |x: &f64| if x <= &0.0031308 {
             &12.92 * x
@@ -1037,10 +1038,12 @@ impl Color for RGBColor {
         } else {
             ((x + &0.055) / &1.055).powf(2.4)
         };
-        let rgb_vec = Vector3::from_iterator([self.r, self.g, self.b].iter().map(uncorrect_gamma));
+        let rgb_vec: Vector<f64> = vec![self.r, self.g, self.b].iter().map(uncorrect_gamma).collect();
 
         // invert the matrix multiplication used in from_xyz()
-        let xyz_vec = *SRGB_INV * rgb_vec;
+        // use LU decomposition for accuracy
+        let xyz_vec = SRGB_LU.solve(rgb_vec)
+            .expect("Matrix is invertible.");
 
         // sRGB, which this is based on, uses D65 as white, but you can convert to whatever
         // illuminant is specified

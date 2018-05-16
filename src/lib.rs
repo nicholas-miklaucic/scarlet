@@ -13,7 +13,8 @@
 
 extern crate csv;
 extern crate geo;
-extern crate nalgebra as na;
+#[macro_use]
+extern crate rulinalg;
 extern crate num;
 extern crate serde;
 #[macro_use]
@@ -34,6 +35,7 @@ pub mod colorpoint;
 pub mod colormap;
 pub mod material_colors;
 pub mod prelude;
+pub mod doc;
 
 
 
