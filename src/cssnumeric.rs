@@ -1,5 +1,5 @@
 //! This file separates out the more difficult aspects of string parsing, in this case dealing with
-//! CSS functional notation and all of its warts. Its goal is to, at the end, provide a function to
+//! CSS numeric notation and all of its warts. Its goal is to, at the end, provide a function to
 //! encode arbitrary CSS color descriptions into Scarlet structs. (Source for CSS syntax:
 //! [https://www.w3.org/TR/css-color-3/](https://www.w3.org/TR/css-color-3/).)
 
@@ -9,7 +9,7 @@ use std::error::Error;
 /// A CSS numeric value. Either an integer, like 255, a float, like 0.8, or a percentage, like
 /// 104%.
 #[derive(Debug, PartialEq, Copy, Clone)]
-enum CSSNumeric {
+pub(crate) enum CSSNumeric {
     /// Represents a string of numeric tokens, such as "124", with an optional leading '+' or '-'. 
     Integer(isize),
     /// Represents two integers separated by a '.', such that the second integer has no leading sign.
@@ -27,6 +27,9 @@ pub enum CSSParseError {
     /// This indicates that invalid numeric syntax was used, such as multiple periods or plus or minus
     /// in invalid places.
     InvalidNumericSyntax,
+    /// This indicates that a general color syntax error occurred, such as mismatching parentheses or
+    /// uninterpretable tokens.
+    InvalidColorSyntax,
 }
 
 impl fmt::Display for CSSParseError {
@@ -40,6 +43,7 @@ impl Error for CSSParseError {
         match self {
             &CSSParseError::InvalidNumericCharacters => "Unexpected non-numeric characters",
             &CSSParseError::InvalidNumericSyntax => "Invalid numeric syntax",
+            &CSSParseError::InvalidColorSyntax => "Invalid color syntax",
         }
     }
 }
@@ -59,7 +63,7 @@ fn parse_css_float(num: &str) -> f64 {
 /// Parses a given CSS float (two integers separated by '.'), CSS integer (a string of characters
 /// '0'-'9') or a CSS percentage (an integer followed by '%'). Returns a struct that represents these
 /// various possibilities.
-fn parse_css_number(num: &str) -> Result<CSSNumeric, CSSParseError> {
+pub(crate) fn parse_css_number(num: &str) -> Result<CSSNumeric, CSSParseError> {
     let mut chars: Vec<char> = num.chars().collect();
     // if invalid characters, return appropriate error
     if !chars.iter().all(|&c| "0123456789-+.%".contains(c)) {

@@ -42,6 +42,7 @@ use consts::BRADFORD_TRANSFORM_LU as BRADFORD_LU;
 use consts::STANDARD_RGB_TRANSFORM as SRGB;
 use consts::STANDARD_RGB_TRANSFORM_LU as SRGB_LU;
 use consts;
+use csscolor::{CSSParseError, parse_rgb_str};
 
 use termion::color::{Bg, Fg, Reset, Rgb};
 use rulinalg::vector::Vector;
@@ -1083,6 +1084,12 @@ impl From<ParseIntError> for RGBParseError {
     }
 }
 
+impl From<CSSParseError> for RGBParseError {
+    fn from(_err: CSSParseError) -> RGBParseError {
+        RGBParseError::InvalidFuncSyntax
+    }
+}                  
+
 impl Error for RGBParseError {
     fn description(&self) -> &str {
         match self {
@@ -1206,7 +1213,13 @@ impl FromStr for RGBColor {
 
     fn from_str(s: &str) -> Result<RGBColor, RGBParseError> {
         match RGBColor::from_hex_code(s) {
-            Err(_e) => RGBColor::from_color_name(s),
+            Err(_e) => match RGBColor::from_color_name(s) {
+                Err(_e) => match parse_rgb_str(s) {
+                    Err(_e) => Err(_e.into()),
+                    Ok(nums) => Ok(RGBColor::from(nums))
+                }
+                Ok(rgb) => Ok(rgb)
+            },
             Ok(rgb) => Ok(rgb),
         }
     }
@@ -1502,6 +1515,18 @@ mod tests {
             Err(x) if x == RGBParseError::InvalidX11Name => true,
             _ => false,
         });
+    }
+    #[test]
+    fn test_rgb_from_func() {
+        let rgb: RGBColor = "rgb(67%, 205, .937)".parse().unwrap();
+        assert_eq!(*"#ABCDEF", rgb.to_string());
+        assert_eq!(Err(RGBParseError::InvalidFuncSyntax), "rgb(53%%, 23, 44)".parse::<RGBColor>());
+    }
+    #[test]
+    fn test_string_parsing_all() {
+        assert_eq!(*"#123456", "rgb(18, 52, 86)".parse::<RGBColor>().unwrap().to_string());
+        assert_eq!(*"#123456", "#123456".parse::<RGBColor>().unwrap().to_string());
+        assert_eq!(*"#000000", "black".parse::<RGBColor>().unwrap().to_string());
     }
     #[test]
     fn test_to_string() {
