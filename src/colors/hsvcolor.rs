@@ -6,9 +6,12 @@
 //! color appearance parameters and is outclassed by CIELCH for that purpose, but it is nontheless
 //! important as the closest to such a space one can get using only basic transformations of RGB.
 
+use std::str::FromStr;
+
 use bound::Bound;
 use coord::Coord;
 use color::{Color, RGBColor, XYZColor};
+use csscolor::{CSSParseError, parse_hsl_hsv_tuple};
 use illuminants::Illuminant;
 
 /// An HSV color, defining parameters for hue, saturation, and value from the RGB space. This is sHSV
@@ -152,6 +155,25 @@ impl Bound for HSVColor {
     }
 }
 
+impl FromStr for HSVColor {
+    type Err = CSSParseError;
+
+    fn from_str(s: &str) -> Result<HSVColor, CSSParseError> {
+        if !s.starts_with("hsv(") {
+            return Err(CSSParseError::InvalidColorSyntax)
+        }
+        let tup: String = s.chars().skip(3).collect::<String>();
+        match parse_hsl_hsv_tuple(&tup) {
+            Ok(res) => Ok(HSVColor{
+                h: res.0,
+                s: res.1,
+                v: res.2,
+            }),
+            Err(_e) => Err(_e)
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     #[allow(unused_imports)]
@@ -175,5 +197,18 @@ mod tests {
         };
         let lavender_rgb: RGBColor = lavender_hsv.convert();
         assert_eq!(lavender_rgb.to_string(), "#6E66EC");
+    }
+
+    #[test]
+    fn test_hsv_string_parsing() {
+        let red_hsv: HSVColor = "hsv(0, 120%, 50%)".parse().unwrap();
+        assert!(red_hsv.h.abs() <= 0.0001);
+        assert!((red_hsv.s - 1.0) <= 0.0001);
+        assert!((red_hsv.v - 0.5) <= 0.0001);
+        let lavender_hsv: HSVColor = "hsv(-445, 24%, 1000%)".parse().unwrap();
+        let lavender_rgb: RGBColor = lavender_hsv.convert();
+        assert_eq!(lavender_rgb.to_string(), "#E5C2FF");
+        // test error
+        assert!("hsv(254%, 0, 0)".parse::<HSVColor>().is_err());
     }
 }

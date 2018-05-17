@@ -90,6 +90,84 @@ pub(crate) fn parse_rgb_str(num: &str) -> Result<(u8, u8, u8), CSSParseError> {
     Ok((nums[0], nums[1], nums[2]))
 }
 
+/// Parses an HSL or HSV tuple, given after "hsl" or "hsv" in normal CSS, such as "(250, 50%, 50%)"
+/// into a tuple (f64, f64, f64) such that the first float lies within the range 0-360 and the other
+/// two lie within the range 0-1. Gives a CSSParseError if invalid.
+pub(crate) fn parse_hsl_hsv_tuple(tup: &str) -> Result<(f64, f64, f64), CSSParseError> {
+    // must have '(' at start and ')' at end: remove them, and store in chars vec
+    if !tup.starts_with('(') || !tup.ends_with(')') {
+        return Err(CSSParseError::InvalidColorSyntax)
+    }
+    let mut chars: Vec<char> = tup.chars().skip(1).collect();
+    chars.pop();
+
+    // split with commas: must be 3 distinct things
+    let split_iter = (&chars).split(|c| c == &',');
+    let mut numerics: Vec<CSSNumeric> = vec![];
+    for split in split_iter {
+        numerics.push(parse_css_number(&(split.iter().collect::<String>().trim()))?);        
+    }
+    if numerics.len() != 3 {
+        return Err(CSSParseError::InvalidColorSyntax)
+    }
+    // hue is special: require float or integer, normalize to 0-360
+    let hue: f64 = match numerics[0] {
+        CSSNumeric::Integer(val) => {
+            let mut clamped = val;
+            while clamped < 0 {
+                clamped += 360;
+            }
+            while clamped >= 360 {
+                clamped -= 360;
+            }
+            clamped as f64
+        }
+        CSSNumeric::Float(val) => {
+            let mut clamped = val;
+            while clamped < 0. {
+                clamped += 360.;
+            }
+            while clamped >= 360. {
+                clamped -= 360.;
+            }
+            clamped
+        }
+        _ => return Err(CSSParseError::InvalidColorSyntax)
+    };
+    // saturation and lightness/value all work the same way: clamp between 0 and 1 and expect a
+    // percentage
+    let sat: f64 = match numerics[1] {
+        CSSNumeric::Percentage(val) => {
+            if val < 0 {
+                0.
+            } else if val > 100 {
+                1.
+            } else {
+                (val as f64) / 100.
+            }
+        },
+        _ => {
+            return Err(CSSParseError::InvalidColorSyntax)
+        }
+    };
+    let l_or_v: f64 = match numerics[2] {
+        CSSNumeric::Percentage(val) => {
+            if val < 0 {
+                0.
+            } else if val > 100 {
+                1.
+            } else {
+                (val as f64) / 100.
+            }
+        },
+        _ => {
+            return Err(CSSParseError::InvalidColorSyntax)
+        }
+    };
+    // now return
+    Ok((hue, sat, l_or_v))
+}
+
 #[cfg(test)]
 mod tests {
     #[allow(unused_imports)]
@@ -123,5 +201,30 @@ mod tests {
         assert_eq!(Err(CSSParseError::InvalidColorSyntax), parse_rgb_str("rgB(123, 33, 2)"));
         assert_eq!(Err(CSSParseError::InvalidColorSyntax), parse_rgb_str("rgb(123, 123, 41, 22)"));
         assert_eq!(Err(CSSParseError::InvalidColorSyntax), parse_rgb_str("rgB(())"));
+    }
+
+    #[test]
+    fn test_hslv_str_parsing() {
+        // test normal
+        let hsl = parse_hsl_hsv_tuple("(123, 40%, 40%)").unwrap();
+        assert_eq!(hsl.0.round() as u8, 123u8);
+        assert_eq!((hsl.1 * 100.).round() as u8, 40u8);
+        assert_eq!((hsl.2 * 100.).round() as u8, 40u8);
+        // test hue angle stuff
+        let hsl = parse_hsl_hsv_tuple("(-597, 40%, 40%)").unwrap();
+        assert_eq!(hsl.0.round() as u8, 123u8);
+        assert_eq!((hsl.1 * 100.).round() as u8, 40u8);
+        assert_eq!((hsl.2 * 100.).round() as u8, 40u8);
+        let hsl = parse_hsl_hsv_tuple("(1203, 40%, 40%)").unwrap();
+        assert_eq!(hsl.0.round() as u8, 123u8);
+        assert_eq!((hsl.1 * 100.).round() as u8, 40u8);
+        assert_eq!((hsl.2 * 100.).round() as u8, 40u8);
+        // test percentage clamping
+        let hsl = parse_hsl_hsv_tuple("(123, 140%, -40%)").unwrap();
+        assert_eq!(hsl.0.round() as u8, 123u8);
+        assert_eq!((hsl.1 * 100.).round() as u8, 100u8);
+        assert_eq!((hsl.2 * 100.).round() as u8, 0u8);
+        // test error
+        assert_eq!(parse_hsl_hsv_tuple("(14%, 140%, 12%)"), Err(CSSParseError::InvalidColorSyntax));
     }
 }

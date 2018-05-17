@@ -18,10 +18,12 @@
 //! degrees, although any hue could be used in its place.
 
 use std::f64;
+use std::str::FromStr;
 
 use bound::Bound;
 use color::{Color, RGBColor, XYZColor};
 use coord::Coord;
+use csscolor::{CSSParseError, parse_hsl_hsv_tuple};
 use illuminants::Illuminant;
 
 /// A color in the HSL color space, a direct transformation of the sRGB space. sHSL is used to
@@ -180,6 +182,26 @@ impl Bound for HSLColor {
     }
 }
 
+impl FromStr for HSLColor {
+    type Err = CSSParseError;
+
+    fn from_str(s: &str) -> Result<HSLColor, CSSParseError> {
+        if !s.starts_with("hsl(") {
+            return Err(CSSParseError::InvalidColorSyntax)
+        }
+        let tup: String = s.chars().skip(3).collect::<String>();
+        match parse_hsl_hsv_tuple(&tup) {
+            Ok(res) => Ok(HSLColor{
+                h: res.0,
+                s: res.1,
+                l: res.2,
+            }),
+            Err(_e) => Err(_e)
+        }
+    }
+}
+
+
 #[cfg(test)]
 mod tests {
     #[allow(unused_imports)]
@@ -203,5 +225,18 @@ mod tests {
         };
         let lavender_rgb: RGBColor = lavender_hsl.convert();
         assert_eq!(lavender_rgb.to_string(), "#6E66CC");
+    }
+
+    #[test]
+    fn test_hsl_string_parsing() {
+        let red_hsl: HSLColor = "hsl(0, 120%, 50%)".parse().unwrap();
+        assert!(red_hsl.h.abs() <= 0.0001);
+        assert!((red_hsl.s - 1.0) <= 0.0001);
+        assert!((red_hsl.l - 0.5) <= 0.0001);
+        let lavender_hsl: HSLColor = "hsl(-475, 50%, 60%)".parse().unwrap();
+        let lavender_rgb: RGBColor = lavender_hsl.convert();
+        assert_eq!(lavender_rgb.to_string(), "#6E66CC");
+        // test error
+        assert!("hsl(254%, 0, 0)".parse::<HSLColor>().is_err());
     }
 }
