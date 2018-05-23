@@ -98,6 +98,7 @@ impl Into<Coord> for CIELCHuvColor {
 mod tests {
     #[allow(unused_imports)]
     use super::*;
+    use consts::TEST_PRECISION;
 
     #[test]
     fn test_cielchuv_xyz_conversion_d50() {
@@ -110,6 +111,7 @@ mod tests {
         let lchuv: CIELCHuvColor = xyz.convert();
         let xyz2: XYZColor = lchuv.convert();
         assert!(xyz.approx_visually_equal(&xyz2));
+        assert!(xyz.distance(&xyz2) <= TEST_PRECISION);
     }
 
     #[test]
@@ -123,5 +125,6 @@ mod tests {
         let lchuv: CIELCHuvColor = xyz.convert();
         let xyz2: XYZColor = lchuv.convert();
         assert!(xyz.approx_visually_equal(&xyz2));
+        assert!(xyz.distance(&xyz2) <= TEST_PRECISION);
     }
 }

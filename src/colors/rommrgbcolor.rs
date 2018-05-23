@@ -181,6 +181,7 @@ impl Bound for ROMMRGBColor {
 mod tests {
     #[allow(unused_imports)]
     use super::*;
+    use consts::TEST_PRECISION;
 
     #[test]
     fn test_romm_rgb_xyz_conversion() {
@@ -193,6 +194,7 @@ mod tests {
         let rgb = ROMMRGBColor::from_xyz(xyz);
         let xyz2: XYZColor = rgb.to_xyz(Illuminant::D50);
         assert!(xyz.approx_equal(&xyz2));
+        assert!(xyz.distance(&xyz2) <= TEST_PRECISION);
     }
     #[test]
     fn test_xyz_romm_rgb_conversion() {
@@ -206,6 +208,7 @@ mod tests {
         assert!((rgb.r - rgb2.r).abs() <= 0.001);
         assert!((rgb.g - rgb2.g).abs() <= 0.001);
         assert!((rgb.b - rgb2.b).abs() <= 0.001);
+        assert!(rgb.distance(&rgb2) <= TEST_PRECISION);
     }
     #[test]
     fn test_error_accumulation_romm_rgb() {
@@ -221,6 +224,7 @@ mod tests {
             assert!((rgb.r - rgb2.r).abs() <= 1e-4);
             assert!((rgb.g - rgb2.g).abs() <= 1e-4);
             assert!((rgb.b - rgb2.b).abs() <= 1e-4);
+            assert!(rgb.distance(&rgb2) <= TEST_PRECISION);
         }
     }
 
@@ -236,5 +240,6 @@ mod tests {
         let rgb: ROMMRGBColor = ROMMRGBColor::from_xyz(xyz);
         let xyz2 = rgb.to_xyz(Illuminant::D65);
         assert!(xyz.approx_visually_equal(&xyz2));
+        assert!(xyz.distance(&xyz2) <= TEST_PRECISION);
     }
 }

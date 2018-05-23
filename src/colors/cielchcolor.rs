@@ -105,6 +105,7 @@ impl Into<Coord> for CIELCHColor {
 mod tests {
     #[allow(unused_imports)]
     use super::*;
+    use consts::TEST_PRECISION;
 
     #[test]
     fn test_lch_xyz_conversion_same_illuminant() {
@@ -117,6 +118,7 @@ mod tests {
         let lch: CIELCHColor = xyz.convert();
         let xyz2: XYZColor = lch.convert();
         assert!(xyz2.approx_equal(&xyz));
+        assert!(xyz.distance(&xyz2) <= TEST_PRECISION);
     }
     #[test]
     fn test_lch_xyz_conversion_different_illuminant() {
@@ -129,5 +131,6 @@ mod tests {
         let lch: CIELCHColor = xyz.convert();
         let xyz2: XYZColor = lch.convert();
         assert!(xyz2.approx_visually_equal(&xyz));
+        assert!(xyz.distance(&xyz2) <= TEST_PRECISION);
     }
 }

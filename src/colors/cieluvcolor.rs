@@ -130,6 +130,7 @@ impl Into<Coord> for CIELUVColor {
 mod tests {
     #[allow(unused_imports)]
     use super::*;
+    use consts::TEST_PRECISION;
 
     #[test]
     fn test_cieluv_xyz_conversion_d50() {
@@ -142,6 +143,7 @@ mod tests {
         let luv: CIELUVColor = xyz.convert();
         let xyz2: XYZColor = luv.convert();
         assert!(xyz2.approx_equal(&xyz));
+        assert!(xyz.distance(&xyz2) <= TEST_PRECISION);
     }
 
     #[test]
@@ -155,5 +157,6 @@ mod tests {
         let luv: CIELUVColor = xyz.convert();
         let xyz2: XYZColor = luv.convert();
         assert!(xyz2.approx_visually_equal(&xyz));
+        assert!(xyz.distance(&xyz2) <= TEST_PRECISION);
     }
 }

@@ -5,6 +5,12 @@
 //! change the result at all, e.g., converting to an illuminant and back again. Thus, this method
 //! allows for saner checking of constant values and guaranteed precision in inversion.
 
+// This is the minimum acceptable difference in CIEDE2000 distance between two colors to consider
+// them equal for the purposes of Scarlet's tests. It doesn't belong outside a tests module, but I'm
+// putting it here just so that any test across Scarlet can use it to ensure uniform precision.
+#[allow(dead_code)] // this is required because it isn't used outside tests: that's OK though
+pub(crate) const TEST_PRECISION: f64 = 1e-12;
+
 use rulinalg::matrix::decomposition::PartialPivLu;
 use rulinalg::matrix::Matrix;
 

@@ -206,6 +206,7 @@ impl FromStr for HSLColor {
 mod tests {
     #[allow(unused_imports)]
     use super::*;
+    use consts::TEST_PRECISION;
 
     #[test]
     fn test_hsl_rgb_conversion() {
@@ -218,6 +219,7 @@ mod tests {
         assert!(red_hsl.h.abs() <= 0.0001);
         assert!((red_hsl.s - 1.0) <= 0.0001);
         assert!((red_hsl.l - 0.5) <= 0.0001);
+        assert!(red_hsl.distance(&red_rgb) < TEST_PRECISION);
         let lavender_hsl = HSLColor {
             h: 245.0,
             s: 0.5,

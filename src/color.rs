@@ -1230,6 +1230,7 @@ impl FromStr for RGBColor {
 mod tests {
     #[allow(unused_imports)]
     use super::*;
+    use consts::TEST_PRECISION;
 
     #[test]
     fn test_visual_distinguishability() {
@@ -1289,6 +1290,7 @@ mod tests {
         assert!((xyz.x - 0.0750).abs() <= 0.01);
         assert!((xyz.y - 0.0379).abs() <= 0.01);
         assert!((xyz.z - 0.3178).abs() <= 0.01);
+        assert!(rgb.distance(&xyz) <= TEST_PRECISION);
     }
     #[test]
     fn test_rgb_to_string() {
@@ -1315,6 +1317,7 @@ mod tests {
         assert!((c3.x - c2.x).abs() <= 0.01);
         assert!((c3.y - c2.y).abs() <= 0.01);
         assert!((c3.z - c2.z).abs() <= 0.01);
+        assert!(c2.distance(&c3) <= TEST_PRECISION);
     }
     #[test]
     fn test_error_buildup_color_adaptation() {

@@ -121,6 +121,7 @@ impl Bound for AdobeRGBColor {
 mod tests {
     #[allow(unused_imports)]
     use super::*;
+    use consts::TEST_PRECISION;
 
     #[test]
     fn test_adobe_rgb_xyz_conversion() {
@@ -132,6 +133,7 @@ mod tests {
         };
         let xyz2 = AdobeRGBColor::from_xyz(xyz1).to_xyz(Illuminant::D75);
         assert!(xyz1.approx_equal(&xyz2));
+        assert!(xyz1.distance(&xyz2) <= TEST_PRECISION);
     }
     #[test]
     fn test_adobe_rgb_clamping() {
@@ -150,5 +152,6 @@ mod tests {
         let xyz1 = argbprime.to_xyz(Illuminant::D50);
         let xyz2 = argb2prime.to_xyz(Illuminant::D50);
         assert!(xyz1.approx_equal(&xyz2));
+        assert!(xyz1.distance(&xyz2) <= TEST_PRECISION);
     }
 }

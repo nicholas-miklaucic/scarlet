@@ -147,6 +147,7 @@ mod tests {
     #[allow(unused_imports)]
     use super::*;
     use color::RGBColor;
+    use consts::TEST_PRECISION;
 
     #[test]
     fn test_cielab_xyz_conversion_d50() {
@@ -159,6 +160,7 @@ mod tests {
         let lab = CIELABColor::from_xyz(xyz);
         let xyz2 = lab.to_xyz(Illuminant::D50);
         assert!(xyz.approx_equal(&xyz2));
+        assert!(xyz.distance(&xyz2) <= TEST_PRECISION);
     }
     #[test]
     fn test_cielab_xyz_conversion() {
@@ -172,6 +174,7 @@ mod tests {
         let xyz_d50 = lab.to_xyz(Illuminant::D50);
         let xyz2 = xyz_d50.color_adapt(Illuminant::D65);
         assert!(xyz.approx_equal(&xyz2));
+        assert!(xyz.distance(&xyz2) <= TEST_PRECISION);
     }
     #[test]
     fn test_out_of_gamut() {
@@ -182,6 +185,6 @@ mod tests {
             b: 100.0,
         };
         let color2: RGBColor = color1.convert();
-        let color3: CIELABColor = color2.convert();
+        let color3: CIELABColor = color2.convert();        
     }
 }
