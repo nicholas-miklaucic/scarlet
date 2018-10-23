@@ -4,7 +4,7 @@
 [![Build
 Status](https://travis-ci.org/nicholas-miklaucic/scarlet.svg?branch=master)](https://travis-ci.org/nicholas-miklaucic/scarlet)
 [![dependency status](https://deps.rs/repo/github/nicholas-miklaucic/scarlet/status.svg)](https://deps.rs/repo/github/nicholas-miklaucic/scarlet)
-[![Documentation](https://docs.rs/scarlet/badge.svg)]
+[![Documentation](https://docs.rs/scarlet/badge.svg)](https://docs.rs/scarlet)
 
 Humans and computers don't view color the same way, and so color descriptions like RGB don't
 effectively describe colors in the way that humans perceive them and vice versa. Image processing
