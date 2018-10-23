@@ -44,7 +44,7 @@ pub trait ColorPoint: Color + Into<Coord> + From<Coord> + Clone + Copy {
         Self::from(c1.weighted_midpoint(&c2, weight))
     }
 
-    /// Like [`weighted_midpoint`], but with `weight = 0.5`: essentially, the
+    /// Like `weighted_midpoint`, but with `weight = 0.5`: essentially, the
     /// [`Color`](../color/trait.Color.html) representing the midpoint of the two inputs in 3D space.
     fn midpoint(self, other: Self) -> Self {
         let c1: Coord = self.into();

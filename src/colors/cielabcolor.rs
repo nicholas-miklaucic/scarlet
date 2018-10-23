@@ -179,12 +179,12 @@ mod tests {
     #[test]
     fn test_out_of_gamut() {
         // this color doesn't exist in sRGB! (that's probably a good thing, this can't really be represented)
-        let color1 = CIELABColor {
+        let _color1 = CIELABColor {
             l: 0.0,
             a: 100.0,
             b: 100.0,
         };
-        let color2: RGBColor = color1.convert();
-        let color3: CIELABColor = color2.convert();        
+        let _color2: RGBColor = _color1.convert();
+        let _color3: CIELABColor = _color2.convert();
     }
 }

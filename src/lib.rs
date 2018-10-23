@@ -6,7 +6,7 @@
 //! working with color convenient enough that it's *easier* to treat colors correctly than it is to do
 //! anything else.
 
-#![doc(html_root_url = "https://docs.rs/scarlet/0.2.2")]
+#![doc(html_root_url = "https://docs.rs/scarlet/1.0.0")]
 
 // we don't mess around with documentation
 #![deny(missing_docs)]

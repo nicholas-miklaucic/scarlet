@@ -1,5 +1,11 @@
 //! This file provides some basic facilities for creating a [`Color`](color/trait.Color.html) object,
-//! specifically an [`RGBColor`](color/struct.RGBColor.html), from the Google Material design spec.
+//! specifically an [`RGBColor`](color/struct.RGBColor.html), from the Google Material design
+//! spec.
+//!
+//! One thing to keep in mind is that the Material Design specification has changed somewhat. Now,
+//! they use "algorithmic adjustment of hue, chroma, lightness" instead of these palette colors. I'm
+//! keeping these here because they're still useful: you can certainly replicate any adjustments
+//! Google does with the other capabilities of Scarlet.
 
 use color::RGBColor;
 

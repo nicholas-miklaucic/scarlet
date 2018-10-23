@@ -1,4 +1,4 @@
-//! This module defines a generalized trait, [`ColorMap`], for a colormap—a mapping of the numbers between 0 and 1
+//! This module defines a generalized trait, [`ColorMap`](colormap::ColorMap), for a colormap—a mapping of the numbers between 0 and 1
 //! to colors in a continuous way—and provides some common ones used in programs like MATLAB and in
 //! data visualization everywhere.
 

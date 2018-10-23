@@ -5,10 +5,6 @@
 Status](https://travis-ci.org/nicholas-miklaucic/scarlet.svg?branch=master)](https://travis-ci.org/nicholas-miklaucic/scarlet)
 [![dependency status](https://deps.rs/repo/github/nicholas-miklaucic/scarlet/status.svg)](https://deps.rs/repo/github/nicholas-miklaucic/scarlet)
 
-
-**Note: This is in beta stage. Breaking changes can and will be made without warning on new
-versions, up until 1.0, expected before June 2018. This is not mature software.**
-
 Humans and computers don't view color the same way, and so color descriptions like RGB don't
 effectively describe colors in the way that humans perceive them and vice versa. Image processing
 and other disciplines require the ability to interconvert and work with colors in a way that
@@ -30,7 +26,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-scarlet = "0.2"
+scarlet = "1.0.0"
 ```
 
 and this to your crate root:

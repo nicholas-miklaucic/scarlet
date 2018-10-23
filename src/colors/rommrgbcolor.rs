@@ -1,4 +1,4 @@
-//! This module implements the Romm, or ProPhoto, RGB space. Unlike other RGB gamuts, ProPhnoto trades
+//! This module implements the Romm, or ProPhoto, RGB space. Unlike other RGB gamuts, ProPhoto trades
 //! having some imaginary colors in its gamut (13% of it can't be seen) in exchange for a much wider
 //! gamut than other RGB spaces (90% of CIELAB surface colors).
 //!

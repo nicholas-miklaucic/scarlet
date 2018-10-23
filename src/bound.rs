@@ -1,6 +1,6 @@
-//! This module describes the [`Bound`] trait, which allows for a description of what colors a color
-//! gamut supports. For example, the sRGB gamut only supports RGB values ranging from 0-1 that are
-//! scaled to 0-255, which is about 30% of the total visible range of human vision.
+//! This module describes the [`Bound`](bound::Bound) trait, which allows for a description of what
+//! colors a color gamut supports. For example, the sRGB gamut only supports RGB values ranging from
+//! 0-1 that are scaled to 0-255, which is about 30% of the total visible range of human vision.
 
 
 use color::{Color, RGBColor};

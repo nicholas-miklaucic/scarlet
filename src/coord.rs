@@ -1,4 +1,4 @@
-//! This module contains a struct, [`Coord`], that models a 3D coordinate space and supports limited
+//! This module contains a struct, [`Coord`](coord::Coord), that models a 3D coordinate space and supports limited
 //! math in 3 dimensions with scalars and other coordinates. Used to unify math with colors that is
 //! the same, just with different projections into 3D space.
 
@@ -17,11 +17,9 @@ impl<T: NumCast + Num> Scalar for T {}
 /// `Coord` has three axes, denoted `x`, `y`, and `z`. These are not any different in any method of
 /// `Coord`, so the distinction between them is completely conventional. In Scarlet, any [`Color`]
 /// that converts to and from a `Coord` will match its components with these axes in the order of the
-/// letters in its name: for example, [`CIELABColor`] maps to a coordinate such that `l` is on the
+/// letters in its name: for example, `CIELABColor` maps to a coordinate such that `l` is on the
 /// x-axis, `a` is on the y-axis, and `b` is on the z-axis.
 ///
-/// [`Color`]: ../color/trait.Color.html
-/// [`CIELABColor`]: ../colors/cielabcolor/struct.CIELABColor.html
 /// # Examples
 /// ## Basic Operations
 /// ```
