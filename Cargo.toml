@@ -8,7 +8,6 @@ readme = "README.MD"
 repository = "https://github.com/nicholas-miklaucic/scarlet"
 keywords = ["color", "rgb", "image", "visualization"]
 categories = ["multimedia::images", "visualization", "data-structures"]
-rustdoc-args = ["--html-after-content", "https://raw.githubusercontent.com/nicholas-miklaucic/scarlet/master/colorize.html"]
 
 [dependencies]
 regex = "1.0"
@@ -24,4 +23,3 @@ maplit = "1.0.1"
 lazy_static = "1.1"
 
 [package.metadata.docs.rs]
-rustdoc-args = ["--html-after-content", "https://raw.githubusercontent.com/nicholas-miklaucic/scarlet/master/colorize.html"]
