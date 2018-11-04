@@ -3,6 +3,7 @@
 
 [![Build
 Status](https://travis-ci.org/nicholas-miklaucic/scarlet.svg?branch=master)](https://travis-ci.org/nicholas-miklaucic/scarlet)
+[![Crates.io](https://img.shields.io/crates/v/scarlet.svg)](https://crates.io/crates/scarlet)
 [![dependency status](https://deps.rs/repo/github/nicholas-miklaucic/scarlet/status.svg)](https://deps.rs/repo/github/nicholas-miklaucic/scarlet)
 [![Documentation](https://docs.rs/scarlet/badge.svg)](https://docs.rs/scarlet)
 
