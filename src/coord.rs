@@ -179,7 +179,7 @@ impl Coord {
     /// # use scarlet::coord::Coord;
     /// let point1 = Coord{x: 0., y: 0., z: 1.};
     /// let others = vec![Coord{x: 1., y: 1., z: 1.}, Coord{x: 2., y: 1., z: 1.}];
-    /// let mean = point1.average(others);
+    /// let mean = point1.average(&others);
     /// assert!((mean.x - 1.).abs() <= 1e-10);
     /// assert!((mean.y - 2. / 3.).abs() <= 1e-10);
     /// assert!((mean.z - 1.).abs() <= 1e-10);
