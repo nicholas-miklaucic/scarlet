@@ -47,10 +47,10 @@ impl NormalizeMapping {
     /// number is outside of the range (0, 1). Given an input between 0 and 1, should always output
     /// another number in the same range.
     pub fn normalize(&self, x: f64) -> f64 {
-        match self {
-            &NormalizeMapping::Linear => x,
-            &NormalizeMapping::Cbrt => x.cbrt(),
-            &NormalizeMapping::Generic(func) => func(x),
+        match *self {
+            NormalizeMapping::Linear => x,
+            NormalizeMapping::Cbrt => x.cbrt(),
+            NormalizeMapping::Generic(func) => func(x),
         }
     }
 }
@@ -153,7 +153,7 @@ impl<T: ColorPoint> ColorMap<T> for ListedColorMap {
         let ind2 = float_ind.ceil() as usize;
         if ind1 == ind2 {
             // x is exactly on the boundary, no interpolation needed
-            let arr = self.vals.get(ind1).unwrap(); // guaranteed to be in range
+            let arr = self.vals[ind1]; // guaranteed to be in range
             RGBColor::from(Coord {
                 x: arr[0],
                 y: arr[1],
@@ -161,8 +161,8 @@ impl<T: ColorPoint> ColorMap<T> for ListedColorMap {
             }).convert()
         } else {
             // interpolate
-            let arr1 = self.vals.get(ind1).unwrap();
-            let arr2 = self.vals.get(ind2).unwrap();
+            let arr1 = self.vals[ind1];
+            let arr2 = self.vals[ind2];
             let coord1 = Coord {
                 x: arr1[0],
                 y: arr1[1],

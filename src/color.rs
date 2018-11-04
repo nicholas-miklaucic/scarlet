@@ -427,7 +427,7 @@ pub trait Color: Sized {
     /// println!("{}", red.to_string());
     /// assert!(!red.visually_indistinguishable(&RGBColor{r: 1., g: 0., b: 0.}));
     /// ```
-    fn set_hue(&mut self, new_hue: f64) -> () {
+    fn set_hue(&mut self, new_hue: f64) {
         let mut lch: CIELCHColor = self.convert();
         lch.h = if new_hue >= 0.0 && new_hue <= 360.0 {
             new_hue
@@ -509,7 +509,7 @@ pub trait Color: Sized {
     /// // essentially, the different hue and saturation is worth .15 luminance
     /// assert!(yellow.s < 0.4);  // saturation has decreased a lot
     /// ```
-    fn set_lightness(&mut self, new_lightness: f64) -> () {
+    fn set_lightness(&mut self, new_lightness: f64) {
         let mut lab: CIELABColor = self.convert();
         lab.l = if new_lightness >= 0.0 && new_lightness <= 100.0 {
             new_lightness
@@ -561,7 +561,7 @@ pub trait Color: Sized {
     /// println!("{} {}", bright_purple.to_string(), changed_purple.to_string());
     /// // prints #CC00CC #AC4FA8
     /// ```
-    fn set_chroma(&mut self, new_chroma: f64) -> () {
+    fn set_chroma(&mut self, new_chroma: f64) {
         let mut lch: CIELCHColor = self.convert();
         lch.c = if new_chroma < 0.0 { 0.0 } else { new_chroma };
         *self = lch.convert();
@@ -604,7 +604,7 @@ pub trait Color: Sized {
     /// println!("{} {}", red.to_string(), changed_red.to_string());
     /// // prints #803333 #8B262C
     /// ```
-    fn set_saturation(&mut self, new_sat: f64) -> () {
+    fn set_saturation(&mut self, new_sat: f64) {
         let mut lch: CIELCHColor = self.convert();
         lch.c = if new_sat < 0.0 { 0.0 } else { new_sat * lch.l };
         *self = lch.convert();
@@ -774,12 +774,10 @@ pub trait Color: Sized {
             h_prime_1 + h_prime_2
         } else if (h_prime_2 - h_prime_1).abs() <= 180.0 {
             (h_prime_1 + h_prime_2) / 2.0
+        } else if h_prime_1 + h_prime_2 < 360.0{
+            (h_prime_1 + h_prime_2 + 360.0) / 2.0
         } else {
-            if h_prime_1 + h_prime_2 < 360.0 {
-                (h_prime_1 + h_prime_2 + 360.0) / 2.0
-            } else {
-                (h_prime_1 + h_prime_2 - 360.0) / 2.0
-            }
+            (h_prime_1 + h_prime_2 - 360.0) / 2.0
         };
 
         // we're gonna use this a lot
@@ -789,7 +787,7 @@ pub trait Color: Sized {
             0.32 * deg_cos(3.0 * h_bar_prime + 6.0) -
             0.20 * deg_cos(4.0 * h_bar_prime - 63.0);
 
-        let delta_theta = 30.0 * (-(((h_bar_prime - 275.0) / 25.0)).powi(2)).exp();
+        let delta_theta = 30.0 * (-((h_bar_prime - 275.0) / 25.0).powi(2)).exp();
         let r_c = 2.0 * (c_bar_prime.powi(7) / (c_bar_prime.powi(7) + 25.0f64.powi(7))).sqrt();
         let s_l = 1.0 +
             ((0.015 * (l_bar_prime - 50.0).powi(2)) / (20.0 + (l_bar_prime - 50.0).powi(2)).sqrt());
@@ -969,9 +967,9 @@ impl From<(u8, u8, u8)> for RGBColor {
     fn from(rgb: (u8, u8, u8)) -> RGBColor {
         let (r, g, b) = rgb;
         RGBColor {
-            r: r as f64 / 255.0,
-            g: g as f64 / 255.0,
-            b: b as f64 / 255.0,
+            r: f64::from(r) / 255.0,
+            g: f64::from(g) / 255.0,
+            b: f64::from(b) / 255.0,
         }
     }
 }
@@ -1023,9 +1021,9 @@ impl Color for RGBColor {
         let lin_rgb_vec = &*SRGB * vector![xyz_d65.x, xyz_d65.y, xyz_d65.z];
         // now we scale for gamma correction
         let gamma_correct = |x: &f64| if x <= &0.0031308 {
-            &12.92 * x
+            12.92 * x
         } else {
-            &1.055 * x.powf(&1.0 / &2.4) - &0.055
+            1.055 * x.powf(1.0 / 2.4) - 0.055
         };
         let float_vec: Vec<f64> = lin_rgb_vec.iter().map(gamma_correct).collect();
         RGBColor {
@@ -1036,9 +1034,9 @@ impl Color for RGBColor {
     }
     fn to_xyz(&self, illuminant: Illuminant) -> XYZColor {
         let uncorrect_gamma = |x: &f64| if x <= &0.04045 {
-            x / &12.92
+            x / 12.92
         } else {
-            ((x + &0.055) / &1.055).powf(2.4)
+            ((x + 0.055) / 1.055).powf(2.4)
         };
         let rgb_vec: Vector<f64> = vec![self.r, self.g, self.b].iter().map(uncorrect_gamma).collect();
 
@@ -1075,7 +1073,7 @@ pub enum RGBParseError {
 
 impl fmt::Display for RGBParseError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", "RGB parsing error")
+        write!(f, "RGB parsing error")
     }
 }
 
@@ -1093,11 +1091,11 @@ impl From<CSSParseError> for RGBParseError {
 
 impl Error for RGBParseError {
     fn description(&self) -> &str {
-        match self {
-            &RGBParseError::OutOfRange => "RGB coordinates out of range",
-            &RGBParseError::InvalidHexSyntax => "Invalid hex code syntax",
-            &RGBParseError::InvalidFuncSyntax => "Invalid \"rgb(\" function call syntax",
-            &RGBParseError::InvalidX11Name => "Invalid X11 color name",
+        match *self {
+            RGBParseError::OutOfRange => "RGB coordinates out of range",
+            RGBParseError::InvalidHexSyntax => "Invalid hex code syntax",
+            RGBParseError::InvalidFuncSyntax => "Invalid \"rgb(\" function call syntax",
+            RGBParseError::InvalidX11Name => "Invalid X11 color name",
         }
     }
 }
@@ -1126,6 +1124,8 @@ impl RGBColor {
     /// #   try_main().unwrap();
     /// # }
     /// ```
+    // otherwise you have really long lines with different reasons for throwing the same error
+    #[allow(clippy::if_same_then_else)]
     pub fn from_hex_code(hex: &str) -> Result<RGBColor, RGBParseError> {
         let mut chars: Vec<char> = hex.chars().collect();
         // check if leading hex, remove if so
@@ -1138,35 +1138,33 @@ impl RGBColor {
         // now split on invalid hex
         } else if !chars.iter().all(|&c| "0123456789ABCDEFabcdef".contains(c)) {
             Err(RGBParseError::InvalidHexSyntax)
-        } else {
-            // split on whether it's #rgb or #rrggbb
-            if chars.len() == 6 {
-                let mut rgb: Vec<u8> = Vec::new();
-                for _i in 0..3 {
-                    // this should never fail, logically, but if by some miracle it did it'd just
-                    // return an OutOfRangeError
-                    rgb.push(
-                        u8::from_str_radix(chars.drain(..2).collect::<String>().as_str(), 16)
-                            .unwrap(),
-                    );
-                }
-                Ok(RGBColor::from((rgb[0], rgb[1], rgb[2])))
-            } else {
-                // len must be 3 from earlier
-                let mut rgb: Vec<u8> = Vec::new();
-                for _i in 0..3 {
-                    // again, this shouldn't ever fail, but if it did it'd just return an
-                    // OutOfRangeError
-                    let c: Vec<char> = chars.drain(..1).collect();
-                    rgb.push(
-                        u8::from_str_radix(
-                            c.iter().chain(c.iter()).collect::<String>().as_str(),
-                            16,
-                        ).unwrap(),
-                    );
-                }
-                Ok(RGBColor::from((rgb[0], rgb[1], rgb[2])))
+        // split on whether it's #rgb or #rrggbb
+        } else if chars.len() == 6 {
+            let mut rgb: Vec<u8> = Vec::new();
+            for _i in 0..3 {
+                // this should never fail, logically, but if by some miracle it did it'd just
+                // return an OutOfRangeError
+                rgb.push(
+                    u8::from_str_radix(chars.drain(..2).collect::<String>().as_str(), 16)
+                        .unwrap(),
+                );
             }
+            Ok(RGBColor::from((rgb[0], rgb[1], rgb[2])))
+        } else {
+            // len must be 3 from earlier
+            let mut rgb: Vec<u8> = Vec::new();
+            for _i in 0..3 {
+                // again, this shouldn't ever fail, but if it did it'd just return an
+                // OutOfRangeError
+                let c: Vec<char> = chars.drain(..1).collect();
+                rgb.push(
+                    u8::from_str_radix(
+                        c.iter().chain(c.iter()).collect::<String>().as_str(),
+                        16,
+                    ).unwrap(),
+                );
+                }
+            Ok(RGBColor::from((rgb[0], rgb[1], rgb[2])))
         }
     }
     /// Gets the RGB color corresponding to an X11 color name. Case is ignored.
@@ -1251,7 +1249,7 @@ mod tests {
         let mut line;
         let mut c;
         let mut h;
-        println!("");
+        println!();
         for i in 0..range {
             h = (i as f64) / (range as f64) * 360.;
             line = String::new();
@@ -1266,7 +1264,7 @@ mod tests {
             }
             println!("{}", line);
         }
-        println!("");
+        println!();
     }
 
     #[test]
@@ -1378,9 +1376,9 @@ mod tests {
         // make two "proposed" illuminants: different observers disagree on which one from the image!
         // bright sunlight, clearly the incorrect one (actually, correct, just the one I don't see)
         let sunlight = Illuminant::D50; // essentially daylight in East US, approximately
-        // dark shade, clear the correct one (actually, incorrect, but the one I see)
-        // to get this, I used GIMP again and picked the brightest point on the dress
-        let dress_wp = RGBColor::from_hex_code("#b0c5e4").unwrap();
+        // dark shade, clearly the correct one (joking, it's the one I see)
+        // just taking a point in the image that looks like white in shade
+        let dress_wp = RGBColor::from_hex_code("#69718b").unwrap();
         let shade_wp = dress_wp.to_xyz(Illuminant::D65);
         let shade = Illuminant::Custom([shade_wp.x, shade_wp.y, shade_wp.z]);
         // print alternate blocks of color: first the dress interpreted in sunlight (black and blue),
@@ -1395,6 +1393,12 @@ mod tests {
         gold.illuminant = shade;
         white.illuminant = shade;
 
+        let black_rgb: RGBColor = black.convert();
+        let blue_rgb: RGBColor = blue.convert();
+        let gold_rgb: RGBColor = gold.convert();
+        let white_rgb: RGBColor = white.convert();        
+        println!("Black: {} Blue: {}", black_rgb.to_string(), blue_rgb.to_string());
+        println!("Gold: {}, White: {}", gold_rgb.to_string(), white_rgb.to_string());
         print_col(black);
         print_col(blue);
         print_col(gold);
@@ -1543,7 +1547,7 @@ mod tests {
     fn lightness_demo() {
         use colors::{CIELABColor, HSLColor};
         let mut line;
-        println!("");
+        println!();
         for i in 0..20 {
             line = String::from("");
             for j in 0..20 {
@@ -1556,7 +1560,7 @@ mod tests {
             }
             println!("{}", line);
         }
-        println!("");
+        println!();
         for i in 0..20 {
             line = String::from("");
             for j in 0..20 {
@@ -1914,7 +1918,7 @@ mod tests {
         for j in 0..8 {
             colors.push(CIELCHColor{l: 50., c: 70., h: j as f64 / 8. * 360. + 10.}.convert());
         }
-        println!("");
+        println!();
         for color in colors {
             println!("{}", color.to_string());
         }

@@ -6,7 +6,9 @@
 //! color appearance parameters and is outclassed by CIELCH for that purpose, but it is nontheless
 //! important as the closest to such a space one can get using only basic transformations of RGB.
 
+
 use std::str::FromStr;
+use std::f64::EPSILON;
 
 use bound::Bound;
 use coord::Coord;
@@ -61,12 +63,12 @@ impl Color for HSVColor {
         let hue = if chroma == 0.0 {
             // could be anything, undefined according to Wikipedia, in Scarlet just 0 for gray
             0.0
-        } else if max_c == rgb.r {
+        } else if (max_c - rgb.r).abs() < EPSILON {
             // in red sector: find which part by comparing green and blue and scaling
             // adding green moves up on the hexagon, adding blue moves down: hence, linearity
             // the modulo makes sure it's in the range 0-360
             (((rgb.g - rgb.b) / chroma) % 6.0) * 60.0
-        } else if max_c == rgb.g {
+        } else if (max_c - rgb.g).abs() < EPSILON {
             // similar to above, but you add an offset
             ((rgb.b - rgb.r) / chroma) * 60.0 + 120.0
         } else {

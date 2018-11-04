@@ -79,8 +79,8 @@ pub trait ColorPoint: Color + Into<Coord> + From<Coord> + Clone + Copy {
     /// case where each weight is the same.
     fn average(self, others: Vec<Self>) -> Coord {
         let c1: Coord = self.into();
-        let other_cs = others.iter().map(|x| (*x).into()).collect();
-        c1.average(other_cs)
+        let other_cs: Vec<Coord> = others.iter().map(|x| (*x).into()).collect();
+        c1.average(&other_cs)
     }
 
     /// Returns `true` if the color is outside the range of human vision. Uses the CIE 1931 standard
@@ -94,7 +94,7 @@ pub trait ColorPoint: Color + Into<Coord> + From<Coord> + Clone + Copy {
             let denom = xyz.x + 15.0 * xyz.y + 3.0 * xyz.z;
             (4.0 * xyz.x / denom, 9.0 * xyz.y / denom)
         };
-        let self_uv: (f64, f64) = (uv_func(self.convert())).into();
+        let self_uv: (f64, f64) = uv_func(self.convert());
         let uv_data: Vec<(f64, f64)> = xyz_data.into_iter().map(uv_func).collect();
         let self_point = Point::new(self_uv.0, self_uv.1);
 

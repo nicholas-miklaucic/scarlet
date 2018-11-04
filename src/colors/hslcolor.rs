@@ -18,6 +18,7 @@
 //! degrees, although any hue could be used in its place.
 
 use std::f64;
+use std::f64::EPSILON;
 use std::str::FromStr;
 
 use bound::Bound;
@@ -80,12 +81,12 @@ impl Color for HSLColor {
         let mut hue = if chroma == 0.0 {
             // could be anything, undefined according to Wikipedia, in Scarlet just 0 for gray
             0.0
-        } else if max_c == rgb.r {
+        } else if (max_c - rgb.r).abs() < EPSILON {
             // in red sector: find which part by comparing green and blue and scaling
             // adding green moves up on the hexagon, adding blue moves down: hence, linearity
             // the modulo makes sure it's in the range 0-360
             (((rgb.g - rgb.b) / chroma) % 6.0) * 60.0
-        } else if max_c == rgb.g {
+        } else if (max_c - rgb.g).abs() < EPSILON {
             // similar to above, but you add an offset
             (((rgb.b - rgb.r) / chroma) % 6.0) * 60.0 + 120.0
         } else {
@@ -108,7 +109,7 @@ impl Color for HSLColor {
         // essentially translates to a double hex cone, quite the interesting structure!
         let lightness = (max_c + min_c) / 2.0;
         // now back to saturation
-        let saturation = if lightness == 1.0 || lightness == 0.0 {
+        let saturation = if (lightness - 1.0).abs() < EPSILON || lightness == 0.0 {
             // this would be a divide by 0 otherwise, just set it to 0 because it doesn't matter
             0.0
         } else {

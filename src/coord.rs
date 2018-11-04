@@ -10,12 +10,11 @@ use num::{Num, NumCast};
 /// in [`num`]. Anything that falls under this category can be multiplied by a [`Coord`] to scale
 /// it. This has no added functionality: it's just for convenience.
 pub trait Scalar: NumCast + Num {}
-
 impl<T: NumCast + Num> Scalar for T {}
 
 /// A point in 3D space. Supports many common arithmetic operations on points.
 /// `Coord` has three axes, denoted `x`, `y`, and `z`. These are not any different in any method of
-/// `Coord`, so the distinction between them is completely conventional. In Scarlet, any [`Color`]
+/// `Coord`, so the distinction between them is completely conventional. In Scarlet, any `Color`
 /// that converts to and from a `Coord` will match its components with these axes in the order of the
 /// letters in its name: for example, `CIELABColor` maps to a coordinate such that `l` is on the
 /// x-axis, `a` is on the y-axis, and `b` is on the z-axis.
@@ -53,11 +52,11 @@ pub struct Coord {
 impl Add for Coord {
     type Output = Coord;
     fn add(self, rhs: Coord) -> Coord {
-        return Coord {
+        Coord {
             x: self.x + rhs.x,
             y: self.y + rhs.y,
             z: self.z + rhs.z,
-        };
+        }
     }
 }
 
@@ -66,11 +65,11 @@ impl Add for Coord {
 impl Sub for Coord {
     type Output = Coord;
     fn sub(self, rhs: Coord) -> Coord {
-        return Coord {
+        Coord {
             x: self.x - rhs.x,
             y: self.y - rhs.y,
             z: self.z - rhs.z,
-        };
+        }
     }
 }
 
@@ -80,11 +79,11 @@ impl<U: Scalar> Mul<U> for Coord {
     type Output = Coord;
     fn mul(self, rhs: U) -> Coord {
         let r: f64 = num::cast(rhs).unwrap();
-        return Coord {
+        Coord {
             x: self.x * r,
             y: self.y * r,
             z: self.z * r,
-        };
+        }
     }
 }
 
@@ -119,9 +118,9 @@ impl Coord {
     /// ```
     pub fn midpoint(&self, other: &Coord) -> Coord {
         Coord {
-            x: (&self.x + &other.x) / 2.0,
-            y: (&self.y + &other.y) / 2.0,
-            z: (&self.z + &other.z) / 2.0,
+            x: (self.x + other.x) / 2.0,
+            y: (self.y + other.y) / 2.0,
+            z: (self.z + other.z) / 2.0,
         }
     }
     /// The weighted midpoint: like the midpoint, but with weighted averages instead of the arithmetic
@@ -141,9 +140,9 @@ impl Coord {
     /// ```
     pub fn weighted_midpoint(&self, other: &Coord, weight: f64) -> Coord {
         Coord {
-            x: (&self.x * weight + (1.0 - weight) * &other.x),
-            y: (&self.y * weight + (1.0 - weight) * &other.y),
-            z: (&self.z * weight + (1.0 - weight) * &other.z),
+            x: (self.x * weight + (1.0 - weight) * other.x),
+            y: (self.y * weight + (1.0 - weight) * other.y),
+            z: (self.z * weight + (1.0 - weight) * other.z),
         }
     }
     /// The Euclidean difference between two 3D points, defined as the square root of the sum of
@@ -184,7 +183,7 @@ impl Coord {
     /// assert!((mean.x - 1.).abs() <= 1e-10);
     /// assert!((mean.y - 2. / 3.).abs() <= 1e-10);
     /// assert!((mean.z - 1.).abs() <= 1e-10);
-    pub fn average(self, others: Vec<Coord>) -> Coord {
+    pub fn average(self, others: &[Coord]) -> Coord {
         let n = others.len() + 1;
         others.iter().fold(self, |x, y| x + *y) / n
     }

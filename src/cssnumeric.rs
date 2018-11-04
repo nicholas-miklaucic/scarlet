@@ -34,16 +34,16 @@ pub enum CSSParseError {
 
 impl fmt::Display for CSSParseError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", "CSS parsing error")
+        write!(f, "CSS parsing error")
     }
 }
 
 impl Error for CSSParseError {
     fn description(&self) -> &str {
-        match self {
-            &CSSParseError::InvalidNumericCharacters => "Unexpected non-numeric characters",
-            &CSSParseError::InvalidNumericSyntax => "Invalid numeric syntax",
-            &CSSParseError::InvalidColorSyntax => "Invalid color syntax",
+        match *self {
+            CSSParseError::InvalidNumericCharacters => "Unexpected non-numeric characters",
+            CSSParseError::InvalidNumericSyntax => "Invalid numeric syntax",
+            CSSParseError::InvalidColorSyntax => "Invalid color syntax",
         }
     }
 }
@@ -79,7 +79,7 @@ pub(crate) fn parse_css_number(num: &str) -> Result<CSSNumeric, CSSParseError> {
         chars.remove(0);
     }
     // if no longer any characters, throw error
-    if chars.len() == 0 {
+    if chars.is_empty() {
         return Err(CSSParseError::InvalidNumericSyntax)
     }
     // if any other pluses or minuses, throw error

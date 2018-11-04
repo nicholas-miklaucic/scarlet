@@ -10,6 +10,9 @@
 
 // we don't mess around with documentation
 #![deny(missing_docs)]
+// Clippy doesn't like long decimals, but adding separators in decimals isn't any more readable
+// compare -0.96924 with -0.96_924
+#![allow(clippy::unreadable_literal)]
 
 extern crate csv;
 extern crate geo;
