@@ -10,6 +10,7 @@
 
 // we don't mess around with documentation
 #![deny(missing_docs)]
+#![cfg_attr(feature = "cargo-clippy", allow(clippy::lint_name))]
 // Clippy doesn't like long decimals, but adding separators in decimals isn't any more readable
 // compare -0.96924 with -0.96_924
 #![allow(clippy::unreadable_literal)]
