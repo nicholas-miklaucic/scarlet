@@ -2,10 +2,10 @@
 //! chroma and hue instead of two opponent color axes. Be careful not to confuse this color with
 //! CIEHCL, which uses CIELUV internally.
 
+use super::cielabcolor::CIELABColor;
 use color::{Color, XYZColor};
 use coord::Coord;
 use illuminants::Illuminant;
-use super::cielabcolor::CIELABColor;
 
 /// A cylindrical form of CIELAB, analogous to the relationship between HSL and RGB.
 /// # Example
@@ -48,10 +48,10 @@ impl Color for CIELCHColor {
         // first get LAB coordinates
         let lab = CIELABColor::from_xyz(xyz);
         let l = lab.l; // the same in both spaces
-        // now we have to do some math
-        // radius is sqrt(a^2 + b^2)
-        // angle is atan2(a, b)
-        // Rust does this ez
+                       // now we have to do some math
+                       // radius is sqrt(a^2 + b^2)
+                       // angle is atan2(a, b)
+                       // Rust does this ez
         let c = lab.b.hypot(lab.a);
         // don't forget to convert to degrees
         let unbounded_h = lab.b.atan2(lab.a).to_degrees();
@@ -77,7 +77,8 @@ impl Color for CIELCHColor {
             l: self.l,
             a: self.c * cos,
             b: self.c * sin,
-        }.to_xyz(illuminant)
+        }
+        .to_xyz(illuminant)
     }
 }
 

@@ -7,7 +7,6 @@
 //! anything else.
 
 #![doc(html_root_url = "https://docs.rs/scarlet/1.0.2")]
-
 // we don't mess around with documentation
 #![deny(missing_docs)]
 #![cfg_attr(feature = "cargo-clippy", allow(clippy::lint_name))]
@@ -23,27 +22,24 @@ extern crate num;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
-extern crate termion;
 #[macro_use]
 extern crate lazy_static;
 
-pub mod coord;
-mod consts;
-mod matplotlib_cmaps;
-mod cssnumeric;
-mod csscolor;
-pub mod illuminants;
-pub mod color;
 pub mod bound;
-mod visual_gamut;
-pub mod colors;
-pub mod colorpoint;
+pub mod color;
 pub mod colormap;
+pub mod colorpoint;
+pub mod colors;
+mod consts;
+pub mod coord;
+mod csscolor;
+mod cssnumeric;
+pub mod illuminants;
 pub mod material_colors;
+mod matplotlib_cmaps;
 pub mod prelude;
+mod visual_gamut;
 // pub mod doc;
-
-
 
 #[cfg(test)]
 mod tests {

@@ -35,17 +35,17 @@ use std::str::FromStr;
 use std::string::ToString;
 
 use super::coord::Coord;
-use illuminants::Illuminant;
 use colors::cielabcolor::CIELABColor;
 use colors::cielchcolor::CIELCHColor;
+use consts;
 use consts::BRADFORD_TRANSFORM as BRADFORD;
 use consts::BRADFORD_TRANSFORM_LU as BRADFORD_LU;
 use consts::STANDARD_RGB_TRANSFORM as SRGB;
 use consts::STANDARD_RGB_TRANSFORM_LU as SRGB_LU;
-use consts;
-use csscolor::{CSSParseError, parse_rgb_str};
+use csscolor::{parse_rgb_str, CSSParseError};
+use illuminants::Illuminant;
+use std::fmt::Debug;
 
-use termion::color::{Bg, Fg, Reset, Rgb};
 use rulinalg::vector::Vector;
 
 /// A point in the CIE 1931 XYZ color space. Although any point in XYZ coordinate space is technically
@@ -165,7 +165,8 @@ impl XYZColor {
             // convert back to XYZ using inverse of previous matrix
 
             // using LU decomposition for accuracy
-            let xyz_c = BRADFORD_LU.solve(vector![r_c, g_c, b_c])
+            let xyz_c = BRADFORD_LU
+                .solve(vector![r_c, g_c, b_c])
                 .expect("Matrix is invertible.");
             XYZColor {
                 x: xyz_c[0],
@@ -195,8 +196,9 @@ impl XYZColor {
     ///
     /// [`Color::visually_indistinguishable`]: ../color/trait.Color.html#method.visually_indistinguishable
     pub fn approx_equal(&self, other: &XYZColor) -> bool {
-        ((self.x - other.x).abs() <= 1e-15 && (self.y - other.y).abs() <= 1e-15 &&
-             (self.z - other.z).abs() <= 1e-15)
+        ((self.x - other.x).abs() <= 1e-15
+            && (self.y - other.y).abs() <= 1e-15
+            && (self.z - other.z).abs() <= 1e-15)
     }
 
     /// Returns `true` if the given other XYZ color would look identically in a different color
@@ -307,75 +309,6 @@ pub trait Color: Sized {
         // correct. D50 is a common gamut for use in internal conversions, so for spaces like CIELAB
         // it will produce the least error
         T::from_xyz(self.to_xyz(Illuminant::D50))
-    }
-    /// "Colors" a given piece of text with terminal escape codes to allow it to be printed out in the
-    /// given foreground color. Will cause problems with terminals that do not support truecolor.
-    ///
-    /// # Example
-    /// This demo prints out a square of colors that have the same luminance in CIELAB and HSL to
-    /// compare the validity of their lightness correlates. It can also simply be used to test whether
-    /// a terminal supports printing color. Note that, in some terminal emulators, this can be very
-    /// slow: it's unclear why.
-    ///
-    /// ```
-    /// # use scarlet::prelude::*;
-    /// # use scarlet::colors::{CIELABColor, HSLColor};
-    /// let mut line;
-    /// println!("");
-    /// for i in 0..20 {
-    ///     line = String::from("");
-    ///     for j in 0..20 {
-    ///         let lab = CIELABColor{l: 50., a: 5. * i as f64, b: 5. * j as f64};
-    ///         line.push_str(lab.write_colored_str("#").as_str());
-    ///     }
-    ///     println!("{}", line);
-    /// }
-    /// println!("");
-    /// for i in 0..20 {
-    ///     line = String::from("");
-    ///     for j in 0..20 {
-    ///         let hsl = HSLColor{h: i as f64 * 18., s: j as f64 * 0.05, l: 0.50};
-    ///         line.push_str(hsl.write_colored_str("#").as_str());
-    ///     }
-    ///     println!("{}", line);
-    /// }
-    /// ```
-    fn write_colored_str(&self, text: &str) -> String {
-        let rgb: RGBColor = self.convert();
-        rgb.base_write_colored_str(text)
-    }
-    /// Returns a string which, when printed in a truecolor-supporting terminal, will have both the
-    /// foreground and background of the desired color, appearing as a complete square.
-    ///
-    /// # Example
-    /// This is the same one as above, but with a complete block of color instead of the # mark.
-    ///
-    /// ```
-    /// # use scarlet::prelude::*;
-    /// # use scarlet::colors::{CIELABColor, HSLColor};
-    /// let mut line;
-    /// println!("");
-    /// for i in 0..20 {
-    ///     line = String::from("");
-    ///     for j in 0..20 {
-    ///         let lab = CIELABColor{l: 50., a: 5. * i as f64, b: 5. * j as f64};
-    ///         line.push_str(lab.write_color().as_str());
-    ///     }
-    ///     println!("{}", line);
-    /// }
-    /// println!("");
-    /// for i in 0..20 {
-    ///     line = String::from("");
-    ///     for j in 0..20 {
-    ///         let hsl = HSLColor{h: i as f64 * 18., s: j as f64 * 0.05, l: 0.50};
-    ///         line.push_str(hsl.write_color().as_str());
-    ///     }
-    ///     println!("{}", line);
-    /// }
-    /// ```
-    fn write_color(&self) -> String {
-        let rgb: RGBColor = self.convert();
-        rgb.base_write_color()
     }
 
     /// Gets the generally most accurate version of hue for a given color: the hue coordinate in
@@ -585,7 +518,11 @@ pub trait Color: Sized {
     /// ```
     fn saturation(&self) -> f64 {
         let lch: CIELCHColor = self.convert();
-        if lch.l == 0.0 { 0.0 } else { lch.c / lch.l }
+        if lch.l == 0.0 {
+            0.0
+        } else {
+            lch.c / lch.l
+        }
     }
 
     /// Sets a perceptually-accurate version of *saturation*, defined as chroma relative to
@@ -736,11 +673,17 @@ pub trait Color: Sized {
 
         // this closure simply does the atan2 like CIELCH, but safely accounts for a == b == 0
         // we're gonna do this twice, so I just use a closure
-        let h_func = |a: f64, b: f64| if a == 0.0 && b == 0.0 {
-            0.0
-        } else {
-            let val = b.atan2(a).to_degrees();
-            if val < 0.0 { val + 360.0 } else { val }
+        let h_func = |a: f64, b: f64| {
+            if a == 0.0 && b == 0.0 {
+                0.0
+            } else {
+                let val = b.atan2(a).to_degrees();
+                if val < 0.0 {
+                    val + 360.0
+                } else {
+                    val
+                }
+            }
         };
 
         let h_prime_1 = h_func(a_prime_1, lab1.b);
@@ -763,8 +706,8 @@ pub trait Color: Sized {
         };
         // now get the Cartesian equivalent of the angle difference in hue
         // this also corrects for chromaticity mattering less at low luminances
-        let delta_h = 2.0 * (c_prime_1 * c_prime_2).sqrt() *
-            (delta_angle_h / 2.0).to_radians().sin();
+        let delta_h =
+            2.0 * (c_prime_1 * c_prime_2).sqrt() * (delta_angle_h / 2.0).to_radians().sin();
 
         // step 3: the color difference
         // if you're reading this, it's not too late to back out
@@ -774,7 +717,7 @@ pub trait Color: Sized {
             h_prime_1 + h_prime_2
         } else if (h_prime_2 - h_prime_1).abs() <= 180.0 {
             (h_prime_1 + h_prime_2) / 2.0
-        } else if h_prime_1 + h_prime_2 < 360.0{
+        } else if h_prime_1 + h_prime_2 < 360.0 {
             (h_prime_1 + h_prime_2 + 360.0) / 2.0
         } else {
             (h_prime_1 + h_prime_2 - 360.0) / 2.0
@@ -783,14 +726,16 @@ pub trait Color: Sized {
         // we're gonna use this a lot
         let deg_cos = |x: f64| x.to_radians().cos();
 
-        let t = 1.0 - 0.17 * deg_cos(h_bar_prime - 30.0) + 0.24 * deg_cos(2.0 * h_bar_prime) +
-            0.32 * deg_cos(3.0 * h_bar_prime + 6.0) -
-            0.20 * deg_cos(4.0 * h_bar_prime - 63.0);
+        let t = 1.0 - 0.17 * deg_cos(h_bar_prime - 30.0)
+            + 0.24 * deg_cos(2.0 * h_bar_prime)
+            + 0.32 * deg_cos(3.0 * h_bar_prime + 6.0)
+            - 0.20 * deg_cos(4.0 * h_bar_prime - 63.0);
 
         let delta_theta = 30.0 * (-((h_bar_prime - 275.0) / 25.0).powi(2)).exp();
         let r_c = 2.0 * (c_bar_prime.powi(7) / (c_bar_prime.powi(7) + 25.0f64.powi(7))).sqrt();
-        let s_l = 1.0 +
-            ((0.015 * (l_bar_prime - 50.0).powi(2)) / (20.0 + (l_bar_prime - 50.0).powi(2)).sqrt());
+        let s_l = 1.0
+            + ((0.015 * (l_bar_prime - 50.0).powi(2))
+                / (20.0 + (l_bar_prime - 50.0).powi(2)).sqrt());
         let s_c = 1.0 + 0.045 * c_bar_prime;
         let s_h = 1.0 + 0.015 * c_bar_prime * t;
         let r_t = -r_c * (2.0 * delta_theta).to_radians().sin();
@@ -798,8 +743,10 @@ pub trait Color: Sized {
         // in the original there are three parametric weights, used for weighting differences in
         // lightness, chroma, or hue. In pretty much any application, including this one, all of
         // these are 1, so they're omitted
-        ((delta_l / s_l).powi(2) + (delta_c / s_c).powi(2) + (delta_h / s_h).powi(2) +
-             r_t * (delta_c / s_c) * (delta_h / s_h))
+        ((delta_l / s_l).powi(2)
+            + (delta_c / s_c).powi(2)
+            + (delta_h / s_h).powi(2)
+            + r_t * (delta_c / s_c) * (delta_h / s_h))
             .sqrt()
     }
     /// Using the metric that two colors with a CIEDE2000 distance of less than 1 are
@@ -934,27 +881,6 @@ impl RGBColor {
     pub fn int_rgb_tup(&self) -> (u8, u8, u8) {
         (self.int_r(), self.int_g(), self.int_b())
     }
-    /// Given a string, returns that string wrapped in codes that will color the foreground. Used for
-    /// the trait implementation of write_colored_str, which should be used instead.
-    fn base_write_colored_str(&self, text: &str) -> String {
-        format!(
-            "{code}{text}{reset}",
-            code = Fg(Rgb(self.int_r(), self.int_g(), self.int_b())),
-            text = text,
-            reset = Fg(Reset)
-        )
-    }
-    /// Used for the Color `write_color()` method.
-    fn base_write_color(&self) -> String {
-        format!(
-            "{bg}{fg}{text}{reset_fg}{reset_bg}",
-            bg = Bg(Rgb(self.int_r(), self.int_g(), self.int_b())),
-            fg = Fg(Rgb(self.int_r(), self.int_g(), self.int_b())),
-            text = "■",
-            reset_fg = Fg(Reset),
-            reset_bg = Bg(Reset),
-        )
-    }
 }
 
 impl PartialEq for RGBColor {
@@ -1020,10 +946,12 @@ impl Color for RGBColor {
 
         let lin_rgb_vec = &*SRGB * vector![xyz_d65.x, xyz_d65.y, xyz_d65.z];
         // now we scale for gamma correction
-        let gamma_correct = |x: &f64| if x <= &0.0031308 {
-            12.92 * x
-        } else {
-            1.055 * x.powf(1.0 / 2.4) - 0.055
+        let gamma_correct = |x: &f64| {
+            if x <= &0.0031308 {
+                12.92 * x
+            } else {
+                1.055 * x.powf(1.0 / 2.4) - 0.055
+            }
         };
         let float_vec: Vec<f64> = lin_rgb_vec.iter().map(gamma_correct).collect();
         RGBColor {
@@ -1033,17 +961,21 @@ impl Color for RGBColor {
         }
     }
     fn to_xyz(&self, illuminant: Illuminant) -> XYZColor {
-        let uncorrect_gamma = |x: &f64| if x <= &0.04045 {
-            x / 12.92
-        } else {
-            ((x + 0.055) / 1.055).powf(2.4)
+        let uncorrect_gamma = |x: &f64| {
+            if x <= &0.04045 {
+                x / 12.92
+            } else {
+                ((x + 0.055) / 1.055).powf(2.4)
+            }
         };
-        let rgb_vec: Vector<f64> = vec![self.r, self.g, self.b].iter().map(uncorrect_gamma).collect();
+        let rgb_vec: Vector<f64> = vec![self.r, self.g, self.b]
+            .iter()
+            .map(uncorrect_gamma)
+            .collect();
 
         // invert the matrix multiplication used in from_xyz()
         // use LU decomposition for accuracy
-        let xyz_vec = SRGB_LU.solve(rgb_vec)
-            .expect("Matrix is invertible.");
+        let xyz_vec = SRGB_LU.solve(rgb_vec).expect("Matrix is invertible.");
 
         // sRGB, which this is based on, uses D65 as white, but you can convert to whatever
         // illuminant is specified
@@ -1087,7 +1019,7 @@ impl From<CSSParseError> for RGBParseError {
     fn from(_err: CSSParseError) -> RGBParseError {
         RGBParseError::InvalidFuncSyntax
     }
-}                  
+}
 
 impl Error for RGBParseError {
     fn description(&self) -> &str {
@@ -1145,8 +1077,7 @@ impl RGBColor {
                 // this should never fail, logically, but if by some miracle it did it'd just
                 // return an OutOfRangeError
                 rgb.push(
-                    u8::from_str_radix(chars.drain(..2).collect::<String>().as_str(), 16)
-                        .unwrap(),
+                    u8::from_str_radix(chars.drain(..2).collect::<String>().as_str(), 16).unwrap(),
                 );
             }
             Ok(RGBColor::from((rgb[0], rgb[1], rgb[2])))
@@ -1158,12 +1089,10 @@ impl RGBColor {
                 // OutOfRangeError
                 let c: Vec<char> = chars.drain(..1).collect();
                 rgb.push(
-                    u8::from_str_radix(
-                        c.iter().chain(c.iter()).collect::<String>().as_str(),
-                        16,
-                    ).unwrap(),
+                    u8::from_str_radix(c.iter().chain(c.iter()).collect::<String>().as_str(), 16)
+                        .unwrap(),
                 );
-                }
+            }
             Ok(RGBColor::from((rgb[0], rgb[1], rgb[2])))
         }
     }
@@ -1215,15 +1144,14 @@ impl FromStr for RGBColor {
             Err(_e) => match RGBColor::from_color_name(s) {
                 Err(_e) => match parse_rgb_str(s) {
                     Err(_e) => Err(_e.into()),
-                    Ok(nums) => Ok(RGBColor::from(nums))
-                }
-                Ok(rgb) => Ok(rgb)
+                    Ok(nums) => Ok(RGBColor::from(nums)),
+                },
+                Ok(rgb) => Ok(rgb),
             },
             Ok(rgb) => Ok(rgb),
         }
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -1239,32 +1167,6 @@ mod tests {
         assert!(color1.visually_indistinguishable(&color2));
         assert!(color2.visually_indistinguishable(&color1));
         assert!(!color1.visually_indistinguishable(&color3));
-    }
-
-    #[test]
-    #[ignore]
-    fn can_display_colors() {
-        let range = 120;
-        let mut col;
-        let mut line;
-        let mut c;
-        let mut h;
-        println!();
-        for i in 0..range {
-            h = (i as f64) / (range as f64) * 360.;
-            line = String::new();
-            for j in 0..range {
-                c = j as f64;
-                col = CIELCHColor {
-                    l: 70.,
-                    c: c / 2.,
-                    h,
-                };
-                line += col.write_color().as_str();
-            }
-            println!("{}", line);
-        }
-        println!();
     }
 
     #[test]
@@ -1336,8 +1238,7 @@ mod tests {
                 Illuminant::D55,
                 Illuminant::D65,
                 Illuminant::D75,
-            ]
-                [i % 4];
+            ][i % 4];
             xyz2 = xyz.color_adapt(lum);
             assert!(xyz2.approx_visually_equal(&xyz));
         }
@@ -1353,139 +1254,7 @@ mod tests {
         let xyz2 = xyz.color_adapt(Illuminant::D65);
         assert_eq!(xyz, xyz2);
     }
-    #[test]
-    #[ignore]
-    fn fun_dress_color_adaptation_demo() {
-        // the famous dress colors, taken completely out of the lighting conditions using GIMP
-        let dress_bg = RGBColor::from_hex_code("#7d6e47").unwrap().to_xyz(
-            Illuminant::D65,
-        );
-        let dress_fg = RGBColor::from_hex_code("#9aabd6").unwrap().to_xyz(
-            Illuminant::D65,
-        );
 
-        // helper closure to print block of color
-        let block_size = 50;
-        let print_col = |c: XYZColor| {
-            println!();        
-            for _i in 0..block_size {
-                println!("{}", c.write_color().repeat(block_size));
-            }
-        };
-
-        // make two "proposed" illuminants: different observers disagree on which one from the image!
-        // bright sunlight, clearly the incorrect one (actually, correct, just the one I don't see)
-        let sunlight = Illuminant::D50; // essentially daylight in East US, approximately
-        // dark shade, clearly the correct one (joking, it's the one I see)
-        // just taking a point in the image that looks like white in shade
-        let dress_wp = RGBColor::from_hex_code("#69718b").unwrap();
-        let shade_wp = dress_wp.to_xyz(Illuminant::D65);
-        let shade = Illuminant::Custom([shade_wp.x, shade_wp.y, shade_wp.z]);
-        // print alternate blocks of color: first the dress interpreted in sunlight (black and blue),
-        // then the dress interpreted in shade (white and gold)
-        let mut black = dress_bg;
-        let mut blue = dress_fg;
-        black.illuminant = sunlight;
-        blue.illuminant = sunlight;
-
-        let mut gold = dress_bg;
-        let mut white = dress_fg;
-        gold.illuminant = shade;
-        white.illuminant = shade;
-
-        let black_rgb: RGBColor = black.convert();
-        let blue_rgb: RGBColor = blue.convert();
-        let gold_rgb: RGBColor = gold.convert();
-        let white_rgb: RGBColor = white.convert();        
-        println!("Black: {} Blue: {}", black_rgb.to_string(), blue_rgb.to_string());
-        println!("Gold: {}, White: {}", gold_rgb.to_string(), white_rgb.to_string());
-        print_col(black);
-        print_col(blue);
-        print_col(gold);
-        print_col(white);
-    }
-
-    #[test]
-    #[ignore]
-    fn fun_color_adaptation_demo() {
-        println!();
-        let w: usize = 120;
-        let h: usize = 60;
-        let d50_wp = Illuminant::D50.white_point();
-        let d75_wp = Illuminant::D75.white_point();
-        let d50 = XYZColor {
-            x: d50_wp[0],
-            y: d50_wp[1],
-            z: d50_wp[2],
-            illuminant: Illuminant::D65,
-        };
-        let d75 = XYZColor {
-            x: d75_wp[0],
-            y: d75_wp[1],
-            z: d75_wp[2],
-            illuminant: Illuminant::D65,
-        };
-        for _ in 0..h + 1 {
-            println!(
-                "{}{}",
-                d50.write_color().repeat(w / 2),
-                d75.write_color().repeat(w / 2)
-            );
-        }
-
-        println!();
-        println!();
-        let y = 0.5;
-        println!();
-        for i in 0..(h + 1) {
-            let mut line = String::from("");
-            let x = i as f64 * 0.9 / h as f64;
-            for j in 0..(w / 2) {
-                let z = j as f64 * 0.9 / w as f64;
-                line.push_str(
-                    XYZColor {
-                        x,
-                        y,
-                        z,
-                        illuminant: Illuminant::D50,
-                    }.write_color()
-                        .as_str(),
-                );
-            }
-            for j in (w / 2)..(w + 1) {
-                let z = j as f64 * 0.9 / w as f64;
-                line.push_str(
-                    XYZColor {
-                        x,
-                        y,
-                        z,
-                        illuminant: Illuminant::D75,
-                    }.write_color()
-                        .as_str(),
-                );
-            }
-            println!("{}", line);
-        }
-        println!();
-        println!();
-        for i in 0..(h + 1) {
-            let mut line = String::from("");
-            let x = i as f64 * 0.9 / h as f64;
-            for j in 0..w {
-                let z = j as f64 * 0.9 / w as f64;
-                line.push_str(
-                    XYZColor {
-                        x,
-                        y,
-                        z,
-                        illuminant: Illuminant::D65,
-                    }.write_color()
-                        .as_str(),
-                );
-            }
-            println!("{}", line);
-        }
-    }
     #[test]
     fn test_rgb_from_hex() {
         // test rgb format
@@ -1528,12 +1297,21 @@ mod tests {
     fn test_rgb_from_func() {
         let rgb: RGBColor = "rgb(67%, 205, .937)".parse().unwrap();
         assert_eq!(*"#ABCDEF", rgb.to_string());
-        assert_eq!(Err(RGBParseError::InvalidFuncSyntax), "rgb(53%%, 23, 44)".parse::<RGBColor>());
+        assert_eq!(
+            Err(RGBParseError::InvalidFuncSyntax),
+            "rgb(53%%, 23, 44)".parse::<RGBColor>()
+        );
     }
     #[test]
     fn test_string_parsing_all() {
-        assert_eq!(*"#123456", "rgb(18, 52, 86)".parse::<RGBColor>().unwrap().to_string());
-        assert_eq!(*"#123456", "#123456".parse::<RGBColor>().unwrap().to_string());
+        assert_eq!(
+            *"#123456",
+            "rgb(18, 52, 86)".parse::<RGBColor>().unwrap().to_string()
+        );
+        assert_eq!(
+            *"#123456",
+            "#123456".parse::<RGBColor>().unwrap().to_string()
+        );
         assert_eq!(*"#000000", "black".parse::<RGBColor>().unwrap().to_string());
     }
     #[test]
@@ -1542,293 +1320,46 @@ mod tests {
             assert_eq!(*hex, RGBColor::from_hex_code(hex).unwrap().to_string());
         }
     }
-    #[test]
-    #[ignore]
-    fn lightness_demo() {
-        use colors::{CIELABColor, HSLColor};
-        let mut line;
-        println!();
-        for i in 0..20 {
-            line = String::from("");
-            for j in 0..20 {
-                let lab = CIELABColor {
-                    l: 50.,
-                    a: 5. * i as f64,
-                    b: 5. * j as f64,
-                };
-                line.push_str(lab.write_colored_str("#").as_str());
-            }
-            println!("{}", line);
-        }
-        println!();
-        for i in 0..20 {
-            line = String::from("");
-            for j in 0..20 {
-                let hsl = HSLColor {
-                    h: i as f64 * 18.,
-                    s: j as f64 * 0.05,
-                    l: 0.50,
-                };
-                line.push_str(hsl.write_colored_str("#").as_str());
-            }
-            println!("{}", line);
-        }
-    }
+
     #[test]
     fn test_ciede2000() {
         // this implements the fancy test cases found here:
         // https://pdfs.semanticscholar.org/969b/c38ea067dd22a47a44bcb59c23807037c8d8.pdf
         let l_1 = vec![
-            50.0,
-            50.0,
-            50.0,
-            50.0,
-            50.0,
-            50.0,
-            50.0,
-            50.0,
-            50.0,
-            50.0,
-            50.0,
-            50.0,
-            50.0,
-            50.0,
-            50.0,
-            50.0,
-            50.0,
-            50.0,
-            50.0,
-            50.0,
-            50.0,
-            50.0,
-            50.0,
-            50.0,
-            60.2574,
-            63.0109,
-            61.2901,
-            35.0831,
-            22.7233,
-            36.4612,
-            90.8027,
-            90.9257,
-            6.7747,
-            2.0776,
+            50.0, 50.0, 50.0, 50.0, 50.0, 50.0, 50.0, 50.0, 50.0, 50.0, 50.0, 50.0, 50.0, 50.0,
+            50.0, 50.0, 50.0, 50.0, 50.0, 50.0, 50.0, 50.0, 50.0, 50.0, 60.2574, 63.0109, 61.2901,
+            35.0831, 22.7233, 36.4612, 90.8027, 90.9257, 6.7747, 2.0776,
         ];
         let l_2 = vec![
-            50.0,
-            50.0,
-            50.0,
-            50.0,
-            50.0,
-            50.0,
-            50.0,
-            50.0,
-            50.0,
-            50.0,
-            50.0,
-            50.0,
-            50.0,
-            50.0,
-            50.0,
-            50.0,
-            73.0,
-            61.0,
-            56.0,
-            58.0,
-            50.0,
-            50.0,
-            50.0,
-            50.0,
-            60.4626,
-            62.8187,
-            61.4292,
-            35.0232,
-            23.0331,
-            36.2715,
-            91.1528,
-            88.6381,
-            5.8714,
-            0.9033,
+            50.0, 50.0, 50.0, 50.0, 50.0, 50.0, 50.0, 50.0, 50.0, 50.0, 50.0, 50.0, 50.0, 50.0,
+            50.0, 50.0, 73.0, 61.0, 56.0, 58.0, 50.0, 50.0, 50.0, 50.0, 60.4626, 62.8187, 61.4292,
+            35.0232, 23.0331, 36.2715, 91.1528, 88.6381, 5.8714, 0.9033,
         ];
         let a_1 = vec![
-            2.6772,
-            3.1571,
-            2.8361,
-            -1.3802,
-            -1.1848,
-            -0.9009,
-            0.0,
-            -1.0,
-            2.49,
-            2.49,
-            2.49,
-            2.49,
-            -0.001,
-            -0.001,
-            -0.001,
-            2.5,
-            2.5,
-            2.5,
-            2.5,
-            2.5,
-            2.5,
-            2.5,
-            2.5,
-            2.5,
-            -34.0099,
-            -31.0961,
-            3.7196,
-            -44.1164,
-            20.0904,
-            47.858,
-            -2.0831,
-            -0.5406,
-            -0.2908,
-            0.0795,
+            2.6772, 3.1571, 2.8361, -1.3802, -1.1848, -0.9009, 0.0, -1.0, 2.49, 2.49, 2.49, 2.49,
+            -0.001, -0.001, -0.001, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, -34.0099,
+            -31.0961, 3.7196, -44.1164, 20.0904, 47.858, -2.0831, -0.5406, -0.2908, 0.0795,
         ];
         let a_2 = vec![
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            -1.0,
-            0.0,
-            -2.49,
-            -2.49,
-            -2.49,
-            -2.49,
-            0.0009,
-            0.001,
-            0.0011,
-            0.0,
-            25.0,
-            -5.0,
-            -27.0,
-            24.0,
-            3.1736,
-            3.2972,
-            1.8634,
-            3.2592,
-            -34.1751,
-            -29.7946,
-            2.248,
-            -40.0716,
-            14.973,
-            50.5065,
-            -1.6435,
-            -0.8985,
-            -0.0985,
-            -0.0636,
+            0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, -2.49, -2.49, -2.49, -2.49, 0.0009, 0.001,
+            0.0011, 0.0, 25.0, -5.0, -27.0, 24.0, 3.1736, 3.2972, 1.8634, 3.2592, -34.1751,
+            -29.7946, 2.248, -40.0716, 14.973, 50.5065, -1.6435, -0.8985, -0.0985, -0.0636,
         ];
         let b_1 = vec![
-            -79.7751,
-            -77.2803,
-            -74.02,
-            -84.2814,
-            -84.8006,
-            -85.5211,
-            0.0,
-            2.0,
-            -0.001,
-            -0.001,
-            -0.001,
-            -0.001,
-            2.49,
-            2.49,
-            2.49,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            36.2677,
-            -5.8663,
-            -5.3901,
-            3.7933,
-            -46.6940,
-            18.3852,
-            1.441,
-            -0.9208,
-            -2.4247,
-            -1.135,
+            -79.7751, -77.2803, -74.02, -84.2814, -84.8006, -85.5211, 0.0, 2.0, -0.001, -0.001,
+            -0.001, -0.001, 2.49, 2.49, 2.49, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 36.2677,
+            -5.8663, -5.3901, 3.7933, -46.6940, 18.3852, 1.441, -0.9208, -2.4247, -1.135,
         ];
         let b_2 = vec![
-            -82.7485,
-            -82.7485,
-            -82.7485,
-            -82.7485,
-            -82.7485,
-            -82.7485,
-            2.0,
-            0.0,
-            0.0009,
-            0.001,
-            0.0011,
-            0.0012,
-            -2.49,
-            -2.49,
-            -2.49,
-            -2.5,
-            -18.0,
-            29.0,
-            -3.0,
-            15.0,
-            0.5854,
-            0.0,
-            0.5757,
-            0.3350,
-            39.4387,
-            -4.0864,
-            -4.962,
-            1.5901,
-            -42.5619,
-            21.2231,
-            0.0447,
-            -0.7239,
-            -2.2286,
-            -0.5514,
+            -82.7485, -82.7485, -82.7485, -82.7485, -82.7485, -82.7485, 2.0, 0.0, 0.0009, 0.001,
+            0.0011, 0.0012, -2.49, -2.49, -2.49, -2.5, -18.0, 29.0, -3.0, 15.0, 0.5854, 0.0,
+            0.5757, 0.3350, 39.4387, -4.0864, -4.962, 1.5901, -42.5619, 21.2231, 0.0447, -0.7239,
+            -2.2286, -0.5514,
         ];
         let d_e = vec![
-            2.0425,
-            2.8615,
-            3.4412,
-            1.0,
-            1.0,
-            1.0,
-            2.3669,
-            2.3669,
-            7.1792,
-            7.1792,
-            7.2195,
-            7.2195,
-            4.8045,
-            4.8045,
-            4.7461,
-            4.3065,
-            27.1492,
-            22.8977,
-            31.9030,
-            19.4535,
-            1.0,
-            1.0,
-            1.0,
-            1.0,
-            1.2644,
-            1.263,
-            1.8731,
-            1.8645,
-            2.0373,
-            1.4146,
-            1.4441,
-            1.5381,
-            0.6377,
-            0.9082,
+            2.0425, 2.8615, 3.4412, 1.0, 1.0, 1.0, 2.3669, 2.3669, 7.1792, 7.1792, 7.2195, 7.2195,
+            4.8045, 4.8045, 4.7461, 4.3065, 27.1492, 22.8977, 31.9030, 19.4535, 1.0, 1.0, 1.0, 1.0,
+            1.2644, 1.263, 1.8731, 1.8645, 2.0373, 1.4146, 1.4441, 1.5381, 0.6377, 0.9082,
         ];
         assert_eq!(l_1.len(), 34);
         assert_eq!(l_2.len(), 34);
@@ -1858,18 +1389,10 @@ mod tests {
         let mut rgb;
         let mut rgb2;
         for code in [
-            "#12000D",
-            "#FAFA22",
-            "#FF0000",
-            "#0000FF",
-            "#FF0FDF",
-            "#2266AA",
-            "#001200",
-            "#FFAAFF",
-            "#003462",
-            "#466223",
-            "#AAFFBC",
-        ].iter()
+            "#12000D", "#FAFA22", "#FF0000", "#0000FF", "#FF0FDF", "#2266AA", "#001200", "#FFAAFF",
+            "#003462", "#466223", "#AAFFBC",
+        ]
+        .iter()
         {
             // hue
             rgb = RGBColor::from_hex_code(code).unwrap();
@@ -1913,10 +1436,24 @@ mod tests {
     fn color_scheme() {
         let mut colors: Vec<RGBColor> = vec![];
         for i in 0..8 {
-            colors.push(CIELCHColor{l: i as f64 / 7. * 100., c: 0., h: 0.}.convert());
+            colors.push(
+                CIELCHColor {
+                    l: i as f64 / 7. * 100.,
+                    c: 0.,
+                    h: 0.,
+                }
+                .convert(),
+            );
         }
         for j in 0..8 {
-            colors.push(CIELCHColor{l: 50., c: 70., h: j as f64 / 8. * 360. + 10.}.convert());
+            colors.push(
+                CIELCHColor {
+                    l: 50.,
+                    c: 70.,
+                    h: j as f64 / 8. * 360. + 10.,
+                }
+                .convert(),
+            );
         }
         println!();
         for color in colors {

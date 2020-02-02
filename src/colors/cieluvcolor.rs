@@ -102,7 +102,8 @@ impl Color for CIELUVColor {
             y,
             z,
             illuminant: Illuminant::D50,
-        }.color_adapt(illuminant)
+        }
+        .color_adapt(illuminant)
     }
 }
 

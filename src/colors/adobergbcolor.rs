@@ -3,10 +3,10 @@
 //! primaries designed to give it a wider coverage (over half of CIE 1931).
 
 use bound::Bound;
-use coord::Coord;
 use color::{Color, XYZColor};
 use consts::ADOBE_RGB_TRANSFORM as ADOBE_RGB;
 use consts::ADOBE_RGB_TRANSFORM_LU as ADOBE_RGB_LU;
+use coord::Coord;
 use illuminants::Illuminant;
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
@@ -56,12 +56,14 @@ impl Color for AdobeRGBColor {
         let rgb = &*ADOBE_RGB * vector![xyz_c.x, xyz_c.y, xyz_c.z];
 
         // clamp
-        let clamp = |x: f64| if x > 1.0 {
-            1.0
-        } else if x < 0.0 {
-            0.0
-        } else {
-            x
+        let clamp = |x: f64| {
+            if x > 1.0 {
+                1.0
+            } else if x < 0.0 {
+                0.0
+            } else {
+                x
+            }
         };
 
         // now we apply gamma transformation
@@ -79,7 +81,8 @@ impl Color for AdobeRGBColor {
         let ungamma = |x: f64| x.powf(563.0 / 256.0);
 
         // more efficient/accurate than using inverses
-        let xyz_vec = ADOBE_RGB_LU.solve(vector![ungamma(self.r), ungamma(self.g), ungamma(self.b)])
+        let xyz_vec = ADOBE_RGB_LU
+            .solve(vector![ungamma(self.r), ungamma(self.g), ungamma(self.b)])
             .expect("Matrix is invertible.");
 
         XYZColor {
@@ -87,7 +90,8 @@ impl Color for AdobeRGBColor {
             y: xyz_vec[1],
             z: xyz_vec[2],
             illuminant: Illuminant::D65,
-        }.color_adapt(illuminant)
+        }
+        .color_adapt(illuminant)
     }
 }
 

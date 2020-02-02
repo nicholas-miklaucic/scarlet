@@ -11,14 +11,13 @@ categories = ["multimedia::images", "visualization", "data-structures"]
 
 [dependencies]
 regex = "1.0"
-termion = "1.5"
 num = "0.2"
 float-cmp = "0.4.0"
 csv = "1.0.2"
 serde = "1"
 serde_derive = "1"
 geo = "0.10"
-rulinalg="0.4.2"
+rulinalg = "0.4.2"
 maplit = "1.0.1"
 lazy_static = "1.1"
 

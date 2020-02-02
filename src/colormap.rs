@@ -2,13 +2,11 @@
 //! to colors in a continuous way—and provides some common ones used in programs like MATLAB and in
 //! data visualization everywhere.
 
-
-use std::iter::Iterator;
 use color::{Color, RGBColor};
 use colorpoint::ColorPoint;
 use coord::Coord;
 use matplotlib_cmaps;
-
+use std::iter::Iterator;
 
 /// A trait that models a colormap, a continuous mapping of the numbers between 0 and 1 to
 /// colors. Any color output format is supported, but it must be consistent.
@@ -54,7 +52,6 @@ impl NormalizeMapping {
         }
     }
 }
-
 
 /// A gradient colormap: a continuous, evenly-spaced shift between two colors A and B such that 0 maps
 /// to A, 1 maps to B, and any number in between maps to a weighted mix of them in a given
@@ -109,14 +106,12 @@ impl<T: ColorPoint> ColorMap<T> for GradientColorMap<T> {
         } else {
             x
         };
-        self.start.padded_gradient(
-            &self.end,
-            self.padding.0,
-            self.padding.1,
-        )(self.normalization.normalize(clamped))
+        self.start
+            .padded_gradient(&self.end, self.padding.0, self.padding.1)(
+            self.normalization.normalize(clamped),
+        )
     }
 }
-
 
 /// A colormap that linearly interpolates between a given series of values in an equally-spaced
 /// progression. This is modeled off of the `matplotlib` Python library's `ListedColormap`, and is
@@ -127,7 +122,6 @@ pub struct ListedColorMap {
     /// The list of values, as a vector of `[f64]` arrays that provide equally-spaced RGB values.
     pub vals: Vec<[f64; 3]>,
 }
-
 
 impl<T: ColorPoint> ColorMap<T> for ListedColorMap {
     /// Linearly interpolates by first finding the two colors on either boundary, and then using a
@@ -158,7 +152,8 @@ impl<T: ColorPoint> ColorMap<T> for ListedColorMap {
                 x: arr[0],
                 y: arr[1],
                 z: arr[2],
-            }).convert()
+            })
+            .convert()
         } else {
             // interpolate
             let arr1 = self.vals[ind1];
@@ -185,7 +180,9 @@ impl ListedColorMap {
     // TODO: In the future, I'd like to remove this weird array type bound if possible
     /// Initializes a ListedColorMap from an iterator of arrays [R, G, B].
     pub fn new<T: Iterator<Item = [f64; 3]>>(vals: T) -> ListedColorMap {
-        ListedColorMap { vals: vals.collect() }
+        ListedColorMap {
+            vals: vals.collect(),
+        }
     }
     /// Initializes a viridis colormap, a pleasing blue-green-yellow colormap that is perceptually
     /// uniform with respect to luminance, found in Python's `matplotlib` as the default
@@ -216,8 +213,6 @@ impl ListedColorMap {
     }
 }
 
-
-
 #[cfg(test)]
 mod tests {
     #[allow(unused_imports)]
@@ -232,13 +227,7 @@ mod tests {
         let vals = vec![-0.2, 0., 1. / 15., 1. / 5., 4. / 5., 1., 100.];
         let cols = cmap.transform(vals);
         let strs = vec![
-            "#FF0000",
-            "#FF0000",
-            "#EE0011",
-            "#CC0033",
-            "#3300CC",
-            "#0000FF",
-            "#0000FF",
+            "#FF0000", "#FF0000", "#EE0011", "#CC0033", "#3300CC", "#0000FF", "#0000FF",
         ];
         for (i, col) in cols.into_iter().enumerate() {
             assert_eq!(col.to_string(), strs[i]);
@@ -252,13 +241,7 @@ mod tests {
         let vals = vec![-0.2, 0., 1. / 27., 1. / 8., 8. / 27., 1., 100.];
         let cols = cmap.transform(vals);
         let strs = vec![
-            "#CC0000",
-            "#CC0000",
-            "#880044",
-            "#660066",
-            "#440088",
-            "#0000CC",
-            "#0000CC",
+            "#CC0000", "#CC0000", "#880044", "#660066", "#440088", "#0000CC", "#0000CC",
         ];
         for (i, col) in cols.into_iter().enumerate() {
             assert_eq!(col.to_string(), strs[i]);
@@ -274,13 +257,7 @@ mod tests {
         let vals = vec![-0.2, 0., 1. / 27., 1. / 8., 8. / 27., 1., 100.];
         let cols = cmap.transform(vals);
         let strs = vec![
-            "#990033",
-            "#990033",
-            "#770055",
-            "#660066",
-            "#550077",
-            "#330099",
-            "#330099",
+            "#990033", "#990033", "#770055", "#660066", "#550077", "#330099", "#330099",
         ];
         for (i, col) in cols.into_iter().enumerate() {
             assert_eq!(col.to_string(), strs[i]);

@@ -6,14 +6,13 @@
 //! color appearance parameters and is outclassed by CIELCH for that purpose, but it is nontheless
 //! important as the closest to such a space one can get using only basic transformations of RGB.
 
-
-use std::str::FromStr;
 use std::f64::EPSILON;
+use std::str::FromStr;
 
 use bound::Bound;
-use coord::Coord;
 use color::{Color, RGBColor, XYZColor};
-use csscolor::{CSSParseError, parse_hsl_hsv_tuple};
+use coord::Coord;
+use csscolor::{parse_hsl_hsv_tuple, CSSParseError};
 use illuminants::Illuminant;
 
 /// An HSV color, defining parameters for hue, saturation, and value from the RGB space. This is sHSV
@@ -162,16 +161,16 @@ impl FromStr for HSVColor {
 
     fn from_str(s: &str) -> Result<HSVColor, CSSParseError> {
         if !s.starts_with("hsv(") {
-            return Err(CSSParseError::InvalidColorSyntax)
+            return Err(CSSParseError::InvalidColorSyntax);
         }
         let tup: String = s.chars().skip(3).collect::<String>();
         match parse_hsl_hsv_tuple(&tup) {
-            Ok(res) => Ok(HSVColor{
+            Ok(res) => Ok(HSVColor {
                 h: res.0,
                 s: res.1,
                 v: res.2,
             }),
-            Err(_e) => Err(_e)
+            Err(_e) => Err(_e),
         }
     }
 }
