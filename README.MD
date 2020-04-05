@@ -56,5 +56,5 @@ The gist of it is:
    functionality.
 
 ## General Philosophy
-To look at the general philosophy and API design of Scarlet, please look at `api.org`. This is more
+To look at the general philosophy and API design of Scarlet, please look at [`api.org`](./api.org). This is more
 intended for developers.
