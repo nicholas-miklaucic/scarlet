@@ -28,7 +28,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-scarlet = "1.0.0"
+scarlet = "1.1.0"
 ```
 
 and this to your crate root:
