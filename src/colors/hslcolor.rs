@@ -24,7 +24,7 @@ use std::str::FromStr;
 use bound::Bound;
 use color::{Color, RGBColor, XYZColor};
 use coord::Coord;
-use csscolor::{CSSParseError, parse_hsl_hsv_tuple};
+use csscolor::{parse_hsl_hsv_tuple, CSSParseError};
 use illuminants::Illuminant;
 
 /// A color in the HSL color space, a direct transformation of the sRGB space. sHSL is used to
@@ -188,20 +188,19 @@ impl FromStr for HSLColor {
 
     fn from_str(s: &str) -> Result<HSLColor, CSSParseError> {
         if !s.starts_with("hsl(") {
-            return Err(CSSParseError::InvalidColorSyntax)
+            return Err(CSSParseError::InvalidColorSyntax);
         }
         let tup: String = s.chars().skip(3).collect::<String>();
         match parse_hsl_hsv_tuple(&tup) {
-            Ok(res) => Ok(HSLColor{
+            Ok(res) => Ok(HSLColor {
                 h: res.0,
                 s: res.1,
                 l: res.2,
             }),
-            Err(_e) => Err(_e)
+            Err(_e) => Err(_e),
         }
     }
 }
-
 
 #[cfg(test)]
 mod tests {

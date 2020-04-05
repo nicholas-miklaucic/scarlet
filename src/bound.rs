@@ -2,11 +2,9 @@
 //! colors a color gamut supports. For example, the sRGB gamut only supports RGB values ranging from
 //! 0-1 that are scaled to 0-255, which is about 30% of the total visible range of human vision.
 
-
 use color::{Color, RGBColor};
 use colorpoint::ColorPoint;
 use coord::Coord;
-
 
 /// Describes a color space in which the total space of representable colors has explicit bounds
 /// besides those imposed by human vision. For example, an sRGB color can't have negative values for
@@ -76,7 +74,6 @@ impl Bound for RGBColor {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::Bound;
@@ -92,13 +89,13 @@ mod tests {
             g: -0.2,
             b: 1.2,
         };
-        assert!(RGBColor::clamp(color1).visually_indistinguishable(
-            &RGBColor {
+        assert!(
+            RGBColor::clamp(color1).visually_indistinguishable(&RGBColor {
                 r: 0.1,
                 g: 0.,
                 b: 1.,
-            },
-        ));
+            },)
+        );
     }
 
     #[test]
@@ -119,19 +116,19 @@ mod tests {
             v: 0.7,
         };
         assert!(color3.visually_indistinguishable(&HSVColor::clamp(color3)));
-        assert!(HSVColor::clamp(color2).visually_indistinguishable(
-            &HSVColor {
+        assert!(
+            HSVColor::clamp(color2).visually_indistinguishable(&HSVColor {
                 h: 360.,
                 s: 0.2,
                 v: 0.5,
-            },
-        ));
-        assert!(HSLColor::clamp(color1).visually_indistinguishable(
-            &HSLColor {
+            },)
+        );
+        assert!(
+            HSLColor::clamp(color1).visually_indistinguishable(&HSLColor {
                 h: 0.,
                 s: 0.,
                 l: 1.,
-            },
-        ));
+            },)
+        );
     }
 }

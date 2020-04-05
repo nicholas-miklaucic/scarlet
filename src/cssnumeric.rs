@@ -3,14 +3,14 @@
 //! encode arbitrary CSS color descriptions into Scarlet structs. (Source for CSS syntax:
 //! [https://www.w3.org/TR/css-color-3/](https://www.w3.org/TR/css-color-3/).)
 
-use std::fmt;
 use std::error::Error;
+use std::fmt;
 
 /// A CSS numeric value. Either an integer, like 255, a float, like 0.8, or a percentage, like
 /// 104%.
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub(crate) enum CSSNumeric {
-    /// Represents a string of numeric tokens, such as "124", with an optional leading '+' or '-'. 
+    /// Represents a string of numeric tokens, such as "124", with an optional leading '+' or '-'.
     Integer(isize),
     /// Represents two integers separated by a '.', such that the second integer has no leading sign.
     Float(f64),
@@ -48,8 +48,6 @@ impl Error for CSSParseError {
     }
 }
 
-
-
 /// Parses a prechecked integer without a sign, such as "023" or "142". Panics on invalid input.
 fn parse_css_integer(num: &str) -> u64 {
     num.parse().unwrap()
@@ -67,7 +65,7 @@ pub(crate) fn parse_css_number(num: &str) -> Result<CSSNumeric, CSSParseError> {
     let mut chars: Vec<char> = num.chars().collect();
     // if invalid characters, return appropriate error
     if !chars.iter().all(|&c| "0123456789-+.%".contains(c)) {
-        return Err(CSSParseError::InvalidNumericCharacters)
+        return Err(CSSParseError::InvalidNumericCharacters);
     }
     // test if initial character is '-' or '+'. Remove and set sign flag accordingly.
     let is_positive = match chars[0] {
@@ -80,11 +78,11 @@ pub(crate) fn parse_css_number(num: &str) -> Result<CSSNumeric, CSSParseError> {
     }
     // if no longer any characters, throw error
     if chars.is_empty() {
-        return Err(CSSParseError::InvalidNumericSyntax)
+        return Err(CSSParseError::InvalidNumericSyntax);
     }
     // if any other pluses or minuses, throw error
     if chars.iter().any(|&c| "-=".contains(c)) {
-        return Err(CSSParseError::InvalidNumericSyntax)
+        return Err(CSSParseError::InvalidNumericSyntax);
     }
     // Test if number contains exactly one period. If more than one, throw error: otherwise, split to
     // cases.
@@ -106,7 +104,7 @@ pub(crate) fn parse_css_number(num: &str) -> Result<CSSNumeric, CSSParseError> {
                 1 => {
                     // check if % is at end
                     if chars.iter().last().unwrap() == &'%' {
-                        // parse the rest as integer and return                        
+                        // parse the rest as integer and return
                         chars.pop();
                         let uint = parse_css_integer(&(chars.iter().collect::<String>()));
                         // adjust for sign
@@ -130,11 +128,7 @@ pub(crate) fn parse_css_number(num: &str) -> Result<CSSNumeric, CSSParseError> {
         1 => {
             // parse as valid float and account for sign
             let ufloat = parse_css_float(&(chars.iter().collect::<String>()));
-            let float = if is_positive {
-                ufloat
-            } else {
-                -ufloat
-            };
+            let float = if is_positive { ufloat } else { -ufloat };
             Ok(CSSNumeric::Float(float))
         }
         _ => {
@@ -142,8 +136,7 @@ pub(crate) fn parse_css_number(num: &str) -> Result<CSSNumeric, CSSParseError> {
             Err(CSSParseError::InvalidNumericSyntax)
         }
     }
-}       
-
+}
 
 #[cfg(test)]
 mod tests {
@@ -232,11 +225,23 @@ mod tests {
     #[test]
     fn test_errors() {
         // test non-numeric characters
-        assert_eq!(parse_css_number("abc"), Err(CSSParseError::InvalidNumericCharacters));
+        assert_eq!(
+            parse_css_number("abc"),
+            Err(CSSParseError::InvalidNumericCharacters)
+        );
         // test multiple periods
-        assert_eq!(parse_css_number("14.23.2"), Err(CSSParseError::InvalidNumericSyntax));
+        assert_eq!(
+            parse_css_number("14.23.2"),
+            Err(CSSParseError::InvalidNumericSyntax)
+        );
         // test multiple percentages, percentages in wrong place
-        assert_eq!(parse_css_number("-24%%"), Err(CSSParseError::InvalidNumericSyntax));
-        assert_eq!(parse_css_number("1%2%"), Err(CSSParseError::InvalidNumericSyntax));        
+        assert_eq!(
+            parse_css_number("-24%%"),
+            Err(CSSParseError::InvalidNumericSyntax)
+        );
+        assert_eq!(
+            parse_css_number("1%2%"),
+            Err(CSSParseError::InvalidNumericSyntax)
+        );
     }
 }

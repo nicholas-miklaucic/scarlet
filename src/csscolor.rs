@@ -5,9 +5,8 @@
 //! spec here: [https://www.w3.org/TR/css-color-3/](https://www.w3.org/TR/css-color-3/). One quick caveat:
 //! as is relatively standard, percents are only integral: "45.5%" will be treated as invalid.
 
-use cssnumeric::{CSSNumeric, parse_css_number};
 pub(crate) use cssnumeric::CSSParseError;
-
+use cssnumeric::{parse_css_number, CSSNumeric};
 
 /// Given a string, attempts to parse as a CSS numeric. If successful, interprets the number given as
 /// a component of an RGB color, clamping accordingly. Returns the appropriate `u8`: e.g., "102%" maps
@@ -24,7 +23,7 @@ fn parse_rgb_num(num: &str) -> Result<u8, CSSParseError> {
             } else {
                 Ok(val as u8)
             }
-        },
+        }
         CSSNumeric::Float(val) => {
             // interpret between 0 and 1, clamping
             let clamped = if val <= 0. {
@@ -59,20 +58,20 @@ pub(crate) fn parse_rgb_str(num: &str) -> Result<(u8, u8, u8), CSSParseError> {
     // must have at least 10 characters
     // has to start with "rgb(" or not a valid color
     if !num.starts_with("rgb(") || num.len() < 10 {
-        return Err(CSSParseError::InvalidColorSyntax)
+        return Err(CSSParseError::InvalidColorSyntax);
     }
     // remove first four chars, put in Vec
     let mut chars: Vec<char> = num.chars().skip(4).collect();
     // check for and remove parenthesis
     if chars.iter().last().unwrap() != &')' {
-        return Err(CSSParseError::InvalidColorSyntax)
+        return Err(CSSParseError::InvalidColorSyntax);
     }
     chars.pop();
 
     // test for disallowed characters
     if chars.iter().any(|&c| !"0123456789+-,. %".contains(c)) {
         println!("hi");
-        return Err(CSSParseError::InvalidColorSyntax)
+        return Err(CSSParseError::InvalidColorSyntax);
     }
     // this now requires a very specific format: three commas, a parenthesis at the end, and spaces
     // in between
@@ -85,7 +84,7 @@ pub(crate) fn parse_rgb_str(num: &str) -> Result<(u8, u8, u8), CSSParseError> {
         nums.push(parse_rgb_num(&(split.iter().collect::<String>().trim()))?);
     }
     if nums.len() != 3 {
-        return Err(CSSParseError::InvalidColorSyntax)
+        return Err(CSSParseError::InvalidColorSyntax);
     }
     Ok((nums[0], nums[1], nums[2]))
 }
@@ -96,7 +95,7 @@ pub(crate) fn parse_rgb_str(num: &str) -> Result<(u8, u8, u8), CSSParseError> {
 pub(crate) fn parse_hsl_hsv_tuple(tup: &str) -> Result<(f64, f64, f64), CSSParseError> {
     // must have '(' at start and ')' at end: remove them, and store in chars vec
     if !tup.starts_with('(') || !tup.ends_with(')') {
-        return Err(CSSParseError::InvalidColorSyntax)
+        return Err(CSSParseError::InvalidColorSyntax);
     }
     let mut chars: Vec<char> = tup.chars().skip(1).collect();
     chars.pop();
@@ -105,10 +104,12 @@ pub(crate) fn parse_hsl_hsv_tuple(tup: &str) -> Result<(f64, f64, f64), CSSParse
     let split_iter = (&chars).split(|c| c == &',');
     let mut numerics: Vec<CSSNumeric> = vec![];
     for split in split_iter {
-        numerics.push(parse_css_number(&(split.iter().collect::<String>().trim()))?);        
+        numerics.push(parse_css_number(
+            &(split.iter().collect::<String>().trim()),
+        )?);
     }
     if numerics.len() != 3 {
-        return Err(CSSParseError::InvalidColorSyntax)
+        return Err(CSSParseError::InvalidColorSyntax);
     }
     // hue is special: require float or integer, normalize to 0-360
     let hue: f64 = match numerics[0] {
@@ -132,7 +133,7 @@ pub(crate) fn parse_hsl_hsv_tuple(tup: &str) -> Result<(f64, f64, f64), CSSParse
             }
             clamped
         }
-        _ => return Err(CSSParseError::InvalidColorSyntax)
+        _ => return Err(CSSParseError::InvalidColorSyntax),
     };
     // saturation and lightness/value all work the same way: clamp between 0 and 1 and expect a
     // percentage
@@ -145,10 +146,8 @@ pub(crate) fn parse_hsl_hsv_tuple(tup: &str) -> Result<(f64, f64, f64), CSSParse
             } else {
                 (val as f64) / 100.
             }
-        },
-        _ => {
-            return Err(CSSParseError::InvalidColorSyntax)
         }
+        _ => return Err(CSSParseError::InvalidColorSyntax),
     };
     let l_or_v: f64 = match numerics[2] {
         CSSNumeric::Percentage(val) => {
@@ -159,10 +158,8 @@ pub(crate) fn parse_hsl_hsv_tuple(tup: &str) -> Result<(f64, f64, f64), CSSParse
             } else {
                 (val as f64) / 100.
             }
-        },
-        _ => {
-            return Err(CSSParseError::InvalidColorSyntax)
         }
+        _ => return Err(CSSParseError::InvalidColorSyntax),
     };
     // now return
     Ok((hue, sat, l_or_v))
@@ -185,8 +182,14 @@ mod tests {
         assert_eq!(122u8, parse_rgb_num("48%").unwrap());
         assert_eq!(255u8, parse_rgb_num("115%").unwrap());
         // test errors
-        assert_eq!(Err(CSSParseError::InvalidNumericCharacters), parse_rgb_num("abc"));
-        assert_eq!(Err(CSSParseError::InvalidNumericSyntax), parse_rgb_num("123%%"));
+        assert_eq!(
+            Err(CSSParseError::InvalidNumericCharacters),
+            parse_rgb_num("abc")
+        );
+        assert_eq!(
+            Err(CSSParseError::InvalidNumericSyntax),
+            parse_rgb_num("123%%")
+        );
     }
 
     #[test]
@@ -198,9 +201,18 @@ mod tests {
         let rgb = parse_rgb_str("rgb(-125, -20%, 10.5)").unwrap();
         assert_eq!(rgb, (0, 0, 255));
         // test error on bad syntax
-        assert_eq!(Err(CSSParseError::InvalidColorSyntax), parse_rgb_str("rgB(123, 33, 2)"));
-        assert_eq!(Err(CSSParseError::InvalidColorSyntax), parse_rgb_str("rgb(123, 123, 41, 22)"));
-        assert_eq!(Err(CSSParseError::InvalidColorSyntax), parse_rgb_str("rgB(())"));
+        assert_eq!(
+            Err(CSSParseError::InvalidColorSyntax),
+            parse_rgb_str("rgB(123, 33, 2)")
+        );
+        assert_eq!(
+            Err(CSSParseError::InvalidColorSyntax),
+            parse_rgb_str("rgb(123, 123, 41, 22)")
+        );
+        assert_eq!(
+            Err(CSSParseError::InvalidColorSyntax),
+            parse_rgb_str("rgB(())")
+        );
     }
 
     #[test]
@@ -225,6 +237,9 @@ mod tests {
         assert_eq!((hsl.1 * 100.).round() as u8, 100u8);
         assert_eq!((hsl.2 * 100.).round() as u8, 0u8);
         // test error
-        assert_eq!(parse_hsl_hsv_tuple("(14%, 140%, 12%)"), Err(CSSParseError::InvalidColorSyntax));
+        assert_eq!(
+            parse_hsl_hsv_tuple("(14%, 140%, 12%)"),
+            Err(CSSParseError::InvalidColorSyntax)
+        );
     }
 }

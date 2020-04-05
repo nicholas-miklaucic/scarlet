@@ -10,11 +10,10 @@
 
 use bound::Bound;
 use color::{Color, XYZColor};
-use coord::Coord;
 use consts::ROMM_RGB_TRANSFORM as ROMM;
 use consts::ROMM_RGB_TRANSFORM_LU as ROMM_LU;
+use coord::Coord;
 use illuminants::Illuminant;
-
 
 /// A color in the ROMM RGB color space, also known as the ProPhoto RGB space. This is a very wide RGB
 /// gamut, wider than both Adobe RGB and sRGB, but the tradeoff is that the colors it uses as
@@ -77,19 +76,23 @@ impl Color for ROMMRGBColor {
 
         // as the spec describes, some "flare" can occur: to fix this, we apply a small fix so that
         // black is just really small and not 0
-        let fix_flare = |x: f64| if x < 0.03125 {
-            0.003473 + 0.0622829 * x
-        } else {
-            0.003473 + 0.996527 * x.powf(1.8)
+        let fix_flare = |x: f64| {
+            if x < 0.03125 {
+                0.003473 + 0.0622829 * x
+            } else {
+                0.003473 + 0.996527 * x.powf(1.8)
+            }
         };
 
         // we also need to clamp between 0 and 1
-        let clamp = |x: f64| if x < 0.0 {
-            0.0
-        } else if x > 1.0 {
-            1.0
-        } else {
-            x
+        let clamp = |x: f64| {
+            if x < 0.0 {
+                0.0
+            } else if x > 1.0 {
+                1.0
+            } else {
+                x
+            }
         };
         // now just apply these in sequence
         ROMMRGBColor {
@@ -138,8 +141,9 @@ impl Color for ROMMRGBColor {
         // The standard brilliantly decided to not even bother adding an inverse matrix. Scarlet uses
         // LU decomposition to avoid any precision loss when solving the equation for the right
         // values. This might differ from other solutions elsewhere: trust this one, unless you have
-        // a good reason not to.        
-        let xyz = ROMM_LU.solve(vector![r_c, g_c, b_c])
+        // a good reason not to.
+        let xyz = ROMM_LU
+            .solve(vector![r_c, g_c, b_c])
             .expect("Matrix is invertible.");
         // now we convert from D50 to whatever space we need and we're done!
         XYZColor {
@@ -147,7 +151,8 @@ impl Color for ROMMRGBColor {
             y: xyz[1],
             z: xyz[2],
             illuminant: Illuminant::D50,
-        }.color_adapt(illuminant)
+        }
+        .color_adapt(illuminant)
     }
 }
 

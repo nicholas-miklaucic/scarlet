@@ -1,7 +1,7 @@
 [package]
 name = "scarlet"
 description = "Colors and color spaces made simple"
-version = "1.0.2"
+version = "1.1.0"
 authors = ["Nicholas Miklaucic <nicholas.miklaucic@gmail.com>"]
 license = "Apache-2.0"
 readme = "README.MD"
@@ -9,17 +9,25 @@ repository = "https://github.com/nicholas-miklaucic/scarlet"
 keywords = ["color", "rgb", "image", "visualization"]
 categories = ["multimedia::images", "visualization", "data-structures"]
 
-[dependencies]
-regex = "1.0"
-termion = "1.5"
-num = "0.2"
-float-cmp = "0.4.0"
-csv = "1.0.2"
-serde = "1"
-serde_derive = "1"
-geo = "0.10"
-rulinalg="0.4.2"
-maplit = "1.0.1"
-lazy_static = "1.1"
-
 [package.metadata.docs.rs]
+
+[features]
+# By default, don't include terminal support so it's WASM-compatible
+default = []
+
+# For terminal support (e.g., printing colors to a terminal)
+terminal = ["termion"]
+
+
+[dependencies]
+regex = "1.3.6"
+num = "0.2.1"
+float-cmp = "0.6.0"
+csv = "1.1.3"
+serde = "1.0.106"
+serde_derive = "1.0.106"
+geo = "0.13.0"
+rulinalg = "0.4.2"
+maplit = "1.0.2"
+lazy_static = "1.4.0"
+termion = { version = "1.5.5", optional = true }

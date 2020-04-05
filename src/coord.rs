@@ -2,9 +2,9 @@
 //! math in 3 dimensions with scalars and other coordinates. Used to unify math with colors that is
 //! the same, just with different projections into 3D space.
 
-use std::ops::{Add, Div, Mul, Sub};
 use num;
 use num::{Num, NumCast};
+use std::ops::{Add, Div, Mul, Sub};
 
 /// Represents a scalar value that can be easily converted, described using the common numeric traits
 /// in [`num`]. Anything that falls under this category can be multiplied by a [`Coord`] to scale

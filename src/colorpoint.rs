@@ -4,12 +4,12 @@
 //! don't require `From<Coord>`. This makes it easy to provide these for custom
 //! [`Color`](color/trait.Color.html) types.
 
-use coord::Coord;
+use super::geo::prelude::*;
+use super::geo::{Closest, LineString, Point};
 use color::{Color, XYZColor};
 use colors::cieluvcolor::CIELUVColor;
+use coord::Coord;
 use visual_gamut::read_cie_spectral_data;
-use super::geo::{Closest, LineString, Point};
-use super::geo::prelude::*;
 
 /// Some errors that might pop up when dealing with colors as coordinates.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -175,7 +175,7 @@ pub trait ColorPoint: Color + Into<Coord> + From<Coord> + Clone + Copy {
     /// let color_at_end = grad(1.).to_string(); // #774BDC
     /// let color_at_third = grad(2./6.).to_string(); // #33479C
     /// ```
-    fn gradient(&self, other: &Self) -> Box<Fn(f64) -> Self> {
+    fn gradient(&self, other: &Self) -> Box<dyn Fn(f64) -> Self> {
         let c1: Coord = (*self).into();
         let c2: Coord = (*other).into();
         Box::new(move |x| Self::from(c2.weighted_midpoint(&c1, x)))
@@ -198,7 +198,7 @@ pub trait ColorPoint: Color + Into<Coord> + From<Coord> + Clone + Copy {
     /// let color_at_end = grad(1.).to_string(); // #774BDC
     /// let color_at_third = grad(2./6.).to_string(); // #5849BF
     /// ```
-    fn cbrt_gradient(&self, other: &Self) -> Box<Fn(f64) -> Self> {
+    fn cbrt_gradient(&self, other: &Self) -> Box<dyn Fn(f64) -> Self> {
         let c1: Coord = (*self).into();
         let c2: Coord = (*other).into();
         Box::new(move |x| Self::from(c2.weighted_midpoint(&c1, x.cbrt())))
@@ -229,13 +229,11 @@ pub trait ColorPoint: Color + Into<Coord> + From<Coord> + Clone + Copy {
         other: &Self,
         lower_pad: f64,
         upper_pad: f64,
-    ) -> Box<Fn(f64) -> Self> {
+    ) -> Box<dyn Fn(f64) -> Self> {
         let c1: Coord = (*self).into();
         let c2: Coord = (*other).into();
         let length = upper_pad - lower_pad;
-        Box::new(move |x| {
-            Self::from(c2.weighted_midpoint(&c1, length * x + lower_pad))
-        })
+        Box::new(move |x| Self::from(c2.weighted_midpoint(&c1, length * x + lower_pad)))
     }
 }
 
@@ -247,8 +245,8 @@ impl<T: Color + Into<Coord> + From<Coord> + Copy + Clone> ColorPoint for T {
 mod tests {
     #[allow(unused_imports)]
     use super::*;
-    use colors::cielabcolor::CIELABColor;
     use color::RGBColor;
+    use colors::cielabcolor::CIELABColor;
 
     #[test]
     fn test_cielab_distance() {
@@ -276,15 +274,7 @@ mod tests {
             .collect();
         assert_eq!(
             grad_hexes,
-            vec![
-                "#11457C",
-                "#22468C",
-                "#33479C",
-                "#4448AC",
-                "#5549BC",
-                "#664ACC",
-                "#774BDC",
-            ]
+            vec!["#11457C", "#22468C", "#33479C", "#4448AC", "#5549BC", "#664ACC", "#774BDC",]
         );
     }
     #[test]
