@@ -5,7 +5,6 @@ use illuminants::Illuminant;
 
 use super::csv;
 
-use std::error::Error;
 use std::path::Path;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -22,7 +21,7 @@ pub fn read_cie_spectral_data() -> (Vec<u16>, Vec<XYZColor>) {
     let mut xyz_data = vec![];
     let path = Path::new("cie-1931-standard-matching.csv");
     let mut reader = match csv::Reader::from_path(path) {
-        Err(e) => panic!("CIE spectral data could not be read: {}", e.description()),
+        Err(e) => panic!("CIE spectral data could not be read: {}", e.to_string()),
         Ok(rdr) => rdr,
     };
     for result in reader.deserialize() {
