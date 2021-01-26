@@ -198,9 +198,9 @@ impl XYZColor {
     ///
     /// [`Color::visually_indistinguishable`]: ../color/trait.Color.html#method.visually_indistinguishable
     pub fn approx_equal(&self, other: &XYZColor) -> bool {
-        ((self.x - other.x).abs() <= 1e-15
+        (self.x - other.x).abs() <= 1e-15
             && (self.y - other.y).abs() <= 1e-15
-            && (self.z - other.z).abs() <= 1e-15)
+            && (self.z - other.z).abs() <= 1e-15
     }
 
     /// Returns `true` if the given other XYZ color would look identically in a different color
