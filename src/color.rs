@@ -669,7 +669,8 @@ pub trait Color: Sized {
     /// works best with small differences, so keep that in mind: it's relatively hard to quantify
     /// whether bright pink and brown are more or less similar than bright blue and dark red.
     ///
-    /// For more, check out the [associated guide](../color_distance.html).
+    /// For more, check out the [associated
+    /// guide](https://github.com/nicholas-miklaucic/scarlet/blob/master/color_distance.md).
     ///
     /// # Examples
     ///
