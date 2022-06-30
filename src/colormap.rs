@@ -211,6 +211,63 @@ impl ListedColorMap {
         let vals = matplotlib_cmaps::PLASMA_DATA.to_vec();
         ListedColorMap { vals }
     }
+    /// Initializes a cividis colormap, a pleasing shades of blue-yellow map that is perceptually
+    /// uniform with respect to luminance, found in Python's `matplotlib.`
+    pub fn cividis() -> ListedColorMap {
+        let vals = matplotlib_cmaps::CIVIDIS_DATA.to_vec();
+        ListedColorMap { vals }
+    }
+    /// Initializes a turbo colormap, a pleasing blue-green-red map that is perceptually
+    /// uniform with respect to luminance, found in Python's `matplotlib.`
+    pub fn turbo() -> ListedColorMap {
+        let vals = matplotlib_cmaps::TURBO_DATA.to_vec();
+        ListedColorMap { vals }
+    }
+    /// "circle" is a constant-brightness, perceptually uniform cyclic rainbow map
+    /// going from magenta through blue, green and red back to magenta.
+    pub fn circle() -> ListedColorMap {
+        let vals = matplotlib_cmaps::CIRCLE_DATA.to_vec();
+        ListedColorMap { vals }
+    }
+    /// "bluered" is a diverging colormap going from dark magenta/blue/cyan to yellow/red/dark purple,
+    /// analogously to "RdBu_r" but with higher contrast and more uniform gradient. It is suitable for
+    /// plotting velocity maps (blue/redshifted) and is similar to "breeze" and "mist" in this respect,
+    /// but has (nearly) white as the central color instead of green.
+    /// It is also cyclic (same colors at endpoints).
+    pub fn bluered() -> ListedColorMap {
+        let vals = matplotlib_cmaps::BLUERED_DATA.to_vec();
+        ListedColorMap { vals }
+    }
+    /// "breeze" is a better-balanced version of "jet", with diverging luminosity profile,
+    /// going from dark blue to bright green in the center and then back to dark red.
+    /// It is nearly perceptually uniform, unlike the original jet map.
+    pub fn breeze() -> ListedColorMap {
+        let vals = matplotlib_cmaps::BREEZE_DATA.to_vec();
+        ListedColorMap { vals }
+    }
+    /// "mist" is another replacement for "jet" or "rainbow" maps, which differs from "breeze" by
+    /// having smaller dynamical range in brightness. The red and blue endpoints are darker than
+    /// the green center, but not as dark as in "breeze", while the center is not as bright.
+    pub fn mist() -> ListedColorMap {
+        let vals = matplotlib_cmaps::MIST_DATA.to_vec();
+        ListedColorMap { vals }
+    }
+    /// "earth" is a rainbow-like colormap with increasing luminosity, going from black through
+    //  dark blue, medium green in the middle and light red/orange to white.
+    // # It is nearly perceptually uniform, monotonic in luminosity, and is suitable for
+    // # plotting nearly anything, especially velocity maps (blue/redshifted).
+    // # It resembles "gist_earth" (but with more vivid colors) or MATLAB's "parula".
+    pub fn earth() -> ListedColorMap {
+        let vals = matplotlib_cmaps::EARTH_DATA.to_vec();
+        ListedColorMap { vals }
+    }
+    /// "hell" is a slightly tuned version of "inferno", with the main difference that it goes to
+    // # pure white at the bright end (starts from black, then dark blue/purple, red in the middle,
+    // # yellow and white). It is fully perceptually uniform and monotonic in luminosity.
+    pub fn hell() -> ListedColorMap {
+        let vals = matplotlib_cmaps::HELL_DATA.to_vec();
+        ListedColorMap { vals }
+    }
 }
 
 #[cfg(test)]
