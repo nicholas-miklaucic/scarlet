@@ -45,7 +45,8 @@ use consts::STANDARD_RGB_TRANSFORM_LU as SRGB_LU;
 use csscolor::{parse_rgb_str, CSSParseError};
 use illuminants::Illuminant;
 
-use rulinalg::vector::Vector;
+use nalgebra::base::Vector;
+use nalgebra::vector;
 
 #[cfg(feature = "terminal")]
 use termion::color::{Bg, Fg, Reset, Rgb};
@@ -168,7 +169,7 @@ impl XYZColor {
 
             // using LU decomposition for accuracy
             let xyz_c = BRADFORD_LU
-                .solve(vector![r_c, g_c, b_c])
+                .solve(&vector![r_c, g_c, b_c])
                 .expect("Matrix is invertible.");
             XYZColor {
                 x: xyz_c[0],
@@ -1070,14 +1071,15 @@ impl Color for RGBColor {
                 ((x + 0.055) / 1.055).powf(2.4)
             }
         };
-        let rgb_vec: Vector<f64> = vec![self.r, self.g, self.b]
-            .iter()
-            .map(uncorrect_gamma)
-            .collect();
+        let rgb_vec = vector![
+            uncorrect_gamma(&self.r),
+            uncorrect_gamma(&self.g),
+            uncorrect_gamma(&self.b)
+        ];
 
         // invert the matrix multiplication used in from_xyz()
         // use LU decomposition for accuracy
-        let xyz_vec = SRGB_LU.solve(rgb_vec).expect("Matrix is invertible.");
+        let xyz_vec = SRGB_LU.solve(&rgb_vec).expect("Matrix is invertible.");
 
         // sRGB, which this is based on, uses D65 as white, but you can convert to whatever
         // illuminant is specified

@@ -143,7 +143,7 @@ impl Color for ROMMRGBColor {
         // values. This might differ from other solutions elsewhere: trust this one, unless you have
         // a good reason not to.
         let xyz = ROMM_LU
-            .solve(vector![r_c, g_c, b_c])
+            .solve(&vector![r_c, g_c, b_c])
             .expect("Matrix is invertible.");
         // now we convert from D50 to whatever space we need and we're done!
         XYZColor {
