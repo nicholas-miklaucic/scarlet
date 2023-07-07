@@ -20,14 +20,14 @@ terminal = ["termion"]
 
 
 [dependencies]
-regex = "1.4.3"
-num = "0.3.1"
-float-cmp = "0.8.0"
+regex = "1.9.1"
+num = "0.4.0"
+float-cmp = "0.9.0"
 csv = "1.1.5"
 serde = "1.0.120"
 serde_derive = "1.0.120"
-geo = "0.17.0"
+geo = "0.25.1"
 maplit = "1.0.2"
 lazy_static = "1.4.0"
 nalgebra = "0.32.2"
-termion = { version = "1.5.5", optional = true }
+termion = { version = "2.0.1", optional = true }
