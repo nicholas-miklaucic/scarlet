@@ -16,7 +16,7 @@
 extern crate csv;
 extern crate geo;
 #[macro_use]
-extern crate rulinalg;
+extern crate nalgebra;
 extern crate num;
 extern crate serde;
 #[macro_use]

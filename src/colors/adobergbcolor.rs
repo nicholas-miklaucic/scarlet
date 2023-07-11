@@ -82,7 +82,7 @@ impl Color for AdobeRGBColor {
 
         // more efficient/accurate than using inverses
         let xyz_vec = ADOBE_RGB_LU
-            .solve(vector![ungamma(self.r), ungamma(self.g), ungamma(self.b)])
+            .solve(&vector![ungamma(self.r), ungamma(self.g), ungamma(self.b)])
             .expect("Matrix is invertible.");
 
         XYZColor {

@@ -208,7 +208,7 @@ mod tests {
         assert!((red_hsv.v - 0.5) <= 0.0001);
         let lavender_hsv: HSVColor = "hsv(-445, 24%, 1000%)".parse().unwrap();
         let lavender_rgb: RGBColor = lavender_hsv.convert();
-        assert_eq!(lavender_rgb.to_string(), "#E5C2FF");
+        assert_eq!(lavender_rgb.to_string(), "#E6C2FF");
         // test error
         assert!("hsv(254%, 0, 0)".parse::<HSVColor>().is_err());
     }

@@ -11,11 +11,12 @@
 #[allow(dead_code)] // this is required because it isn't used outside tests: that's OK though
 pub(crate) const TEST_PRECISION: f64 = 1e-12;
 
-use rulinalg::matrix::decomposition::PartialPivLu;
-use rulinalg::matrix::Matrix;
+use nalgebra::Const;
+use nalgebra::Matrix3;
 
-lazy_static! {
-    pub(crate) static ref ADOBE_RGB_TRANSFORM: Matrix<f64> = {
+/*
+fn hutz() {
+    let ADOBE_RGB_TRANSFORMX =
         // FIXME: https://github.com/rust-lang/rust/issues/66145
         // warning: this method call currently resolves to
         // `<&[T; N] as IntoIterator>::into_iter` (due to autoref coercions),
@@ -23,31 +24,47 @@ lazy_static! {
         // arrays are added.
         matrix![02.04159, -0.56501, -0.34473;
                 -0.96924, 01.87957, 00.04156;
-                00.01344, -0.11836, 01.01517]
-    };
-    pub(crate) static ref ADOBE_RGB_TRANSFORM_LU: PartialPivLu<f64> =
-        PartialPivLu::decompose(ADOBE_RGB_TRANSFORM.clone()).expect("Matrix is invertible.");
-    pub(crate) static ref BRADFORD_TRANSFORM: Matrix<f64> = {
+                00.01344, -0.11836, 01.01517];
+    let ADOBE_RGB_TRANSFORM_LUX: nalgebra::linalg::LU<f64, Const<3>, Const<3>> =
+        nalgebra::linalg::LU::new(ADOBE_RGB_TRANSFORMX.clone());
+}
+*/
+
+lazy_static! {
+    pub(crate) static ref ADOBE_RGB_TRANSFORM: Matrix3<f64> =
+        // FIXME: https://github.com/rust-lang/rust/issues/66145
+        // warning: this method call currently resolves to
+        // `<&[T; N] as IntoIterator>::into_iter` (due to autoref coercions),
+        // but that might change in the future when `IntoIterator` impls for
+        // arrays are added.
+        matrix![02.04159, -0.56501, -0.34473;
+                -0.96924, 01.87957, 00.04156;
+                00.01344, -0.11836, 01.01517];
+
+    pub(crate) static ref ADOBE_RGB_TRANSFORM_LU: nalgebra::linalg::LU<f64, Const<3>, Const<3>>  =
+        nalgebra::linalg::LU::new(ADOBE_RGB_TRANSFORM.clone());
+
+    pub(crate) static ref BRADFORD_TRANSFORM: Matrix3<f64> = {
         matrix![00.8951, 00.2664, -0.1614;
                 -0.7502, 01.7135, 00.0367;
                 00.0389, -0.0685, 01.0296]
     };
-    pub(crate) static ref BRADFORD_TRANSFORM_LU: PartialPivLu<f64> =
-        PartialPivLu::decompose(BRADFORD_TRANSFORM.clone()).expect("Matrix is invertible.");
-    pub(crate) static ref ROMM_RGB_TRANSFORM: Matrix<f64> = {
+    pub(crate) static ref BRADFORD_TRANSFORM_LU: nalgebra::linalg::LU<f64, Const<3>, Const<3>> =
+    nalgebra::linalg::LU::new(BRADFORD_TRANSFORM.clone());
+    pub(crate) static ref ROMM_RGB_TRANSFORM: Matrix3<f64> = {
         matrix![0.7976749, 0.1351917, 0.0313534;
                 0.2880402, 0.7118741, 0.0000857;
                 0.0000000, 0.0000000, 0.8252100]
     };
-    pub(crate) static ref ROMM_RGB_TRANSFORM_LU: PartialPivLu<f64> =
-        PartialPivLu::decompose(ROMM_RGB_TRANSFORM.clone()).expect("Matrix is invertible.");
-    pub(crate) static ref STANDARD_RGB_TRANSFORM: Matrix<f64> = {
+    pub(crate) static ref ROMM_RGB_TRANSFORM_LU: nalgebra::linalg::LU<f64, Const<3>, Const<3>> =
+    nalgebra::linalg::LU::new(ROMM_RGB_TRANSFORM.clone());
+    pub(crate) static ref STANDARD_RGB_TRANSFORM: Matrix3<f64> = {
         matrix![03.2406, -1.5372, -0.4986;
                 -0.9689, 01.8758, 00.0415;
                 00.0557, -0.2040, 01.0570]
     };
-    pub(crate) static ref STANDARD_RGB_TRANSFORM_LU: PartialPivLu<f64> =
-        PartialPivLu::decompose(STANDARD_RGB_TRANSFORM.clone()).expect("Matrix is invertible.");
+    pub(crate) static ref STANDARD_RGB_TRANSFORM_LU: nalgebra::linalg::LU<f64, Const<3>, Const<3>> =
+    nalgebra::linalg::LU::new(STANDARD_RGB_TRANSFORM.clone());
 }
 
 // These next two constants define the X11 color names and hex codes.

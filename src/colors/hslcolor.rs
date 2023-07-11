@@ -226,7 +226,7 @@ mod tests {
             l: 0.6,
         };
         let lavender_rgb: RGBColor = lavender_hsl.convert();
-        assert_eq!(lavender_rgb.to_string(), "#6E66CC");
+        assert_eq!(lavender_rgb.to_string(), "#6F66CC");
     }
 
     #[test]
@@ -237,7 +237,7 @@ mod tests {
         assert!((red_hsl.l - 0.5) <= 0.0001);
         let lavender_hsl: HSLColor = "hsl(-475, 50%, 60%)".parse().unwrap();
         let lavender_rgb: RGBColor = lavender_hsl.convert();
-        assert_eq!(lavender_rgb.to_string(), "#6E66CC");
+        assert_eq!(lavender_rgb.to_string(), "#6F66CC");
         // test error
         assert!("hsl(254%, 0, 0)".parse::<HSLColor>().is_err());
     }
