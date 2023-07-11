@@ -77,11 +77,11 @@ pub(crate) fn parse_rgb_str(num: &str) -> Result<(u8, u8, u8), CSSParseError> {
     // in between
     // check for commas (the right number of them) and split into numbers, remove whitespace,
     // parse, and recombine
-    let split_iter = (&chars).split(|c| c == &',');
+    let split_iter = chars.split(|c| c == &',');
     // now remove surrounding whitespace and pass to number parsing, propagating errors
     let mut nums: Vec<u8> = vec![];
     for split in split_iter {
-        nums.push(parse_rgb_num(&(split.iter().collect::<String>().trim()))?);
+        nums.push(parse_rgb_num(split.iter().collect::<String>().trim())?);
     }
     if nums.len() != 3 {
         return Err(CSSParseError::InvalidColorSyntax);
@@ -101,12 +101,10 @@ pub(crate) fn parse_hsl_hsv_tuple(tup: &str) -> Result<(f64, f64, f64), CSSParse
     chars.pop();
 
     // split with commas: must be 3 distinct things
-    let split_iter = (&chars).split(|c| c == &',');
+    let split_iter = chars.split(|c| c == &',');
     let mut numerics: Vec<CSSNumeric> = vec![];
     for split in split_iter {
-        numerics.push(parse_css_number(
-            &(split.iter().collect::<String>().trim()),
-        )?);
+        numerics.push(parse_css_number(split.iter().collect::<String>().trim())?);
     }
     if numerics.len() != 3 {
         return Err(CSSParseError::InvalidColorSyntax);

@@ -42,7 +42,7 @@ lazy_static! {
                 00.01344, -0.11836, 01.01517];
 
     pub(crate) static ref ADOBE_RGB_TRANSFORM_LU: nalgebra::linalg::LU<f64, Const<3>, Const<3>>  =
-        nalgebra::linalg::LU::new(ADOBE_RGB_TRANSFORM.clone());
+        nalgebra::linalg::LU::new(*ADOBE_RGB_TRANSFORM);
 
     pub(crate) static ref BRADFORD_TRANSFORM: Matrix3<f64> = {
         matrix![00.8951, 00.2664, -0.1614;
@@ -50,21 +50,21 @@ lazy_static! {
                 00.0389, -0.0685, 01.0296]
     };
     pub(crate) static ref BRADFORD_TRANSFORM_LU: nalgebra::linalg::LU<f64, Const<3>, Const<3>> =
-    nalgebra::linalg::LU::new(BRADFORD_TRANSFORM.clone());
+    nalgebra::linalg::LU::new(*BRADFORD_TRANSFORM);
     pub(crate) static ref ROMM_RGB_TRANSFORM: Matrix3<f64> = {
         matrix![0.7976749, 0.1351917, 0.0313534;
                 0.2880402, 0.7118741, 0.0000857;
                 0.0000000, 0.0000000, 0.8252100]
     };
     pub(crate) static ref ROMM_RGB_TRANSFORM_LU: nalgebra::linalg::LU<f64, Const<3>, Const<3>> =
-    nalgebra::linalg::LU::new(ROMM_RGB_TRANSFORM.clone());
+    nalgebra::linalg::LU::new(*ROMM_RGB_TRANSFORM);
     pub(crate) static ref STANDARD_RGB_TRANSFORM: Matrix3<f64> = {
         matrix![03.2406, -1.5372, -0.4986;
                 -0.9689, 01.8758, 00.0415;
                 00.0557, -0.2040, 01.0570]
     };
     pub(crate) static ref STANDARD_RGB_TRANSFORM_LU: nalgebra::linalg::LU<f64, Const<3>, Const<3>> =
-    nalgebra::linalg::LU::new(STANDARD_RGB_TRANSFORM.clone());
+    nalgebra::linalg::LU::new(*STANDARD_RGB_TRANSFORM);
 }
 
 // These next two constants define the X11 color names and hex codes.

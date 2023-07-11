@@ -4,9 +4,10 @@
 //! colormaps are CC0 and public domain because the makers are just that nice, but it's good to
 //! credit them anyway: nice job to Nathaniel J. Smith, Stefan van der Walt, and Eric Firing. The
 //! link to the easiest reference for this data is
-//! https://github.com/BIDS/colormap/blob/master/colormaps.py for the data itself, or
-//! http://bids.github.io/colormap/ for the general idea.
+//! <ttps://github.com/BIDS/colormap/blob/master/colormaps.py> for the data itself, or
+//! <http://bids.github.io/colormap/> for the general idea.
 
+#[allow(clippy::approx_constant)]
 pub const MAGMA_DATA: [[f64; 3]; 256] = [
     [0.001462, 0.000466, 0.013866],
     [0.002258, 0.001295, 0.018331],
@@ -266,6 +267,7 @@ pub const MAGMA_DATA: [[f64; 3]; 256] = [
     [0.987053, 0.991438, 0.749504],
 ];
 
+#[allow(clippy::approx_constant)]
 pub const INFERNO_DATA: [[f64; 3]; 256] = [
     [0.001462, 0.000466, 0.013866],
     [0.002267, 0.001270, 0.018570],
@@ -525,6 +527,7 @@ pub const INFERNO_DATA: [[f64; 3]; 256] = [
     [0.988362, 0.998364, 0.644924],
 ];
 
+#[allow(clippy::approx_constant)]
 pub const PLASMA_DATA: [[f64; 3]; 256] = [
     [0.050383, 0.029803, 0.527975],
     [0.063536, 0.028426, 0.533124],
@@ -784,6 +787,7 @@ pub const PLASMA_DATA: [[f64; 3]; 256] = [
     [0.940015, 0.975158, 0.131326],
 ];
 
+#[allow(clippy::approx_constant)]
 pub const VIRIDIS_DATA: [[f64; 3]; 256] = [
     [0.267004, 0.004874, 0.329415],
     [0.268510, 0.009605, 0.335427],
@@ -1043,6 +1047,7 @@ pub const VIRIDIS_DATA: [[f64; 3]; 256] = [
     [0.993248, 0.906157, 0.143936],
 ];
 
+#[allow(clippy::approx_constant)]
 pub const CIVIDIS_DATA: [[f64; 3]; 256] = [
     [0.0000, 0.1262, 0.3015],
     [0.0000, 0.1292, 0.3077],
@@ -1302,6 +1307,7 @@ pub const CIVIDIS_DATA: [[f64; 3]; 256] = [
     [1.0000, 0.9169, 0.2731],
 ];
 
+#[allow(clippy::approx_constant)]
 pub const TURBO_DATA: [[f64; 3]; 256] = [
     [0.18995, 0.07176, 0.23217],
     [0.19483, 0.08339, 0.26149],
@@ -1561,6 +1567,7 @@ pub const TURBO_DATA: [[f64; 3]; 256] = [
     [0.47960, 0.01583, 0.01055],
 ];
 
+#[allow(clippy::approx_constant)]
 pub const CIRCLE_DATA: [[f64; 3]; 256] = [
     [0.8194, 0.2757, 0.8333],
     [0.8131, 0.2824, 0.8396],
@@ -1820,6 +1827,7 @@ pub const CIRCLE_DATA: [[f64; 3]; 256] = [
     [0.8194, 0.2757, 0.8333],
 ];
 
+#[allow(clippy::approx_constant)]
 pub const BLUERED_DATA: [[f64; 3]; 256] = [
     [0.1463, 0.0064, 0.1461],
     [0.1545, 0.0119, 0.1593],
@@ -2079,6 +2087,7 @@ pub const BLUERED_DATA: [[f64; 3]; 256] = [
     [0.1463, 0.0064, 0.1461],
 ];
 
+#[allow(clippy::approx_constant)]
 pub const BREEZE_DATA: [[f64; 3]; 256] = [
     [0.0276, 0.0829, 0.1149],
     [0.0351, 0.0907, 0.1266],
@@ -2338,6 +2347,7 @@ pub const BREEZE_DATA: [[f64; 3]; 256] = [
     [0.1661, 0.0067, 0.0219],
 ];
 
+#[allow(clippy::approx_constant)]
 pub const MIST_DATA: [[f64; 3]; 256] = [
     [0.3057, 0.0056, 0.7690],
     [0.3030, 0.0407, 0.7704],
@@ -2597,6 +2607,7 @@ pub const MIST_DATA: [[f64; 3]; 256] = [
     [0.4901, 0.0026, 0.1927],
 ];
 
+#[allow(clippy::approx_constant)]
 pub const EARTH_DATA: [[f64; 3]; 256] = [
     [0.065, 0.063, 0.063],
     [0.073, 0.072, 0.079],
@@ -2856,6 +2867,7 @@ pub const EARTH_DATA: [[f64; 3]; 256] = [
     [0.994, 0.994, 0.985],
 ];
 
+#[allow(clippy::approx_constant)]
 pub const HELL_DATA: [[f64; 3]; 256] = [
     [0.001, 0.000, 0.014],
     [0.002, 0.001, 0.019],

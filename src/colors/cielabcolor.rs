@@ -133,12 +133,12 @@ impl From<Coord> for CIELABColor {
     }
 }
 
-impl Into<Coord> for CIELABColor {
-    fn into(self) -> Coord {
+impl From<CIELABColor> for Coord {
+    fn from(val: CIELABColor) -> Self {
         Coord {
-            x: self.l,
-            y: self.a,
-            z: self.b,
+            x: val.l,
+            y: val.a,
+            z: val.b,
         }
     }
 }

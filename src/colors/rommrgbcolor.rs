@@ -61,7 +61,7 @@ impl Color for ROMMRGBColor {
 
         // matrix multiplication, using spec's variable names
         // &* needed because lazy_static uses a different type which implements Deref
-        let rr_gg_bb = &*ROMM * vector![xyz_c.x, xyz_c.y, xyz_c.z];
+        let rr_gg_bb = *ROMM * vector![xyz_c.x, xyz_c.y, xyz_c.z];
 
         // like sRGB, there's a linear part and an exponential part to the gamma conversion
         let gamma = |x: f64| {
@@ -166,12 +166,12 @@ impl From<Coord> for ROMMRGBColor {
     }
 }
 
-impl Into<Coord> for ROMMRGBColor {
-    fn into(self) -> Coord {
+impl From<ROMMRGBColor> for Coord {
+    fn from(val: ROMMRGBColor) -> Self {
         Coord {
-            x: self.r,
-            y: self.g,
-            z: self.b,
+            x: val.r,
+            y: val.g,
+            z: val.b,
         }
     }
 }

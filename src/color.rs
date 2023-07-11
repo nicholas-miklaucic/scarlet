@@ -1,27 +1,32 @@
-//! This file defines the [`Color`](color::Color) trait, the foundational defining trait of the entire
-//! library. Despite the dizzying amount of things [`Color`](color::Color) can do in Scarlet, especially with its
-//! extending traits, the definition is quite simple: anything that can be converted to and from the
-//! [CIE 1931 XYZ space](https://en.wikipedia.org/wiki/CIE_1931_color_space). This color space is
-//! common to use as a master space, and Scarlet is no different. What makes XYZ unique is that it
-//! can be computed directly from the spectral data of a color. Although Scarlet does not implement
-//! this due to its scope, this property makes it possible to derive XYZ colors from real-world data,
+//! This file defines the [`Color`] trait, the foundational defining trait of
+//! the entire library. Despite the dizzying amount of things [`Color`] can do
+//! in Scarlet, especially with its extending traits, the definition is quite
+//! simple: anything that can be converted to and from the [CIE 1931 XYZ
+//! space](https://en.wikipedia.org/wiki/CIE_1931_color_space). This color space
+//! is common to use as a master space, and Scarlet is no different. What makes
+//! XYZ unique is that it can be computed directly from the spectral data of a
+//! color. Although Scarlet does not implement this due to its scope, this
+//! property makes it possible to derive XYZ colors from real-world data,
 //! something that no other color space can do the same way.
 //!
-//! The thing that makes [`XYZColor`](color::XYZColor), the base implementation of the CIE 1931 XYZ
-//! space, special is that it is the only color object in Scarlet that keeps track of its own
-//! illuminant data. Every other color space assumes a viewing environment, but because XYZ color
-//! maps directly to neural perception it keeps track of what environment the color is being viewed
-//! in. This allows Scarlet to translate between color spaces that have different assumptions
-//! seamlessly. (If you notice that Scarlet's values for conversions differ from other sources, this
-//! may be why: some sources don't do this properly or implement it differently. Scarlet generally
-//! follows best practices and industry standards, but file an issue if you feel this is not true.)
-//! The essential workflow of [`Color`](color::Color), and therefore Scarlet, is generally like this:
-//! convert between different color spaces using the generic [`convert<T:
-//! Color>()`](trait.Color.html#method.convert) method, which allows any [`Color`](color::Color) to
-//! be interconverted to any other representation. Leverage the specific attributes of each color
-//! space if need be (for example, using the hue or luminance attributes), and then convert back to
-//! a suitable display space. The many other methods of [`Color`](color::Color) make some of the more
-//! common such patterns simple to do.
+//! The thing that makes [`XYZColor`], the base implementation of the CIE 1931
+//! XYZ space, special is that it is the only color object in Scarlet that keeps
+//! track of its own illuminant data. Every other color space assumes a viewing
+//! environment, but because XYZ color maps directly to neural perception it
+//! keeps track of what environment the color is being viewed in. This allows
+//! Scarlet to translate between color spaces that have different assumptions
+//! seamlessly. (If you notice that Scarlet's values for conversions differ from
+//! other sources, this may be why: some sources don't do this properly or
+//! implement it differently. Scarlet generally follows best practices and
+//! industry standards, but file an issue if you feel this is not true.) The
+//! essential workflow of [`Color`], and therefore Scarlet, is generally like
+//! this: convert between different color spaces using the generic [`convert<T:
+//! Color>()`](trait.Color.html#method.convert) method, which allows any
+//! [`Color`] to be interconverted to any other representation. Leverage the
+//! specific attributes of each color space if need be (for example, using the
+//! hue or luminance attributes), and then convert back to a suitable display
+//! space. The many other methods of [`Color`] make some of the more common such
+//! patterns simple to do.
 //!
 
 use std::collections::HashMap;
@@ -144,13 +149,13 @@ impl XYZColor {
         } else {
             // convert to Bradford RGB space
             // &* needed because lazy_static uses a different type which implements Deref
-            let rgb = &*BRADFORD * vector![self.x, self.y, self.z];
+            let rgb = *BRADFORD * vector![self.x, self.y, self.z];
 
             // get the RGB values for the white point of the illuminant we are currently using and
             // the one we want: wr here stands for "white reference", i.e., the one we're converting
             // to
-            let rgb_w = &*BRADFORD * Vector::from(self.illuminant.white_point().to_vec());
-            let rgb_wr = &*BRADFORD * Vector::from(other_illuminant.white_point().to_vec());
+            let rgb_w = *BRADFORD * Vector::from(self.illuminant.white_point().to_vec());
+            let rgb_wr = *BRADFORD * Vector::from(other_illuminant.white_point().to_vec());
 
             // perform the transform
             // this usually includes a parameter indicating how much you want to adapt, but it's
@@ -261,7 +266,7 @@ pub trait Color: Sized {
     /// #     try_main().unwrap();
     /// # }
     /// ```
-    fn from_xyz(XYZColor) -> Self;
+    fn from_xyz(xyz: XYZColor) -> Self;
     /// Converts from the given color type to a color in CIE 1931 XYZ space. Because most color types
     /// don't include illuminant information, it is provided instead, as an enum. For most
     /// applications, D50 or D65 is a good choice.
@@ -440,7 +445,7 @@ pub trait Color: Sized {
     /// ```
     fn set_hue(&mut self, new_hue: f64) {
         let mut lch: CIELCHColor = self.convert();
-        lch.h = if new_hue >= 0.0 && new_hue <= 360.0 {
+        lch.h = if (0.0..=360.0).contains(&new_hue) {
             new_hue
         } else if new_hue < 0.0 {
             new_hue - 360.0 * (new_hue / 360.0).floor()
@@ -522,7 +527,7 @@ pub trait Color: Sized {
     /// ```
     fn set_lightness(&mut self, new_lightness: f64) {
         let mut lab: CIELABColor = self.convert();
-        lab.l = if new_lightness >= 0.0 && new_lightness <= 100.0 {
+        lab.l = if (0.0..=100.0).contains(&new_lightness) {
             new_lightness
         } else if new_lightness < 0.0 {
             0.0
@@ -1003,9 +1008,9 @@ impl From<(u8, u8, u8)> for RGBColor {
     }
 }
 
-impl Into<(u8, u8, u8)> for RGBColor {
-    fn into(self) -> (u8, u8, u8) {
-        (self.int_r(), self.int_g(), self.int_b())
+impl From<RGBColor> for (u8, u8, u8) {
+    fn from(val: RGBColor) -> Self {
+        (val.int_r(), val.int_g(), val.int_b())
     }
 }
 
@@ -1019,12 +1024,12 @@ impl From<Coord> for RGBColor {
     }
 }
 
-impl Into<Coord> for RGBColor {
-    fn into(self) -> Coord {
+impl From<RGBColor> for Coord {
+    fn from(val: RGBColor) -> Self {
         Coord {
-            x: self.r,
-            y: self.g,
-            z: self.b,
+            x: val.r,
+            y: val.g,
+            z: val.b,
         }
     }
 }
@@ -1047,7 +1052,7 @@ impl Color for RGBColor {
         // first, get linear RGB values (i.e., without gamma correction)
         // https://en.wikipedia.org/wiki/SRGB#Specification_of_the_transformation
 
-        let lin_rgb_vec = &*SRGB * vector![xyz_d65.x, xyz_d65.y, xyz_d65.z];
+        let lin_rgb_vec = *SRGB * vector![xyz_d65.x, xyz_d65.y, xyz_d65.z];
         // now we scale for gamma correction
         let gamma_correct = |x: &f64| {
             if x <= &0.0031308 {
@@ -1541,16 +1546,10 @@ mod tests {
         assert_eq!(rgb.int_b(), 219);
         // test for error if 7 chars
         let rgb = RGBColor::from_hex_code("#1244444");
-        assert!(match rgb {
-            Err(x) if x == RGBParseError::InvalidHexSyntax => true,
-            _ => false,
-        });
+        assert!(matches!(rgb, Err(x) if x == RGBParseError::InvalidHexSyntax));
         // test for error if invalid hex chars
         let rgb = RGBColor::from_hex_code("#ffggbb");
-        assert!(match rgb {
-            Err(x) if x == RGBParseError::InvalidHexSyntax => true,
-            _ => false,
-        });
+        assert!(matches!(rgb, Err(x) if x == RGBParseError::InvalidHexSyntax));
     }
     #[test]
     fn test_rgb_from_name() {

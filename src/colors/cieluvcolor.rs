@@ -117,12 +117,12 @@ impl From<Coord> for CIELUVColor {
     }
 }
 
-impl Into<Coord> for CIELUVColor {
-    fn into(self) -> Coord {
+impl From<CIELUVColor> for Coord {
+    fn from(val: CIELUVColor) -> Self {
         Coord {
-            x: self.l,
-            y: self.u,
-            z: self.v,
+            x: val.l,
+            y: val.u,
+            z: val.v,
         }
     }
 }

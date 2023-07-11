@@ -20,6 +20,7 @@ pub(crate) enum CSSNumeric {
 
 /// An error in parsing a CSS string. Covers many different kinds of errors.
 #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
+#[allow(clippy::enum_variant_names)]
 pub enum CSSParseError {
     /// This indicates that non-numeric characters were used in a string on which a parse into a
     /// number was attempted.

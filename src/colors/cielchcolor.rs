@@ -92,12 +92,12 @@ impl From<Coord> for CIELCHColor {
     }
 }
 
-impl Into<Coord> for CIELCHColor {
-    fn into(self) -> Coord {
+impl From<CIELCHColor> for Coord {
+    fn from(val: CIELCHColor) -> Self {
         Coord {
-            x: self.l,
-            y: self.c,
-            z: self.h,
+            x: val.l,
+            y: val.c,
+            z: val.h,
         }
     }
 }

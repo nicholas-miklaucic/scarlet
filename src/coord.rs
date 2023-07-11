@@ -1,6 +1,7 @@
-//! This module contains a struct, [`Coord`](coord::Coord), that models a 3D coordinate space and supports limited
-//! math in 3 dimensions with scalars and other coordinates. Used to unify math with colors that is
-//! the same, just with different projections into 3D space.
+//! This module contains a struct, [`Coord`], that models a 3D coordinate space
+//! and supports limited math in 3 dimensions with scalars and other
+//! coordinates. Used to unify math with colors that is the same, just with
+//! different projections into 3D space.
 
 use num;
 use num::{Num, NumCast};

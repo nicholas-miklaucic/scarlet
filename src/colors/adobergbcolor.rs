@@ -16,7 +16,7 @@ use illuminants::Illuminant;
 /// # Example
 ///
 /// We can find the percentage of Adobe RGB that is inside the sRGB gamut:
-/// Adobe RGB, in 3D space, is a cube 1 by 1 by 1. sRGB is within that a rectangular prism, so all we
+/// Adobe RGB, in 3D space, is a cube 1 by 1 by 1. sRGB is within kthat a rectangular prism, so all we
 /// need to do is just multiply together all of the sRGB ranges.
 ///
 /// ```
@@ -53,7 +53,7 @@ impl Color for AdobeRGBColor {
         // matrix multiplication
         // https://en.wikipedia.org/wiki/Adobe_RGB_color_space
         // &* needed because lazy_static uses a different type which implements Deref
-        let rgb = &*ADOBE_RGB * vector![xyz_c.x, xyz_c.y, xyz_c.z];
+        let rgb = *ADOBE_RGB * vector![xyz_c.x, xyz_c.y, xyz_c.z];
 
         // clamp
         let clamp = |x: f64| {
@@ -105,12 +105,12 @@ impl From<Coord> for AdobeRGBColor {
     }
 }
 
-impl Into<Coord> for AdobeRGBColor {
-    fn into(self) -> Coord {
+impl From<AdobeRGBColor> for Coord {
+    fn from(val: AdobeRGBColor) -> Self {
         Coord {
-            x: self.r,
-            y: self.g,
-            z: self.b,
+            x: val.r,
+            y: val.g,
+            z: val.b,
         }
     }
 }

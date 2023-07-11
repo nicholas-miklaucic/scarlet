@@ -1,6 +1,7 @@
-//! This module defines a generalized trait, [`ColorMap`](colormap::ColorMap), for a colormap—a mapping of the numbers between 0 and 1
-//! to colors in a continuous way—and provides some common ones used in programs like MATLAB and in
-//! data visualization everywhere.
+//! This module defines a generalized trait, [`ColorMap`], for a colormap—a
+//! mapping of the numbers between 0 and 1 to colors in a continuous way—and
+//! provides some common ones used in programs like MATLAB and in data
+//! visualization everywhere.
 
 use color::{Color, RGBColor};
 use colorpoint::ColorPoint;
@@ -13,7 +14,7 @@ use std::iter::Iterator;
 pub trait ColorMap<T: Color + Sized> {
     /// Maps a given number between 0 and 1 to a given output `Color`. This should never fail or panic
     /// except for NaN and similar: there should be some Color that marks out-of-range data.
-    fn transform_single(&self, f64) -> T;
+    fn transform_single(&self, color: f64) -> T;
     /// Maps a given collection of numbers between 0 and 1 to an iterator of `Color`s. Does not evaluate
     /// lazily, because the colormap could have some sort of state that changes between iterations otherwise.
     fn transform<U: IntoIterator<Item = f64>>(&self, inputs: U) -> Vec<T> {

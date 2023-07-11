@@ -140,12 +140,12 @@ impl From<Coord> for HSVColor {
     }
 }
 
-impl Into<Coord> for HSVColor {
-    fn into(self) -> Coord {
+impl From<HSVColor> for Coord {
+    fn from(val: HSVColor) -> Self {
         Coord {
-            x: self.h,
-            y: self.s,
-            z: self.v,
+            x: val.h,
+            y: val.s,
+            z: val.v,
         }
     }
 }
